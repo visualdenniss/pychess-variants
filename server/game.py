@@ -2,9 +2,7 @@ import asyncio
 import collections
 import logging
 import random
-import string
-from datetime import datetime
-from itertools import chain
+from datetime import datetime, timezone
 from time import monotonic
 
 try:
@@ -17,11 +15,13 @@ from broadcast import lobby_broadcast
 from clock import Clock
 from compress import encode_moves, R2C
 from const import CREATED, STARTED, ABORTED, MATE, STALEMATE, DRAW, FLAG, CLAIM, \
-    INVALIDMOVE, VARIANT_960_TO_PGN, LOSERS, VARIANTEND, GRANDS, CASUAL, RATED, IMPORTED
-from convert import uci2cg, uci2usi, mirror5, mirror9
+    INVALIDMOVE, VARIANT_960_TO_PGN, LOSERS, VARIANTEND, GRANDS, CASUAL, RATED, \
+    IMPORTED, HIGHSCORE_MIN_GAMES, variant_display_name
+from convert import grand2zero, uci2usi, mirror5, mirror9
 from fairy import FairyBoard, BLACK, WHITE
-from glicko2.glicko2 import gl2, PROVISIONAL_PHI
+from glicko2.glicko2 import gl2
 from settings import URI
+from spectators import spectators
 
 log = logging.getLogger(__name__)
 
@@ -30,16 +30,8 @@ MAX_PLY = 600
 KEEP_TIME = 600  # keep game in app["games"] for KEEP_TIME secs
 
 
-async def new_game_id(db):
-    new_id = "".join(random.choice(string.ascii_letters + string.digits) for x in range(8))
-    existing = await db.game.find_one({'_id': {'$eq': new_id}})
-    if existing:
-        new_id = "".join(random.choice(string.digits + string.ascii_letters) for x in range(8))
-    return new_id
-
-
 class Game:
-    def __init__(self, app, gameId, variant, initial_fen, wplayer, bplayer, base=1, inc=0, byoyomi_period=0, level=0, rated=CASUAL, chess960=False, create=True):
+    def __init__(self, app, gameId, variant, initial_fen, wplayer, bplayer, base=1, inc=0, byoyomi_period=0, level=0, rated=CASUAL, chess960=False, create=True, tournamentId=None):
         self.app = app
         self.db = app["db"] if "db" in app else None
         self.users = app["users"]
@@ -56,15 +48,22 @@ class Game:
         self.base = base
         self.inc = inc
         self.level = level if level is not None else 0
+        self.tournamentId = tournamentId
         self.chess960 = chess960
         self.create = create
 
+        self.browser_title = "%s • %s vs %s" % (
+            variant_display_name(self.variant + ("960" if self.chess960 else "")).title(),
+            self.wplayer.username,
+            self.bplayer.username
+        )
+
         # rating info
         self.white_rating = wplayer.get_rating(variant, chess960)
-        self.wrating = "%s%s" % (int(round(self.white_rating.mu, 0)), "?" if self.white_rating.phi > PROVISIONAL_PHI else "")
+        self.wrating = "%s%s" % self.white_rating.rating_prov
         self.wrdiff = 0
         self.black_rating = bplayer.get_rating(variant, chess960)
-        self.brating = "%s%s" % (int(round(self.black_rating.mu, 0)), "?" if self.black_rating.phi > PROVISIONAL_PHI else "")
+        self.brating = "%s%s" % self.black_rating.rating_prov
         self.brdiff = 0
 
         # crosstable info
@@ -86,7 +85,7 @@ class Game:
         self.draw_offers = set()
         self.rematch_offers = set()
         self.messages = collections.deque([], 200)
-        self.date = datetime.utcnow()
+        self.date = datetime.now(timezone.utc)
 
         self.ply_clocks = [{
             "black": (base * 1000 * 60) + 0 if base > 0 else inc * 1000,
@@ -202,8 +201,8 @@ class Game:
             return
         if self.status == CREATED:
             self.status = STARTED
-            self.app["g_cnt"] += 1
-            response = {"type": "g_cnt", "cnt": self.app["g_cnt"]}
+            self.app["g_cnt"][0] += 1
+            response = {"type": "g_cnt", "cnt": self.app["g_cnt"][0]}
             await lobby_broadcast(self.app["lobbysockets"], response)
 
         cur_player = self.bplayer if self.board.color == BLACK else self.wplayer
@@ -301,15 +300,21 @@ class Game:
     async def save_game(self, with_clocks=False):
         if self.saved:
             return
+        self.saved = True
+
         if self.rated == IMPORTED:
             log.exception("Save IMPORTED game %s ???", self.id)
             return
 
-        self.stopwatch.kill()
+        self.stopwatch.clock_task.cancel()
+        try:
+            await self.stopwatch.clock_task
+        except asyncio.CancelledError:
+            pass
 
         if self.board.ply > 0:
-            self.app["g_cnt"] -= 1
-            response = {"type": "g_cnt", "cnt": self.app["g_cnt"]}
+            self.app["g_cnt"][0] -= 1
+            response = {"type": "g_cnt", "cnt": self.app["g_cnt"][0]}
             await lobby_broadcast(self.app["lobbysockets"], response)
 
         async def remove(keep_time):
@@ -331,10 +336,9 @@ class Game:
                 except KeyError:
                     log.error("Failed to del %s from game_queues", self.id)
 
-        self.saved = True
-        asyncio.create_task(remove(KEEP_TIME))
+        self.remove_task = asyncio.create_task(remove(KEEP_TIME))
 
-        if self.board.ply < 3 and (self.db is not None):
+        if self.board.ply < 3 and (self.db is not None) and (self.tournamentId is None):
             result = await self.db.game.delete_one({"_id": self.id})
             log.debug("Removed too short game %s from db. Deleted %s game.", self.id, result.deleted_count)
         else:
@@ -344,6 +348,9 @@ class Game:
                 if (not self.bot_game) and (not self.wplayer.anon) and (not self.bplayer.anon):
                     await self.save_crosstable()
 
+            if self.tournamentId is not None:
+                await self.app["tournaments"][self.tournamentId].game_update(self)
+
             # self.print_game()
 
             new_data = {
@@ -352,7 +359,7 @@ class Game:
                 "s": self.status,
                 "r": R2C[self.result],
                 'm': encode_moves(
-                    map(uci2cg, self.board.move_stack) if self.variant in GRANDS
+                    map(grand2zero, self.board.move_stack) if self.variant in GRANDS
                     else self.board.move_stack, self.variant)}
 
             if self.rated == RATED and self.result != "*":
@@ -471,10 +478,18 @@ class Game:
         self.brdiff = int(round(br.mu - self.black_rating.mu, 0))
         self.p1 = {"e": self.brating, "d": self.brdiff}
 
-        await self.set_highscore(self.variant, self.chess960, {self.wplayer.username: int(round(wr.mu, 0))})
-        await self.set_highscore(self.variant, self.chess960, {self.bplayer.username: int(round(br.mu, 0))})
+        w_nb = self.wplayer.perfs[self.variant + ("960" if self.chess960 else "")]["nb"]
+        if w_nb >= HIGHSCORE_MIN_GAMES:
+            await self.set_highscore(self.variant, self.chess960, {self.wplayer.username: int(round(wr.mu, 0))})
+
+        b_nb = self.bplayer.perfs[self.variant + ("960" if self.chess960 else "")]["nb"]
+        if b_nb >= HIGHSCORE_MIN_GAMES:
+            await self.set_highscore(self.variant, self.chess960, {self.bplayer.username: int(round(br.mu, 0))})
 
     def update_status(self, status=None, result=None):
+        if self.status > STARTED:
+            return
+
         def result_string_from_value(color, game_result_value):
             if game_result_value < 0:
                 return "1-0" if color == BLACK else "0-1"
@@ -493,6 +508,7 @@ class Game:
                 self.bplayer.game_in_progress = None
             if not self.wplayer.bot:
                 self.wplayer.game_in_progress = None
+
             return
 
         if self.board.move_stack:
@@ -500,7 +516,7 @@ class Game:
 
         w, b = self.board.insufficient_material()
         if w and b:
-            print("1/2 by board.insufficient_material()")
+            # print("1/2 by board.insufficient_material()")
             self.status = DRAW
             self.result = "1/2-1/2"
 
@@ -510,7 +526,7 @@ class Game:
 
             if self.board.is_immediate_game_end()[0]:
                 self.status = VARIANTEND
-                print(self.result, "variant end")
+                # print(self.result, "variant end")
             elif self.check:
                 self.status = MATE
                 # Draw if the checkmating player is the one counting
@@ -519,16 +535,20 @@ class Game:
                     if self.result == ("1-0" if counting_side == 'w' else "0-1"):
                         self.status = DRAW
                         self.result = "1/2-1/2"
-                print(self.result, "checkmate")
+
+                # TODO: remove this when https://github.com/ianfab/Fairy-Stockfish/issues/48 resolves
+                if self.board.move_stack[-1][0:2] == "P@" and self.variant in ("shogi", "minishogi", "gorogoro"):
+                    self.status = INVALIDMOVE
+                # print(self.result, "checkmate")
             else:
                 # being in stalemate loses in xiangqi and shogi variants
                 # Atomic checkmate is internally a stalemate so we need to change it here. Remove when pyffish is fixed.
                 if self.variant == 'atomic' and self.result != "1/2-1/2":
                     self.status = MATE
-                    print(self.result, "checkmate")
+                    # print(self.result, "checkmate")
                 else:
                     self.status = STALEMATE
-                    print(self.result, "stalemate")
+                    # print(self.result, "stalemate")
 
         elif self.variant in ('makruk', 'makpong', 'cambodian', 'sittuyin'):
             parts = self.board.fen.split()
@@ -538,7 +558,7 @@ class Game:
                 if counting_ply > counting_limit:
                     self.status = DRAW
                     self.result = "1/2-1/2"
-                    print(self.result, "counting limit reached")
+                    # print(self.result, "counting limit reached")
 
         else:
             # end the game by 50 move rule and repetition automatically
@@ -547,15 +567,16 @@ class Game:
             if is_game_end and (game_result_value != 0 or (self.wplayer.bot or self.bplayer.bot)):
                 self.result = result_string_from_value(self.board.color, game_result_value)
                 self.status = CLAIM if game_result_value != 0 else DRAW
-                print(self.result, "claim")
+                # print(self.result, "claim")
 
         if self.board.ply > MAX_PLY:
             self.status = DRAW
             self.result = "1/2-1/2"
-            print(self.result, "Ply %s reached" % MAX_PLY)
+            # print(self.result, "Ply %s reached" % MAX_PLY)
 
         if self.status > STARTED:
             self.set_crosstable()
+
             if not self.bplayer.bot:
                 self.bplayer.game_in_progress = None
             if not self.wplayer.bot:
@@ -571,8 +592,9 @@ class Game:
             # print("RM: %s" % self.random_move)
 
         for move in moves:
+            # chessgroundx key uses ":" for tenth rank
             if self.variant in GRANDS:
-                move = uci2cg(move)
+                move = move.replace("10", ":")
             source, dest = move[0:2], move[2:4]
             if source in dests:
                 dests[source].append(dest)
@@ -643,18 +665,7 @@ class Game:
 
     @property
     def spectator_list(self):
-        spectators = (spectator.username for spectator in self.spectators if not spectator.anon)
-        anons = ()
-        anon = sum(1 for user in self.spectators if user.anon)
-
-        cnt = len(self.spectators)
-        if cnt > 10:
-            spectators = str(cnt)
-        else:
-            if anon > 0:
-                anons = ("Anonymous(%s)" % anon,)
-            spectators = ", ".join(chain(spectators, anons))
-        return {"type": "spectators", "spectators": spectators, "gameId": self.id}
+        return spectators(self)
 
     def analysis_start(self, username):
         return '{"type": "analysisStart", "username": "%s", "game": {"id": "%s", "skill_level": "%s", "chess960": "%s"}}\n' % (username, self.id, self.level, self.chess960)
@@ -767,3 +778,18 @@ class Game:
                 "rm": self.random_move if self.status <= STARTED else "",
                 "ct": crosstable,
                 }
+
+    def game_json(self, player):
+        color = "w" if self.wplayer == player else "b"
+        opp_player = self.bplayer if color == "w" else self.wplayer
+        opp_rating = self.black_rating if color == "w" else self.white_rating
+        opp_rating, prov = opp_rating.rating_prov
+        return {
+            "gameId": self.id,
+            "title": opp_player.title,
+            "name": opp_player.username,
+            "rating": opp_rating,
+            "prov": prov,
+            "color": color,
+            "result": self.result,
+        }

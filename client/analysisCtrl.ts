@@ -22,9 +22,9 @@ import { JSONObject } from './types';
 import { _ } from './i18n';
 import { Gating } from './gating';
 import { Promotion } from './promotion';
-import { dropIsValid, pocketView, updatePockets, Pockets } from './pocket';
+import { pocketView, updatePockets, Pockets, refreshPockets } from './pocket';
 import { sound } from './sound';
-import { roleToSan, uci2cg, cg2uci, VARIANTS, IVariant, getPockets, sanToRole } from './chess';
+import { role2san, uci2cg, cg2uci, VARIANTS, IVariant, getPockets, san2role, dropIsValid } from './chess';
 import { crosstableView } from './crosstable';
 import { chatMessage, chatView } from './chat';
 import { createMovelistButtons, updateMovelist, selectMove, activatePlyVari } from './movelist';
@@ -34,6 +34,7 @@ import { analysisChart } from './chart';
 import { copyBoardToPNG } from './png'; 
 import { updateCount, updatePoint } from './info';
 import { boardSettings } from './boardSettings';
+import { getPieceImageUrl } from './document';
 import { variantsIni } from './variantsIni';
 
 const patch = init([klass, attributes, properties, listeners]);
@@ -76,6 +77,7 @@ export default class AnalysisController {
     turnColor: Color;
     gameId: string;
     variant: IVariant;
+    chess960: boolean;
     hasPockets: boolean;
     pockets: Pockets;
     vpocket0: VNode;
@@ -110,8 +112,6 @@ export default class AnalysisController {
     players: string[];
     titles: string[];
     ratings: string[];
-    clickDrop: Piece | undefined;
-    clickDropEnabled: boolean;
     animation: boolean;
     showDests: boolean;
     analysisChart;
@@ -173,6 +173,7 @@ export default class AnalysisController {
         this.model = model;
         this.gameId = model["gameId"] as string;
         this.variant = VARIANTS[model["variant"]];
+        this.chess960 = model["chess960"] === 'True';
         this.fullfen = model["fen"] as string;
         this.wplayer = model["wplayer"] as string;
         this.bplayer = model["bplayer"] as string;
@@ -185,7 +186,6 @@ export default class AnalysisController {
 
         this.flip = false;
         this.settings = true;
-        this.clickDropEnabled = true;
         this.animation = localStorage.animation === undefined ? true : localStorage.animation === "true";
         this.showDests = localStorage.showDests === undefined ? true : localStorage.showDests === "true";
         this.arrow = localStorage.arrow === undefined ? true : localStorage.arrow === "true";
@@ -263,6 +263,11 @@ export default class AnalysisController {
                 move: this.onMove(),
                 dropNewPiece: this.onDrop(),
                 select: this.onSelect(),
+            },
+            dropmode: {
+                events: {
+                    cancel: this.onCancelDropMode()
+                }
             }
         });
 
@@ -333,15 +338,15 @@ export default class AnalysisController {
     getGround = () => this.chessground;
 
     private pass = () => {
-        let passKey = 'z0';
+        let passKey = 'a0';
         const pieces = this.chessground.state.pieces;
         const dests = this.chessground.state.movable.dests;
         for (const key in pieces) {
-            if (pieces[key]!.role === 'king' && pieces[key]!.color === this.turnColor) {
+            if (pieces[key]!.role === 'k-piece' && pieces[key]!.color === this.turnColor) {
                 if ((key in dests!) && (dests![key].indexOf(key as Key) >= 0)) passKey = key;
             }
         }
-        if (passKey !== 'z0') {
+        if (passKey !== 'a0') {
             // prevent calling pass() again by selectSquare() -> onSelect()
             this.chessground.state.movable.dests = undefined;
             this.chessground.selectSquare(passKey as Key);
@@ -483,10 +488,12 @@ export default class AnalysisController {
             // so we remove from part to avoid that
             lastMove = lastMove.indexOf('@') > -1 ? [lastMove.slice(-2)] : [lastMove.slice(0, 2), lastMove.slice(2, 4)];
         }
-        // save capture state before updating chessground
-        // 960 king takes rook castling is not capture
+
         const step = this.steps[this.steps.length - 1];
-        const capture = (lastMove !== null) && ((this.chessground.state.pieces[lastMove[1]] && step.san.slice(0, 2) !== 'O-') || (step.san.slice(1, 2) === 'x'));
+        let capture = false;
+        if (step.san !== undefined) {
+            capture = step.san.slice(1, 2) === 'x';
+        }
 
         if (lastMove !== null && (this.turnColor === this.mycolor || this.spectator)) {
             sound.moveSound(this.variant, capture);
@@ -544,7 +551,7 @@ export default class AnalysisController {
                         const availableVariants = this.ffish.variants();
                         //console.log('Available variants:', availableVariants);
                         if (this.model.variant === 'chess' || availableVariants.includes(this.model.variant)) {
-                            this.ffishBoard = new this.ffish.Board(this.variant.name, this.fullfen, this.model.chess960 === 'True');
+                            this.ffishBoard = new this.ffish.Board(this.variant.name, this.fullfen, this.chess960);
                             this.dests = this.getDests();
                             this.chessground.set({ movable: { color: this.turnColor, dests: this.dests } });
                         } else {
@@ -555,11 +562,11 @@ export default class AnalysisController {
 
                 // TODO: enable S-chess960 when stockfish.wasm catches upstream Fairy-Stockfish
                 if ((this.model.variant === 'chess' || line.includes(this.model.variant)) &&
-                    !(this.model.variant === 'seirawan' && this.model.chess960 === 'True')) {
+                    !(this.model.variant === 'seirawan' && this.chess960)) {
                     this.localEngine = true;
                     patch(document.getElementById('input') as HTMLElement, h('input#input', {attrs: {disabled: false}}));
                 } else {
-                    const v = this.model.variant + ((this.model.chess960 === 'True') ? '960' : '');
+                    const v = this.model.variant + ((this.chess960) ? '960' : '');
                     const title = _("Selected variant %1 is not supported by stockfish.wasm", v);
                     patch(document.getElementById('slider') as HTMLElement, h('span.sw-slider', {attrs: {title: title}}));
                 }
@@ -644,15 +651,19 @@ export default class AnalysisController {
                 if (atPos > -1) {
                     const d = pv_move.slice(atPos + 1, atPos + 3) as Key;
                     let color = turnColor;
-                    if (this.variant.sideDetermination === "direction")
-                        if (this.flip !== (this.mycolor === "black"))
-                            color = (color === 'white') ? 'black' : 'white';
+
+                    const dropPieceRole = san2role(pv_move.slice(0, atPos));
+                    const orientation = this.flip ? this.oppcolor : this.mycolor;
+                    const side = color === orientation ? "ally" : "enemy";
+                    const url = getPieceImageUrl(dropPieceRole, color, side);
+                    this.chessground.set({ drawable: { pieces: { baseUrl: url! } } });
+
                     shapes0 = [{
                         orig: d,
                         brush: 'paleGreen',
                         piece: {
                             color: color,
-                            role: sanToRole[pv_move.slice(0, atPos)]
+                            role: dropPieceRole
                         }},
                         { orig: d, brush: 'paleGreen'}
                     ];
@@ -721,7 +732,7 @@ export default class AnalysisController {
     }
 
     engineGo = () => {
-        if (this.model.chess960 === 'True') {
+        if (this.chess960) {
             window.fsf.postMessage('setoption name UCI_Chess960 value true');
         }
         if (this.model.variant !== 'chess') {
@@ -756,7 +767,7 @@ export default class AnalysisController {
             }
 
             const tail = move.slice(-1);
-            if (tail > '9' || tail === '+') {
+            if (tail > '9' || tail === '+' || tail === '-') {
                 if (!(this.variant.gate && (move.slice(1, 2) === '1' || move.slice(1, 2) === '8'))) {
                     this.promotions.push(move);
                 }
@@ -871,10 +882,8 @@ export default class AnalysisController {
     private onDrop = () => {
         return (piece, dest) => {
             // console.log("ground.onDrop()", piece, dest);
-            if (dest != 'z0' && piece.role && dropIsValid(this.dests, piece.role, dest)) {
+            if (dest != 'a0' && piece.role && dropIsValid(this.dests, piece.role, dest)) {
                 sound.moveSound(this.variant, false);
-            } else if (this.clickDropEnabled) {
-                this.clickDrop = piece;
             }
         }
     }
@@ -1020,20 +1029,20 @@ export default class AnalysisController {
         // console.log("ground.onUserMove()", orig, dest, meta);
         let moved = pieces[dest];
         // Fix king to rook 960 castling case
-        if (moved === undefined) moved = {role: 'king', color: this.mycolor} as Piece;
-        if (meta.captured === undefined && moved !== undefined && moved.role === "pawn" && orig[0] != dest[0] && this.variant.enPassant) {
+        if (moved === undefined) moved = {role: 'k-piece', color: this.mycolor} as Piece;
+        if (meta.captured === undefined && moved !== undefined && moved.role === "p-piece" && orig[0] != dest[0] && this.variant.enPassant) {
             const pos = key2pos(dest),
             pawnPos: Pos = [pos[0], pos[1] + (this.mycolor === 'white' ? -1 : 1)];
             const diff: PiecesDiff = {};
             diff[pos2key(pawnPos)] = undefined;
             this.chessground.setPieces(diff);
-            meta.captured = {role: "pawn"};
+            meta.captured = {role: "p-piece"};
         }
         // increase pocket count
         if (this.variant.drop && meta.captured) {
             let role = meta.captured.role
             if (meta.captured.promoted)
-                role = (this.variant.promotion === 'shogi' || this.variant.promotion === 'kyoto') ? meta.captured.role.slice(1) as Role : "pawn";
+                role = (this.variant.promotion === 'shogi' || this.variant.promotion === 'kyoto') ? meta.captured.role.slice(1) as Role : "p-piece";
 
             let position = (this.turnColor === this.mycolor) ? "bottom": "top";
             if (this.flip) position = (position === "top") ? "bottom" : "top";
@@ -1070,15 +1079,14 @@ export default class AnalysisController {
                 this.vpocket1 = patch(this.vpocket1, pocketView(this, this.turnColor, "bottom"));
             }
             if (this.variant.promotion === 'kyoto') {
-                if (!this.promotion.start(role, 'a0', dest)) this.sendMove(roleToSan[role] + "@", dest, '');
+                if (!this.promotion.start(role, 'a0', dest)) this.sendMove(role2san(role) + "@", dest, '');
             } else {
-                this.sendMove(roleToSan[role] + "@", dest, '')
+                this.sendMove(role2san(role) + "@", dest, '')
             }
             // console.log("sent move", move);
         } else {
             // console.log("!!! invalid move !!!", role, dest);
             // restore board
-            this.clickDrop = undefined;
             this.chessground.set({
                 fen: this.fullfen,
                 lastMove: this.lastmove,
@@ -1098,20 +1106,9 @@ export default class AnalysisController {
         return (key) => {
             if (this.chessground.state.movable.dests === undefined) return;
 
-            // If drop selection was set dropDests we have to restore dests here
-            if (key != 'z0' && 'z0' in this.chessground.state.movable.dests) {
-                if (this.clickDropEnabled && this.clickDrop !== undefined && dropIsValid(this.dests, this.clickDrop.role, key)) {
-                    this.chessground.newPiece(this.clickDrop, key);
-                    this.onUserDrop(this.clickDrop.role, key, {predrop: this.predrop});
-                }
-                this.clickDrop = undefined;
-                //cancelDropMode(this.chessground.state);
-                this.chessground.set({ movable: { dests: this.dests }});
-            }
-
             // Save state.pieces to help recognise 960 castling (king takes rook) moves
             // Shouldn't this be implemented in chessground instead?
-            if (this.model.chess960 === 'True' && this.variant.gate) {
+            if (this.chess960 && this.variant.gate) {
                 this.prevPieces = Object.assign({}, this.chessground.state.pieces);
             }
 
@@ -1126,12 +1123,12 @@ export default class AnalysisController {
                     const pieces = {};
                     pieces[key] = {
                         color: piece!.color,
-                        role: 'ferz',
+                        role: 'f-piece',
                         promoted: true
                     };
                     this.chessground.setPieces(pieces);
                     this.sendMove(key, key, 'f');
-                } else if (this.variant.pass && piece!.role === 'king') {
+                } else if (this.variant.pass && piece!.role === 'k-piece') {
                     this.pass();
                 }
             }
@@ -1275,4 +1272,9 @@ export default class AnalysisController {
                 break;
         }
     }
+
+    private onCancelDropMode = () => {
+        return () => { refreshPockets(this); }
+    }
+
 }

@@ -1,0 +1,63 @@
+{% extends "template.html" %}
+{% block content %}
+<div id="main-wrap">
+<main class="tournaments box box-pad">
+    <div class="box-top">
+        <h1>{% trans %}Tournaments{% endtrans %}</h1>
+        {% if admin %}
+        <div class="actions">
+            <a class="button icon icon-plus-square text" href="{{ home }}/tournaments/new">{% trans %}CREATE A NEW TOURNAMENT{% endtrans %}</a>
+        </div>
+        {% endif %}
+    </div>
+    {% for table in tables %}
+    <table class="slist">
+        <thead>
+            <tr>
+                {% if loop.index == 1 %}
+                <th colspan="4">{% trans %}Now playing{% endtrans %}</th>
+                {% elif loop.index == 2 %}
+                <th colspan="4">{% trans %}Starting soon{% endtrans %}</th>
+                {% else %}
+                <th colspan="4">{% trans %}Finished{% endtrans %}</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for tourney in table %}
+            <tr>
+                <td>
+                    {% if tourney.frequency == "s" %}
+                    <span class="shield-trophy">{{ icons[tourney.variant + ('960' if tourney.chess960 else '')] }}</span>
+                    {% else %}
+                    <div class="icon" data-icon="{{ icons[tourney.variant + ('960' if tourney.chess960 else '')] }}">
+                    {% endif %}
+                </td>
+                <td class="header">
+                    <a href="/tournament/{{ tourney.id }}">
+                        <span class="name">{{ tourney.name }}</span>by
+                        <span class="by">{{ tourney.created_by }}</span>
+                    </a>
+                </td>
+                <td class="infos">
+                    <span class="system">{{ pairing_system_name(tourney.system) }} • {{ "Rated" if tourney.rated else "Casual" }}</span>
+                    <span>{{ time_control_str(tourney.base, tourney.inc, tourney.byoyomi_period) }} • {{ variant_display_name(tourney.variant + ('960' if tourney.chess960 else '')) }}</span>
+                </td>
+                <td>
+                    <span class="starts">
+                        <info-date timestamp="{{ tourney.starts_at }}"></info-date>
+                    </span>
+                    <span>{{ tourney.nb_players }} players</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+</main>
+</div>
+{% endblock %}
+{% block js %}
+    <script src="{{ js }}"></script>
+{% endblock %}
+

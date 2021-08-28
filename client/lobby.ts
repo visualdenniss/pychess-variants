@@ -20,19 +20,22 @@ import { chatMessage, chatView } from './chat';
 import { validFen, VARIANTS, selectVariant, IVariant } from './chess';
 import { sound } from './sound';
 import { boardSettings } from './boardSettings';
-import { debounce } from './document';
 import { timeControlStr } from './view';
+import { notify } from './notification';
+
 
 class LobbyController {
-    test_ratings: boolean;
     model;
     sock;
     player;
     logged_in;
     challengeAI: boolean;
     inviteFriend: boolean;
+    validGameData: boolean;
     _ws;
     seeks;
+    streams;
+    spotlights;
     minutesValues = [
         0, 1 / 4, 1 / 2, 3 / 4, 1, 3 / 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
         17, 18, 19, 20, 25, 30, 35, 40, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180
@@ -45,21 +48,27 @@ class LobbyController {
 
     constructor(el, model) {
         console.log("LobbyController constructor", el, model);
-        // enable for local testong only !!!
-        // this.test_ratings = true;
-        this.test_ratings = false;
 
         this.model = model;
         this.challengeAI = false;
         this.inviteFriend = false;
+        this.validGameData = false;
+        this.seeks = [];
 
         const onOpen = (evt) => {
             this._ws = evt.target;
+            console.log('onOpen()');
             // console.log("---CONNECTED", evt);
+            // prevent losing my seeks in case of websocket reconnections
+            if (this.seeks !== undefined) {
+                this.seeks.forEach(s => {
+                    if (s.user === this.model["username"]) {
+                        this.createSeekMsg(s.variant, s.color, s.fen, s.base, s.inc, s.byoyomi, s.chess960, s.rated, s.alternateStart);
+                    }
+                });
+            }
             this.doSend({ type: "lobby_user_connected", username: this.model["username"]});
             this.doSend({ type: "get_seeks" });
-
-            window.addEventListener("resize", debounce(resizeSeeksHeader, 10));
         }
 
         this._ws = { "readyState": -1 };
@@ -82,6 +91,10 @@ class LobbyController {
         }
         patch(document.getElementById('seekbuttons') as HTMLElement, h('div#seekbuttons', this.renderSeekButtons()));
         patch(document.getElementById('lobbychat') as HTMLElement, chatView(this, "lobbychat"));
+
+        this.streams = document.getElementById('streams') as HTMLElement;
+
+        this.spotlights = document.getElementById('spotlights') as HTMLElement;
 
         // challenge!
         const anon = this.model.anon === 'True';
@@ -165,7 +178,9 @@ class LobbyController {
             seek.variant === variant &&
             seek.fen === fen &&
             seek.color === color &&
-            seek.tc === timeControlStr(minutes, increment, byoyomiPeriod) &&
+            seek.base === minutes &&
+            seek.inc === increment &&
+            seek.byoyomi === byoyomiPeriod &&
             seek.chess960 === chess960 &&
             seek.rated === rated
         );
@@ -173,6 +188,8 @@ class LobbyController {
 
     createSeek(color) {
         document.getElementById('id01')!.style.display='none';
+        if (!this.validGameData) return;
+
         let e;
         e = document.getElementById('variant') as HTMLSelectElement;
         const variant = VARIANTS[e.options[e.selectedIndex].value];
@@ -209,7 +226,13 @@ class LobbyController {
 
         e = document.querySelector('input[name="mode"]:checked') as HTMLInputElement;
         let rated: boolean;
-        if (!this.test_ratings && (this.challengeAI || this.inviteFriend || this.model.anon === "True" || this.model.title === "BOT" || fen !== ""))
+        if (this.challengeAI ||
+            this.model.anon === "True" ||
+            this.model.title === "BOT" ||
+            fen !== "" ||
+            (minutes < 1 && increment === 0) ||
+            (minutes === 0 && increment === 1)
+            )
             rated = false;
         else
             rated = e.value === "1";
@@ -236,6 +259,9 @@ class LobbyController {
         // prevent to create challenges continuously
         this.model.profileid = '';
         window.history.replaceState({}, this.model.title, '/');
+
+        // We need to ask the user for permission
+        notify(null, null);
     }
 
     renderSeekButtons() {
@@ -314,9 +340,19 @@ class LobbyController {
                         ]),
                         h('form#game-mode', [
                             h('div.radio-group', [
-                                h('input#casual', { props: { type: "radio", name: "mode", value: "0" }, attrs: { checked: vRated === "0" }, }),
+                                h('input#casual', {
+                                    props: { type: "radio", name: "mode", value: "0" },
+                                    attrs: { checked: vRated === "0" }, 
+                                    on: { input: e => this.setCasual((e.target as HTMLInputElement).value) },
+                                    hook: { insert: vnode => this.setCasual((vnode.elm as HTMLInputElement).value) },
+                                }),
                                 h('label', { attrs: { for: "casual"} }, _("Casual")),
-                                h('input#rated', { props: { type: "radio", name: "mode", value: "1" }, attrs: { checked: vRated === "1" }, }),
+                                h('input#rated', {
+                                    props: { type: "radio", name: "mode", value: "1" },
+                                    attrs: { checked: vRated === "1" },
+                                    on: { input: e => this.setRated((e.target as HTMLInputElement).value) },
+                                    hook: { insert: vnode => this.setRated((vnode.elm as HTMLInputElement).value) },
+                                }),
                                 h('label', { attrs: { for: "rated"} }, _("Rated")),
                             ]),
                         ]),
@@ -372,7 +408,7 @@ class LobbyController {
                     click: () => {
                         this.challengeAI = true;
                         this.inviteFriend = false;
-                        document.getElementById('game-mode')!.style.display = (!this.test_ratings || anon) ? 'none' : 'inline-flex';
+                        document.getElementById('game-mode')!.style.display = (anon) ? 'none' : 'inline-flex';
                         document.getElementById('challenge-block')!.style.display = 'none';
                         document.getElementById('ailevel')!.style.display = 'inline-block';
                         document.getElementById('id01')!.style.display = 'block';
@@ -435,15 +471,31 @@ class LobbyController {
         e.setCustomValidity(this.validateFen() ? '' : _('Invalid FEN'));
         this.setStartButtons();
     }
+    private setCasual(casual) {
+        console.log("setCasual", casual);
+        this.setStartButtons();
+    }
+    private setRated(rated) {
+        console.log("setRated", rated);
+        this.setStartButtons();
+    }
     private setStartButtons() {
-        const valid = this.validateTimeControl() && this.validateFen();
+        this.validGameData = this.validateTimeControl() && this.validateFen();
         const e = document.getElementById('color-button-group') as HTMLElement;
-        e.classList.toggle("disabled", !valid);
+        e.classList.toggle("disabled", !this.validGameData);
     }
     private validateTimeControl() {
         const min = Number((document.getElementById('min') as HTMLInputElement).value);
         const inc = Number((document.getElementById('inc') as HTMLInputElement).value);
-        return min + inc > ((this.challengeAI) ? 4 : 0);
+        const minutes = this.minutesValues[min];
+
+        const e = document.querySelector('input[name="mode"]:checked') as HTMLInputElement;
+        const rated = e.value === "1";
+
+        const atLeast = (this.challengeAI) ? 4 : min + inc > 0;
+        const tooFast = (minutes < 1 && inc === 0) || (minutes === 0 && inc === 1);
+
+        return atLeast && !(tooFast && rated);
     }
     private validateFen() {
         const e = document.getElementById('variant') as HTMLSelectElement;
@@ -466,7 +518,7 @@ class LobbyController {
             h('td', [ this.colorIcon(seek.color) ]),
             h('td', [ this.challengeIcon(seek), this.title(seek), this.user(seek) ]),
             h('td', seek.rating),
-            h('td', seek.tc),
+            h('td', timeControlStr(seek.base, seek.inc, seek.byoyomi)),
             h('td.icon', { attrs: { "data-icon": variant.icon(chess960) } }, [h('variant-name', " " + variant.displayName(chess960))]),
             h('td', { class: { tooltip: seek.fen } }, [
                 this.tooltip(seek, variant),
@@ -532,6 +584,31 @@ class LobbyController {
             return _("Casual");
     }
 
+    private streamView(stream) {
+        const url = (stream.site === 'twitch') ? 'https://www.twitch.tv/' : 'https://www.youtube.com/channel/';
+        return h('a.stream', { attrs: { "href": url + stream.streamer, "rel": "noopener nofollow", "target": "_blank" } }, [
+            h('strong.text', {class: {"icon": true, "icon-mic": true} }, stream.username),
+            stream.title,
+        ]);
+    }
+
+    private spotlightView(spotlight) {
+        const variant = VARIANTS[spotlight.variant];
+        const chess960 = spotlight.chess960;
+        const dataIcon = variant.icon(chess960);
+
+        return h('a.tour-spotlight', { attrs: { "href": "/tournament/" + spotlight.tid } }, [
+            h('i.icon', { attrs: { "data-icon": dataIcon } }),
+            h('span.content', [
+                h('span.name', spotlight.name),
+                h('span.more', [
+                    h('nb', spotlight.nbPlayers + ' players • '),
+                    h('info-date', { attrs: { "timestamp": spotlight.startsAt } } )
+                ])
+            ])
+        ]);
+    }
+
     onMessage(evt) {
         // console.log("<+++ lobby onMessage():", evt.data);
         const msg = JSON.parse(evt.data);
@@ -562,6 +639,12 @@ class LobbyController {
                 break;
             case "u_cnt":
                 this.onMsgUserCounter(msg);
+                break;
+            case "streams":
+                this.onMsgStreams(msg);
+                break;
+            case "spotlights":
+                this.onMsgSpotlights(msg);
                 break;
             case "invite_created":
                 this.onMsgInviteCreated(msg);
@@ -603,8 +686,9 @@ class LobbyController {
     }
     private onMsgChat(msg) {
         chatMessage(msg.user, msg.message, "lobbychat");
-        if (msg.user.length !== 0 && msg.user !== '_server')
-            sound.socialNotify();
+        // seems this is annoying for most of the users
+        //if (msg.user.length !== 0 && msg.user !== '_server')
+        //    sound.socialNotify();
     }
     private onMsgFullChat(msg) {
         // To prevent multiplication of messages we have to remove old messages div first
@@ -624,16 +708,23 @@ class LobbyController {
         alert(msg.message);
     }
     private onMsgGameCounter(msg) {
-        console.log("Gcnt=", msg.cnt);
+        // console.log("Gcnt=", msg.cnt);
         const gameCount = document.getElementById('g_cnt') as HTMLElement;
         patch(gameCount, h('counter#g_cnt', ngettext('%1 game in play', '%1 games in play', msg.cnt)));
     }
     private onMsgUserCounter(msg) {
-        console.log("Ucnt=", msg.cnt);
+        // console.log("Ucnt=", msg.cnt);
         const userCount = document.getElementById('u_cnt') as HTMLElement;
         patch(userCount as HTMLElement, h('counter#u_cnt', ngettext('%1 player', '%1 players', msg.cnt)));
     }
 
+    private onMsgStreams(msg) {
+        this.streams = patch(this.streams, h('div#streams', msg.items.map(stream => this.streamView(stream))));
+    }
+
+    private onMsgSpotlights(msg) {
+        this.spotlights = patch(this.spotlights, h('div#spotlights', msg.items.map(spotlight => this.spotlightView(spotlight))));
+    }
 }
 
 function seekHeader() {
@@ -651,8 +742,8 @@ function seekHeader() {
 
 function runSeeks(vnode: VNode, model) {
     const el = vnode.elm as HTMLElement;
-    const ctrl = new LobbyController(el, model);
-    console.log("lobbyView() -> runSeeks()", el, model, ctrl);
+    new LobbyController(el, model);
+    // console.log("lobbyView() -> runSeeks()", el, model, ctrl);
 }
 
 export function lobbyView(model): VNode[] {
@@ -672,7 +763,7 @@ export function lobbyView(model): VNode[] {
 
     if (model['anon'] === 'False') {
         const evtSource = new EventSource(model["home"] + "/api/notify");
-        console.log("new EventSource" + model["home"] + "/api/notify");
+        // console.log("new EventSource" + model["home"] + "/api/notify");
         evtSource.onmessage = e => {
             const message = JSON.parse(e.data);
             console.log(message);
@@ -681,10 +772,13 @@ export function lobbyView(model): VNode[] {
     }
 
     return [
-        h('aside.sidebar-first', [ h('div#lobbychat') ]),
+        h('aside.sidebar-first', [
+            h('div#streams'),
+            h('div#spotlights'),
+            h('div#lobbychat')
+        ]),
         h('div.seeks', [
             h('div#seeks-table', [
-                h('table#seeks-header', { hook: { insert: () => resizeSeeksHeader() } }, seekHeader()),
                 h('div#seeks-wrapper', h('table#seeks', { hook: { insert: vnode => runSeeks(vnode, model) } })),
             ]),
         ]),
@@ -703,8 +797,34 @@ export function lobbyView(model): VNode[] {
                 h('a.reflist', { attrs: {href: '/news'} }, _("Latest updates")),
             ]),
             h('posts', [
+                // TODO: create news documents in mongodb and load latest 3 dinamically here
+                h('a.post', { attrs: {href: '/news/Empire_Chess_and_Orda_Mirror_Have_Arrived'} }, [
+                    h('img', { attrs: {src: model["asset-url"] + '/images/Darth-Vader-Comic.jpg'} }),
+                    h('span.text', [
+                        h('strong', "Empire Chess and Orda Mirror Have Arrived!"),
+                        h('span', 'New variants'),
+                    ]),
+                    h('time', '2021.07.30'),
+                ]),
+                h('a.post', { attrs: {href: '/news/Shinobi_Arrives_in_Time_For_the_Sakura_Blossoms'} }, [
+                    h('img', { attrs: {src: model["asset-url"] + '/icons/shinobi.svg'} }),
+                    h('span.text', [
+                        h('strong', "Shinobi Arrives in Time For the Sakura Blossoms"),
+                        h('span', 'Shinobi Chess has arrived!'),
+                    ]),
+                    h('time', '2021.04.21'),
+                ]),
+                h('a.post', { attrs: {href: '/news/The_Winner_Is_Tasshaq'} }, [
+                    h('img', { attrs: {src: model["asset-url"] + '/icons/Dobutsu.svg'} }),
+                    h('span.text', [
+                        h('strong', "And the winner is Tasshaq"),
+                        h('span', 'Subjective report on 1st Dōbutsu Tournament'),
+                    ]),
+                    h('time', '2021.03.28'),
+                ]),
+                /*
                 h('a.post', { attrs: {href: '/news/New_Weapons_Arrived'} }, [
-                    h('img', { attrs: {src: '/static/images/RS-24.jpg'} }),
+                    h('img', { attrs: {src: model["asset-url"] + '/images/RS-24.jpg'} }),
                     h('span.text', [
                         h('strong', "Atomic chess and Atomic960 are here"),
                         h('span', 'New Weapons Arrived'),
@@ -712,7 +832,7 @@ export function lobbyView(model): VNode[] {
                     h('time', '2021.03.03'),
                 ]),
                 h('a.post', { attrs: {href: '/news/Short_History_Of_Pychess'} }, [
-                    h('img', { attrs: {src: '/static/images/TomatoPlasticSet.svg'} }),
+                    h('img', { attrs: {src: model["asset-url"] + '/images/TomatoPlasticSet.svg'} }),
                     h('span.text', [
                         h('strong', "And Now for Something Completely Different"),
                         h('span', 'Short History Of Pychess'),
@@ -720,13 +840,14 @@ export function lobbyView(model): VNode[] {
                     h('time', '2021.02.27'),
                 ]),
                 h('a.post', { attrs: {href: '/news/Dobutsu_Tournament'} }, [
-                    h('img', { attrs: {src: '/static/icons/Dobutsu.svg'} }),
+                    h('img', { attrs: {src: model["asset-url"] + '/icons/Dobutsu.svg'} }),
                     h('span.text', [
                         h('strong', "PyChess tournament announcement"),
                         h('span', 'The 1st Dōbutsu Tournament on PyChess'),
                     ]),
                     h('time', '2021.02.04'),
                 ]),
+                */ 
             ]),
         ]),
         h('under-right', [
@@ -734,10 +855,4 @@ export function lobbyView(model): VNode[] {
             h('a', { attrs: { href: '/games' } }, [ h('counter#g_cnt') ]),
         ]),
     ];
-}
-
-function resizeSeeksHeader() {
-    const seeksHeader = document.getElementById('seeks-header') as HTMLElement;
-    const seeks = document.getElementById('seeks') as HTMLElement;
-    seeksHeader.style.width = seeks.clientWidth + 'px';
 }

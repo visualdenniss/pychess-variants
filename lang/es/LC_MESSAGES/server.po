@@ -1,24 +1,25 @@
 # Translations template for PROJECT.
-# Copyright (C) 2020 ORGANIZATION
+# Copyright (C) 2021 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 # 
 # Translators:
 # Ignacio Poggi <ignaciop.3@gmail.com>, 2020
+# Jose Doval Gonzalez <pepellou@gmail.com>, 2021
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-11-30 12:03+0100\n"
+"POT-Creation-Date: 2021-07-16 13:23+0200\n"
 "PO-Revision-Date: 2020-05-04 12:19+0000\n"
-"Last-Translator: Ignacio Poggi <ignaciop.3@gmail.com>, 2020\n"
+"Last-Translator: Jose Doval Gonzalez <pepellou@gmail.com>, 2021\n"
 "Language-Team: Spanish (https://www.transifex.com/gbtami/teams/14790/es/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.4.0\n"
 "Language: es\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
@@ -27,10 +28,10 @@ msgid "404 GAME NOT FOUND"
 msgstr "404 PARTIDA NO ENCONTRADA"
 
 #: ../templates/404.html:21
-msgid "Sorry, but not all games saved on PyChess-Variants server."
+msgid "Sorry, not all games are saved on the Pychess server."
 msgstr ""
-"Lo siento, pero no todas las partidas están guardadas en el servidor de "
-"variantes de PyChess."
+"Lamentablemente no todas las partidas son guardadas en el servidor de "
+"Pychess."
 
 #: ../templates/404.html:22
 msgid "Probably it was abandoned or stopped before the third move."
@@ -65,41 +66,61 @@ msgstr "Anónimo"
 msgid "All players"
 msgstr "Todos los jugadores"
 
-#: ../templates/profile.html:14
+#: ../templates/profile.html:13
 #, python-format
 msgid "%(count)s game"
 msgid_plural "%(count)s games"
 msgstr[0] "%(count)spartida"
 msgstr[1] "%(count)spartidas"
 
-#: ../templates/template.html:96
+#: ../templates/template.html:17
 msgid "Tv"
 msgstr "Tv"
 
-#: ../templates/template.html:97
+#: ../templates/template.html:18
 msgid "Current games"
 msgstr "Partidas actuales"
 
-#: ../templates/template.html:98
+#: ../templates/template.html:19 ../templates/tournaments.html:6
+msgid "Tournaments"
+msgstr "Torneos"
+
+#: ../templates/template.html:20
 msgid "Players"
 msgstr "Jugadores"
 
-#: ../templates/template.html:99
+#: ../templates/template.html:21
 msgid "Editor"
 msgstr "Editor"
 
-#: ../templates/template.html:100
+#: ../templates/template.html:22
 msgid "Analysis"
-msgstr ""
+msgstr "Análisis"
 
-#: ../templates/template.html:101
+#: ../templates/template.html:23
 msgid "Learn"
 msgstr "Aprender"
 
-#: ../templates/template.html:107
+#: ../templates/template.html:29
 msgid "Login with Lichess"
 msgstr "Iniciar sesión con Lichess"
 
-#: ../templates/template.html:107
+#: ../templates/template.html:29
 msgid "Log in"
 msgstr "Iniciar sesión"
+
+#: ../templates/tournaments.html:9
+msgid "CREATE A NEW TOURNAMENT"
+msgstr "CREAR UN NUEVO TORNEO"
+
+#: ../templates/tournaments.html:18
+msgid "Now playing"
+msgstr "En juego ahora"
+
+#: ../templates/tournaments.html:20
+msgid "Starting soon"
+msgstr "Comenzando pronto"
+
+#: ../templates/tournaments.html:22
+msgid "Finished"
+msgstr "Completados"

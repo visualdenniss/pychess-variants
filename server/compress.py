@@ -26,6 +26,7 @@ V2C = {
     "grandhouse": "r",
     "gothic": "o",
     "gothhouse": "t",
+    "embassy": "E",
     "cambodian": "b",
     "shako": "d",
     "minixiangqi": "e",
@@ -39,6 +40,9 @@ V2C = {
     "manchu": "M",
     "dobutsu": "D",
     "gorogoro": "G",
+    "shinobi": "J",
+    "empire": "P",
+    "ordamirror": "O",
 }
 C2V = {v: k for k, v in V2C.items()}
 
@@ -46,7 +50,7 @@ R2C = {"1-0": "a", "0-1": "b", "1/2-1/2": "c", "*": "d"}
 C2R = {v: k for k, v in R2C.items()}
 
 # Create square to int mapping
-M2C = dict(zip([a + b for a, b in product("abcdefghij", "123456789:")], list(range(34, 256))))
+M2C = dict(zip([a + b for a, b in product("abcdefghij", "0123456789")], list(range(34, 256))))
 
 # Add possible from parts of drop moves
 PIECES = "PNBRQKFGSLACHE"
@@ -58,6 +62,14 @@ for piece in PIECES:
 # Kyoto Shogi drop moves can start with extra "+"
 for piece in "PLNS":
     M2C["+%s" % piece] = m2c_len
+    m2c_len += 1
+
+# More droppable pieces
+#   The variant that uses these pieces (shinobi) was added after kyotoshogi
+#   so these letters need to be here to be backward compatible
+PIECES = "MDJ"
+for piece in PIECES:
+    M2C["%s@" % piece] = m2c_len
     m2c_len += 1
 
 C2M = {v: k for k, v in M2C.items()}

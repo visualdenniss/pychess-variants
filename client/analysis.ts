@@ -39,7 +39,7 @@ function leftSide(model) {
                         h('a.user-link', {
                             attrs: {
                                 target: '_blank',
-                                href: '/variant/' + model["variant"] + (chess960 ? '960': ''),
+                                href: '/variants/' + model["variant"] + (chess960 ? '960': ''),
                             }
                         },
                             variant.displayName(chess960),
@@ -56,6 +56,7 @@ function leftSide(model) {
                         "icon-red":   fc === "Red",
                         "icon-blue":  fc === "Blue",
                         "icon-gold":  fc === "Gold",
+                        "icon-pink":  fc === "Pink",
                     }
                 }),
                 h('player', playerInfo(model.wplayer, model.wtitle, model.level, model.wrating, model.wrdiff)),
@@ -68,6 +69,7 @@ function leftSide(model) {
                         "icon-red":   sc === "Red",
                         "icon-blue":  sc === "Blue",
                         "icon-gold":  sc === "Gold",
+                        "icon-pink":  sc === "Pink",
                     }
                 }),
                 h('player', playerInfo(model.bplayer, model.btitle, model.level, model.brating, model.brdiff)),

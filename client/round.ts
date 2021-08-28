@@ -34,7 +34,7 @@ export function roundView(model): VNode[] {
                             h('a.user-link', {
                                 attrs: {
                                     target: '_blank',
-                                    href: '/variant/' + model["variant"] + (chess960 ? '960': ''),
+                                    href: '/variants/' + model["variant"] + (chess960 ? '960': ''),
                                 }
                             },
                                 variant.displayName(chess960)),
@@ -50,6 +50,7 @@ export function roundView(model): VNode[] {
                             "icon-red":   fc === "Red",
                             "icon-blue":  fc === "Blue",
                             "icon-gold":  fc === "Gold",
+                            "icon-pink":  fc === "Pink",
                         }
                     }),
                     h('player', playerInfo(model, 'w', null)),
@@ -62,6 +63,7 @@ export function roundView(model): VNode[] {
                             "icon-red":   sc === "Red",
                             "icon-blue":  sc === "Blue",
                             "icon-gold":  sc === "Gold",
+                            "icon-pink":  sc === "Pink",
                         }
                     }),
                     h('player', playerInfo(model, 'b', null)),
@@ -91,6 +93,7 @@ export function roundView(model): VNode[] {
                 ]),
                 h('div#misc-info0'),
             ]),
+            h('div#expiration-top'),
             h('round-player0#rplayer0'),
             h('div#move-controls'),
             h('div.movelist-block', [
@@ -98,6 +101,7 @@ export function roundView(model): VNode[] {
             ]),
             h('div#game-controls'),
             h('round-player1#rplayer1'),
+            h('div#expiration-bottom'),
             h('div.info-wrap1', [
                 h('div#clock1'),
                 h('div#misc-info1'),

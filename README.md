@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.com/gbtami/pychess-variants.svg?branch=master)](https://travis-ci.com/gbtami/pychess-variants)
+[![Python-CI](https://github.com/gbtami/pychess-variants/actions/workflows/ci.yml/badge.svg)](https://github.com/gbtami/pychess-variants/actions/workflows/ci.yml)
+[![Nodejs-CI](https://github.com/gbtami/pychess-variants/actions/workflows/nodejs.yml/badge.svg)](https://github.com/gbtami/pychess-variants/actions/workflows/nodejs.yml)
 ## PyChess-Variants
 
 PyChess-Variants is a free, open-source chess server designed to play chess variants.
@@ -13,6 +14,7 @@ Currently supported games are:
 - [Minishogi](https://www.pychess.org/variant/minishogi)
 - [Kyoto shogi](https://www.pychess.org/variant/kyotoshogi)
 - [Dobutsu shogi](https://www.pychess.org/variant/dobutsu)
+- [Goro-Goro shogi](https://www.pychess.org/variant/gorogoro)
 - [Xiangqi](https://www.pychess.org/variant/xiangqi)
 - [Manchu](https://www.pychess.org/variant/manchu)
 - [Janggi](https://www.pychess.org/variant/janggi)
@@ -29,6 +31,9 @@ Currently supported games are:
 - [Orda](https://www.pychess.org/variant/orda)
 - [Synochess](https://www.pychess.org/variant/synochess)
 - [Hoppel-Poppel](https://www.pychess.org/variant/hoppelpoppel)
+- [Shinobi](https://www.pychess.org/variant/shinobi)
+- [Empire Chess](https://www.pychess.org/variant/empire)
+- [Orda Mirror](https://www.pychess.org/variant/ordamirror)
 - [S-house (S-chess+Crazyhouse)](https://www.pychess.org/variant/shouse)
 - [Capahouse (Capablanca+Crazyhouse)](https://www.pychess.org/variant/capahouse)
 - [Grandhouse (Grand chess+Crazyhouse)](https://www.pychess.org/variant/grandhouse)
@@ -38,7 +43,7 @@ Additionally you can check Chess960 option in for Standard, Crazyhouse, Atomic, 
 [Chess960 castling rules](https://en.wikipedia.org/wiki/Chess960#Castling_rules)
 
 For move generation, validation, analysis and engine play it uses
-- [Fairy-Stockfish Python3 bindings](https://github.com/gbtami/Fairy-Stockfish) fork of [Fairy-Stockfish](https://github.com/ianfab/Fairy-Stockfish)
+- [Fairy-Stockfish](https://github.com/ianfab/Fairy-Stockfish)
 - [fairyfishnet](https://github.com/gbtami/fairyfishnet) fork of [fishnet](https://github.com/niklasf/fishnet)
 - [lichess-bot-variants](https://github.com/gbtami/lichess-bot-variants) fork of [lichess-bot](https://github.com/careless25/lichess-bot)
 
@@ -55,14 +60,19 @@ Your contribution will be greatly appreciated and help me continue to develop th
 ## Installation
 
 ### Prerequisites
-* Mongo daemon (You need mongodb up and running)
+* [Mongo daemon](https://docs.mongodb.com/manual/installation/) (You need mongodb up and running)
 
 
 ### Project setup
 ```
 pip3 install -r requirements.txt --user
 yarn install
-yarn gulp prod
+yarn dev
+```
+
+For MacOS, replace the last command with:
+```
+yarn dev-mac
 ```
 
 ### Start server

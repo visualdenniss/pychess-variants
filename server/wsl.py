@@ -13,6 +13,7 @@ from seek import challenge, create_seek, get_seeks, Seek
 from user import User
 from utils import new_game, load_game, online_count, MyWebSocketResponse
 from misc import server_growth, server_state
+from tournament import tournament_spotlights
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ async def lobby_socket_handler(request):
     seeks = request.app["seeks"]
     db = request.app["db"]
     invites = request.app["invites"]
+    twitch = request.app["twitch"]
 
     ws = MyWebSocketResponse(heartbeat=3.0, receive_timeout=10.0)
 
@@ -113,13 +115,22 @@ async def lobby_socket_handler(request):
                             continue
 
                         print("create_seek", data)
-                        await create_seek(db, invites, seeks, user, data, ws)
+                        seek = await create_seek(db, invites, seeks, user, data, ws)
                         await lobby_broadcast(sockets, get_seeks(seeks))
 
                         if data.get("target"):
                             queue = users[data["target"]].notify_queue
                             if queue is not None:
                                 await queue.put(json.dumps({"notify": "new_challenge"}))
+
+                        # Send msg to discord-relay BOT
+                        try:
+                            for dr_ws in sockets["Discord-Relay"]:
+                                await dr_ws.send_json({"type": "create_seek", "message": seek.discord_msg})
+                                break
+                        except (KeyError, ConnectionResetError):
+                            # BOT disconnected
+                            log.error("--- Discord-Relay disconnected!")
 
                     elif data["type"] == "create_invite":
                         no = await is_playing(request, user, ws)
@@ -128,9 +139,6 @@ async def lobby_socket_handler(request):
 
                         print("create_invite", data)
                         seek = await create_seek(db, invites, seeks, user, data, ws)
-
-                        response = get_seeks(seeks)
-                        await ws.send_json(response)
 
                         response = {"type": "invite_created", "gameId": seek.game_id}
                         await ws.send_json(response)
@@ -181,14 +189,12 @@ async def lobby_socket_handler(request):
                                 else:
                                     user = User(request.app, username=data["username"], anon=data["username"].startswith("Anon-"))
                                     users[user.username] = user
-                                # response = {"type": "lobbychat", "user": "", "message": "%s joined the lobby" % session_user}
                             else:
                                 if session_user in users:
                                     user = users[session_user]
                                 else:
                                     user = User(request.app, username=data["username"], anon=data["username"].startswith("Anon-"))
                                     users[user.username] = user
-                                # response = {"type": "lobbychat", "user": "", "message": "%s joined the lobby" % session_user}
                         else:
                             log.info("+++ Existing lobby_user %s socket reconnected.", data["username"])
                             session_user = data["username"]
@@ -197,9 +203,6 @@ async def lobby_socket_handler(request):
                             else:
                                 user = User(request.app, username=data["username"], anon=data["username"].startswith("Anon-"))
                                 users[user.username] = user
-                            # response = {"type": "lobbychat", "user": "", "message": "%s rejoined the lobby" % session_user}
-
-                        # await lobby_broadcast(sockets, response)
 
                         # update websocket
                         user.lobby_sockets.add(ws)
@@ -209,11 +212,11 @@ async def lobby_socket_handler(request):
                         response = {"type": "lobby_user_connected", "username": user.username}
                         await ws.send_json(response)
 
-                        response = {"type": "fullchat", "lines": list(request.app["chat"])}
+                        response = {"type": "fullchat", "lines": list(request.app["lobbychat"])}
                         await ws.send_json(response)
 
                         # send game count
-                        response = {"type": "g_cnt", "cnt": request.app["g_cnt"]}
+                        response = {"type": "g_cnt", "cnt": request.app["g_cnt"][0]}
                         await ws.send_json(response)
 
                         # send user count
@@ -222,6 +225,14 @@ async def lobby_socket_handler(request):
                             await lobby_broadcast(sockets, response)
                         else:
                             await ws.send_json(response)
+
+                        spotlights = tournament_spotlights(request.app["tournaments"])
+                        if len(spotlights) > 0:
+                            await ws.send_json({"type": "spotlights", "items": spotlights})
+
+                        streams = twitch.live_streams
+                        if len(streams) > 0:
+                            await ws.send_json({"type": "streams", "items": streams})
 
                     elif data["type"] == "lobbychat":
                         message = data["message"]
@@ -247,7 +258,7 @@ async def lobby_socket_handler(request):
 
                         if response is not None:
                             await lobby_broadcast(sockets, response)
-                            request.app["chat"].append(response)
+                            request.app["lobbychat"].append(response)
 
                     elif data["type"] == "logout":
                         await ws.close()

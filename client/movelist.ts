@@ -127,21 +127,26 @@ export function updateMovelist (ctrl, full = true, activate = true, needResult =
         moves.push(h('div#result', result(ctrl.variant, ctrl.status, ctrl.result)));
     }
 
-    if (full) {
-        ctrl.vmovelist = patch(ctrl.vmovelist, h('div#movelist'));
-        ctrl.vmovelist = patch(ctrl.vmovelist, h('div#movelist', moves));
-    } else {
-        const container = document.getElementById('movelist') as HTMLElement;
-        ctrl.vmovelist = patch(container, h('div#movelist', moves));
+    const container = document.getElementById('movelist') as HTMLElement;
+    if (full){
+        while (container.lastChild) {
+            container.removeChild(container.lastChild);
+        }
     }
+    ctrl.vmovelist = patch(container, h('div#movelist', moves));
 
-    if (activate)
+    if (activate) {
         activatePly(ctrl);
         scrollToPly(ctrl);
+    }
 }
 
 export function updateResult (ctrl) {
     if (ctrl.status < 0) return;
+
+    // Prevent to render it twice
+    const resultEl = document.getElementById('result') as HTMLElement;
+    if (resultEl) return;
 
     const container = document.getElementById('movelist') as HTMLElement;
     ctrl.vmovelist = patch(container, h('div#movelist', [h('div#result', result(ctrl.variant, ctrl.status, ctrl.result))]));

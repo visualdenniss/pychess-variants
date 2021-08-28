@@ -4,23 +4,26 @@ import klass from 'snabbdom/modules/class';
 import attributes from 'snabbdom/modules/attributes';
 import properties from 'snabbdom/modules/props';
 import listeners from 'snabbdom/modules/eventlisteners';
+import style from 'snabbdom/modules/style';
 
-const patch = init([klass, attributes, properties, listeners]);
+const patch = init([klass, attributes, properties, listeners, style]);
 
 import h from 'snabbdom/h';
 
 import { _ } from './i18n';
 import { VARIANTS, BOARD_FAMILIES, PIECE_FAMILIES } from './chess';
-import { changeBoardCSS, changePieceCSS } from './document';
+import { changeBoardCSS, changePieceCSS, getPieceImageUrl } from './document';
 import AnalysisController from './analysisCtrl';
 import RoundController from './roundCtrl';
-import EditorController from './editor';
+import { EditorController } from './editorCtrl';
 import { analysisChart } from './chart';
 import { updateCount, updatePoint } from './info';
 import { pocketView } from './pocket';
 import { player } from './player';
 import { NumberSettings, BooleanSettings } from './settings';
 import { slider, checkbox } from './view';
+import { model } from './main';
+
 
 class BoardSettings {
     ctrl: AnalysisController | RoundController | EditorController | undefined; // BoardController | undefined
@@ -63,33 +66,32 @@ class BoardSettings {
     updateBoardStyle(family: string) {
         const idx = this.getSettings("BoardStyle", family).value as number;
         const board = BOARD_FAMILIES[family].boardCSS[idx];
-        changeBoardCSS(family, board);
+        changeBoardCSS(model["asset-url"], family, board);
     }
 
     updatePieceStyle(family: string) {
         const idx = this.getSettings("PieceStyle", family).value as number;
         let css = PIECE_FAMILIES[family].pieceCSS[idx];
-        const variant = this.ctrl?.variant;
-        if (this.ctrl && variant && variant.piece === family) {
-            if (variant.sideDetermination === 'direction') {
-                // change piece orientation according to board orientation
-                if (this.ctrl.flip !== (this.ctrl.mycolor === "black")) // exclusive or
-                    css = css.replace('0', '1');
-            }
+        changePieceCSS(model["asset-url"], family, css);
+        this.updateDropSuggestion();
+    }
 
-            // Redraw the piece being suggested for dropping in the new piece style
-            if (this.ctrl.hasPockets) {
-                const chessground = this.ctrl.chessground;
-                const baseurl = variant.pieceBaseURL[idx] + '/';
-                chessground.set({
-                    drawable: {
-                        pieces: { baseUrl: '/static/images/pieces/' + baseurl },
-                    }
-                });
+    updateDropSuggestion() {
+        // Redraw the piece being suggested for dropping in the new piece style
+        if (this.ctrl && this.ctrl.hasPockets) {
+            const chessground = this.ctrl.chessground;
+            const el = document.querySelector('svg image') as HTMLElement;
+            // if there is any
+            if (el) {
+                const classNames = el.getAttribute('className')!.split(' ');
+                const role = classNames[0];
+                const color = classNames[1];
+                const orientation = this.ctrl.flip ? this.ctrl.oppcolor : this.ctrl.mycolor;
+                const side = color === orientation ? "ally" : "enemy";
+                chessground.set({ drawable: { pieces: { baseUrl: getPieceImageUrl(role, color, side)! } } });
                 chessground.redrawAll();
             }
         }
-        changePieceCSS(family, css);
     }
 
     updateZoom(family: string) {
@@ -155,16 +157,13 @@ class BoardSettings {
         return h('div#board-settings', settingsList);
     }
 
-    // TODO This should be in the "BoardController" class,
-    // which is the common class between RoundController and AnalysisController
-    // (and maybe EditorController)
+    // TODO This should be in the theoretical "ChessgroundController" class,
+    // which is the common class between EditorController, RoundController, and AnalysisController
     toggleOrientation() {
         if (this.ctrl) {
             this.ctrl.flip = !this.ctrl.flip;
             this.ctrl.chessground.toggleOrientation();
-
-            if (this.ctrl.variant.sideDetermination === 'direction')
-                this.updatePieceStyle(this.ctrl.variant.name);
+            this.updateDropSuggestion();
 
             // console.log("FLIP");
             if (this.ctrl.hasPockets) {
@@ -307,7 +306,7 @@ class ShowDestsSettings extends BooleanSettings {
     }
 
     update(): void {
-        this.boardSettings.ctrl?.chessground.set({ movable: { showDests: this.value } });
+        this.boardSettings.ctrl?.chessground.set({ movable: { showDests: this.value }, dropmode: { showDropDests: this.value }, predroppable: { showDropDests: this.value } } );
     }
 
     view(): VNode {

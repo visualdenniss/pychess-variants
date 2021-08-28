@@ -1,5 +1,22 @@
+from settings import static_url
+
+# Minimum number of rated games needed
+HIGHSCORE_MIN_GAMES = 5
+
+# Show the number of spectators only after this limit
+MAX_NAMED_SPECTATORS = 20
+
+# tournament status
+T_CREATED, T_STARTED, T_ABORTED, T_FINISHED, T_ARCHIVED = range(5)
+
+# tournament frequency
+DAILY, WEEKLY, MONTHLY, YEARLY, MARATHON, SHIELD = "d", "w", "m", "y", "a", "s"
+
+# tournament pairing
+ARENA, RR, SWISS = range(3)
+
 # translations
-LANGUAGES = ["de", "en", "es", "fr", "hu", "it", "ja", "ko", "pt", "th", "tr", "zh"]
+LANGUAGES = ["de", "en", "es", "gl_ES", "fr", "hu", "it", "ja", "ko", "pl", "pt", "th", "tr", "zh"]
 
 # fishnet work types
 MOVE, ANALYSIS = 0, 1
@@ -9,7 +26,7 @@ CASUAL, RATED, IMPORTED = 0, 1, 2
 
 # game status
 CREATED, STARTED, ABORTED, MATE, RESIGN, STALEMATE, TIMEOUT, DRAW, FLAG, \
-    ABANDONE, CHEAT, NOSTART, INVALIDMOVE, UNKNOWNFINISH, VARIANTEND, CLAIM = range(-2, 14)
+    ABANDONE, CHEAT, BYEGAME, INVALIDMOVE, UNKNOWNFINISH, VARIANTEND, CLAIM = range(-2, 14)
 
 LOSERS = {
     "abandone": ABANDONE,
@@ -19,6 +36,8 @@ LOSERS = {
 }
 
 GRANDS = ("xiangqi", "manchu", "grand", "grandhouse", "shako", "janggi")
+
+CONSERVATIVE_CAPA_FEN = "arnbqkbnrc/pppppppppp/10/10/10/10/PPPPPPPPPP/ARNBQKBNRC w KQkq - 0 1"
 
 VARIANTS = (
     "chess",
@@ -45,8 +64,11 @@ VARIANTS = (
     "capablanca960",
     "capahouse",
     "capahouse960",
+    # We support to import/store/analyze these variants
+    # but don't support to add them to leaderboard page
     # "gothic",
     # "gothhouse",
+    # "embassy",
     "seirawan",
     "seirawan960",
     "shouse",
@@ -57,6 +79,9 @@ VARIANTS = (
     "orda",
     "synochess",
     "hoppelpoppel",
+    "shinobi",
+    "empire",
+    "ordamirror",
 )
 
 VARIANT_ICONS = {
@@ -78,6 +103,7 @@ VARIANT_ICONS = {
     "grandhouse": "*",
     "gothic": "P",
     "gothhouse": "&",
+    "embassy": "P",
     "minishogi": "6",
     "dobutsu": "8",
     "gorogoro": "🐱",
@@ -96,6 +122,9 @@ VARIANT_ICONS = {
     "manchu": "{",
     "atomic": "~",
     "atomic960": "\\",
+    "shinobi": "🐢",
+    "empire": "♚",
+    "ordamirror": "◩",
 }
 
 VARIANT_960_TO_PGN = {
@@ -113,6 +142,14 @@ VARIANT_960_TO_PGN = {
     "grand": "Grand",
 }
 
+TROPHIES = {
+    "top1": (static_url("images/trophy/Big-Gold-Cup.png"), "Champion!"),
+    "top10": (static_url("images/trophy/Big-Silver-Cup.png"), "Top 10!"),
+    "top50": (static_url("images/trophy/Fancy-Gold-Cup.png"), "Top 50!"),
+    "top100": (static_url("images/trophy/Gold-Cup.png"), "Top 100!"),
+    "shield": (static_url("images/trophy/shield-gold.png"), "Shield"),
+}
+
 
 def variant_display_name(variant):
     if variant == "seirawan":
@@ -123,5 +160,18 @@ def variant_display_name(variant):
         return "S-HOUSE"
     elif variant == "cambodian":
         return "OUK CHATRANG"
+    elif variant == "ordamirror":
+        return "ORDA MIRROR"
     else:
         return variant.upper()
+
+
+def pairing_system_name(system):
+    if system == 0:
+        return "Arena"
+    elif system == 1:
+        return "Round-Robin"
+    elif system == 2:
+        return "Swiss"
+    else:
+        return ""

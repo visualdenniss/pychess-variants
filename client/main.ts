@@ -18,18 +18,21 @@ import { renderGames } from './games';
 import { editorView } from './editor';
 import { analysisView, embedView } from './analysis';
 import { profileView } from './profile';
+import { tournamentView } from './tournament';
 import { pasteView } from './paste';
 import { statsView } from './stats';
 import { volumeSettings, soundThemeSettings } from './sound';
 import { getCookie } from './document';
 import { backgroundSettings } from './background';
+import { renderTimeago } from './datetime';
+import { zenButtonView, zenModeSettings } from './zen';
 
 // redirect to correct URL except Heroku preview apps
 if (window.location.href.includes('heroku') && !window.location.href.includes('-pr-')) {
     window.location.assign('https://www.pychess.org/');
 }
 
-const model = {};
+export const model = {};
 
 export function view(el, model): VNode {
     const user = getCookie("user");
@@ -45,6 +48,8 @@ export function view(el, model): VNode {
     model["level"] = el.getAttribute("data-level");
     model["username"] = user !== "" ? user : el.getAttribute("data-user");
     model["gameId"] = el.getAttribute("data-gameid");
+    model["tournamentId"] = el.getAttribute("data-tournamentid");
+    model["tournamentname"] = el.getAttribute("data-tournamentname");
     model["inviter"] = el.getAttribute("data-inviter");
     model["ply"] = el.getAttribute("data-ply");
     model["wplayer"] = el.getAttribute("data-wplayer");
@@ -82,6 +87,8 @@ export function view(el, model): VNode {
         return h('div#main-wrap', inviteView(model));
     case 'editor':
         return h('div#main-wrap', editorView(model));
+    case 'tournament':
+        return h('div#main-wrap', [h('main.tour', tournamentView(model))]);
     case 'games':
         return h('div', renderGames());
     case 'paste':
@@ -108,6 +115,8 @@ function start() {
         }
     );
 
+    renderTimeago();
+
     // Clicking outside settings panel closes it
     const settingsPanel = patch(document.getElementById('settings-panel') as HTMLElement, settingsView()).elm as HTMLElement;
     const settings = document.getElementById('settings') as HTMLElement;
@@ -115,27 +124,32 @@ function start() {
         if (!settingsPanel.contains(event.target as Node))
             settings.style.display = 'none';
     });
+
+    patch(document.getElementById('zen-button') as HTMLElement, zenButtonView()).elm as HTMLElement;
 }
 
 window.addEventListener('resize', () => document.body.dispatchEvent(new Event('chessground.resize')));
 
 backgroundSettings.update();
-
-// Always update sound theme before volume
-// Updating sound theme requires reloading sound files,
-// while updating volume does not
-soundThemeSettings.update();
-volumeSettings.update();
+zenModeSettings.update();
 
 const el = document.getElementById('pychess-variants');
 if (el instanceof Element) {
+    model["asset-url"] = el.getAttribute("data-asset-url");
+
+    // Always update sound theme before volume
+    // Updating sound theme requires reloading sound files,
+    // while updating volume does not
+    soundThemeSettings.update();
+    volumeSettings.update();
+
     const lang = el.getAttribute("data-lang");
-    fetch('/static/lang/' + lang + '/LC_MESSAGES/client.json')
+    fetch(model["asset-url"] + '/lang/' + lang + '/LC_MESSAGES/client.json')
       .then(res => res.json())
       .then(translation => {
         i18n.loadJSON(translation, 'messages');
         i18n.setLocale(lang);
-        console.log('Loaded translations for lang', lang);
+        // console.log('Loaded translations for lang', lang);
         start();
       })
       .catch(() => {

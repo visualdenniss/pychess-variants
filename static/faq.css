@@ -1,0 +1,25 @@
+div.guide {
+    display: flex;
+    flex-flow: column;
+    width: 100%;
+}
+details > summary {
+    list-style: none;
+}
+details > summary::-webkit-details-marker {
+    display: none;
+}
+details[open] {
+    padding: 1em;
+    background-color: var(--bg-color2);
+    border: none;
+    box-shadow: var(--base-shadow);
+}
+details[open] > summary {
+    color: var(--ct-current);
+    padding-bottom: 1em;
+}
+summary {
+    color: var(--link-color-blue);
+    cursor: pointer;
+}

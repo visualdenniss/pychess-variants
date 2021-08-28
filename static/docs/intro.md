@@ -8,7 +8,7 @@ Many chess variants are available to play here. Available games range from tradi
 
 Each variant also has its own selection of piece sets and boards to choose from! Especially for the Asian variants that use Chinese characters, you can find internationalized pieces for those variants to use as well. To change the settings, click the gear button in the top right of the screen (next to login or your username), choose "Board Settings," and then choose the variant you would like to configure.
 
-If you need to practice with the piece moves and rules before diving into a real game, feel free to start a game against the *Random Mover* bot.
+If you need to practice with the piece moves and rules before diving into a real game, feel free to select a casual game against the *Random Mover* bot in the lobby.
 
 ## Chess variants using standard pieces
 
@@ -23,6 +23,10 @@ If you need to practice with the piece moves and rules before diving into a real
 **Placement Chess** - Choose where your pieces start
 
 **Crazyhouse 960** - Combines Crazyhouse and Chess 960
+
+**Atomic Chess** - Pieces explode upon capture!
+
+**Atomic 960** - Atomic chess with Chess 960 rules
 
 ## Southeast Asian variants
 
@@ -46,7 +50,9 @@ If you need to practice with the piece moves and rules before diving into a real
 
 **Kyoto Shogi** - 5x5 Shogi where pieces flip to a different piece each move
 
-**Dobutsu** - Shogi on a 3x4 board
+**Dobutsu** - Shogi on a 3x4 board, designed to introduce children to Shogi
+
+**Gorogoro Shogi** Shogi on a 5x6 board
 
 ## Xiangqi variants
 
@@ -66,8 +72,6 @@ If you need to practice with the piece moves and rules before diving into a real
 
 **Capablanca Chess** - Play with the hybrid pieces, archbishop (B+N) and chancellor (R+N), on a 10x8 board
 
-**Gothic Chess / Trice's Chess** - Like Capablanca Chess but with a different starting setup
-
 **S-Chess / Seirawan Chess / SHARPER Chess** - Hybrid pieces, the hawk (B+N) and elephant (R+N) can enter the board after moving a back rank piece
 
 **Grand Chess** - Play with the hybrid pieces, archbishop (B+N) and chancellor (R+N), on a *grand* 10x10 board
@@ -80,6 +84,8 @@ If you need to practice with the piece moves and rules before diving into a real
 
 **Synochess** - Asymmetric East vs. West variant which pits the western chess army against a xiangqi and janggi-styled army
 
+**Shinobi Chess** - Asymmetric variant where one army has pieces that can drop and promote, like in Shogi
+
 **Capablanca 960** - Capablanca with Chess 960 rules
 
 **Capahouse** - Capablanca with Crazyhouse drop rules
@@ -90,4 +96,4 @@ If you need to practice with the piece moves and rules before diving into a real
 
 **Grandhouse** - Grand Chess with Crazyhouse drop rules
 
-**Hoppel-poppel** - Knights are capturing as bishops, bishops are capturing as knights
+**Hoppel-poppel** - Knights capture as bishops, bishops capture as knights

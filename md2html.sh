@@ -9,6 +9,10 @@ for f in *.md; do
 showdown makehtml -i "$f" -o "$(basename -- "$f" .md).html" --flavor github
 done
 
+for f in es/*.md; do
+showdown makehtml -i "$f" -o "$(basename -- "$f" .md).es.html" --flavor github
+done
+
 for f in hu/*.md; do
 showdown makehtml -i "$f" -o "$(basename -- "$f" .md).hu.html" --flavor github
 done
@@ -29,7 +33,8 @@ showdown makehtml -i "zh/intro.md" -o "intro.zh.html" --flavor github
 
 
 SRC='https://github.com/gbtami/pychess-variants/blob/master'; 
-DST='https://www.pychess.org';
+#DST='https://www.pychess.org';
+DST='https://cdn.jsdelivr.net/gh/gbtami/pychess-variants@1.6.26';
 find . -type f -name "*.html" -exec sed -i 's,'"$SRC"','"$DST"',g' {} \;
 
 mkdir -p ../../templates/docs

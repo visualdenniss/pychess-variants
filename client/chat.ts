@@ -16,7 +16,7 @@ export function chatView (ctrl, chatType) {
             return;
         const message = (e.target as HTMLInputElement).value;
         if ((e.keyCode == 13 || e.which == 13) && message.length > 0) {
-            ctrl.doSend({"type": chatType, "message": message, "gameId": ctrl.model["gameId"], "room": (ctrl.spectator) ? "spectator": "player"});
+            ctrl.doSend({"type": chatType, "message": message, "gameId": ctrl.model["gameId"], "tournamentId": ctrl.model["tournamentId"], "room": (ctrl.spectator) ? "spectator": "player"});
             (e.target as HTMLInputElement).value = "";
         }
     }
@@ -65,5 +65,5 @@ export function chatMessage (user, message, chatType) {
         patch(container, h('div#messages', [ h("li.message", [h("user", h("a", { attrs: {href: "/@/" + user} }, user)), h("t", message)]) ]));
     }
 
-    if (isScrolled) myDiv.scrollTop = myDiv.scrollHeight;
+    if (isScrolled) setTimeout(() => {myDiv.scrollTop = myDiv.scrollHeight;}, 200);
 }

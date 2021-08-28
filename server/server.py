@@ -1,5 +1,4 @@
 import asyncio
-import uvloop
 
 import argparse
 import gettext
@@ -8,6 +7,13 @@ import logging
 import os
 from operator import neg
 from urllib.parse import urlparse
+from datetime import datetime, timezone
+from sys import platform
+
+if platform != "win32":
+    import uvloop
+else:
+    print("uvloop not installed")
 
 import jinja2
 from aiohttp import web
@@ -20,26 +26,37 @@ from pythongettext.msgfmt import PoSyntaxError
 
 from ai import BOT_task
 from broadcast import lobby_broadcast, round_broadcast
-from const import VARIANTS, STARTED, LANGUAGES
+from const import VARIANTS, STARTED, LANGUAGES, T_CREATED, T_STARTED
 from generate_crosstable import generate_crosstable
 from generate_highscore import generate_highscore
+from generate_shield import generate_shield
 from glicko2.glicko2 import DEFAULT_PERF
 from routes import get_routes, post_routes
-from settings import MAX_AGE, SECRET_KEY, MONGO_HOST, MONGO_DB_NAME, FISHNET_KEYS, URI
+from settings import DEV, MAX_AGE, SECRET_KEY, MONGO_HOST, MONGO_DB_NAME, FISHNET_KEYS, URI, static_url
 from seek import Seek
 from user import User
+from tournaments import load_tournament
+from twitch import Twitch
 
 log = logging.getLogger(__name__)
 
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+if platform != "win32":
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
 async def on_prepare(request, response):
-    if request.path.startswith("/variant") or request.path.startswith("/news"):
+    if request.path.endswith(".br"):
+        # brotli compressed js
+        response.headers["Content-Encoding"] = "br"
+        return
+    elif request.path.startswith("/variants") or request.path.startswith("/news"):
+        # Learn and News pages may have links to other sites
         response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
         return
-    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-    response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+    else:
+        # required to get stockfish.wasm in Firefox
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
 
 
 def make_app(with_db=True):
@@ -65,7 +82,7 @@ def make_app(with_db=True):
 
 
 async def init_db(app):
-    app["client"] = ma.AsyncIOMotorClient(MONGO_HOST)
+    app["client"] = ma.AsyncIOMotorClient(MONGO_HOST, tz_aware=True,)
     app["db"] = app["client"][MONGO_DB_NAME]
 
 
@@ -73,6 +90,7 @@ async def init_state(app):
     # We have to put "kill" into a dict to prevent getting:
     # DeprecationWarning: Changing state of started or joined application is deprecated
     app["data"] = {"kill": False}
+    app["date"] = {"startedAt": datetime.now(timezone.utc)}
 
     if "db" not in app:
         app["db"] = None
@@ -83,22 +101,33 @@ async def init_state(app):
         "Discord-Relay": User(app, anon=True, username="Discord-Relay"),
     }
     app["users"]["Random-Mover"].online = True
-    app["lobbysockets"] = {}
+    app["lobbysockets"] = {}  # one dict only! {user.username: user.tournament_sockets, ...}
+    app["lobbychat"] = collections.deque([], 100)
+
+    app["tourneysockets"] = {}  # one dict per tournament! {tournamentId: {user.username: user.tournament_sockets, ...}, ...}
+    app["tournaments"] = {}
+    app["tourneychat"] = {}  # one deque per tournament! {tournamentId: collections.deque([], 100), ...}
+
     app["seeks"] = {}
     app["games"] = {}
     app["invites"] = {}
-    app["chat"] = collections.deque([], 100)
     app["game_channels"] = set()
     app["invite_channels"] = set()
     app["highscore"] = {variant: ValueSortedDict(neg) for variant in VARIANTS}
     app["crosstable"] = {}
+    app["shield"] = {}
+    app["shield_owners"] = {}  # {variant: username, ...}
+
     app["stats"] = {}
 
     # counters for games
-    app["g_cnt"] = 0
+    app["g_cnt"] = [0]
 
     # last game played
     app["tv"] = None
+
+    app["twitch"] = Twitch(app)
+    await app["twitch"].init_subscriptions()
 
     # fishnet active workers
     app["workers"] = set()
@@ -156,13 +185,14 @@ async def init_state(app):
             loader=jinja2.FileSystemLoader("templates"),
             autoescape=jinja2.select_autoescape(["html"]))
         env.install_gettext_translations(translation, newstyle=True)
+        env.globals["static"] = static_url
 
         app["jinja"][lang] = env
 
     if app["db"] is None:
         return
 
-    # Read users and highscore from db
+    # Read tournaments, users and highscore from db
     try:
         cursor = app["db"].user.find()
         async for doc in cursor:
@@ -175,18 +205,28 @@ async def init_state(app):
                     app,
                     username=doc["_id"],
                     title=doc.get("title"),
-                    first_name=doc.get("first_name"),
-                    last_name=doc.get("last_name"),
-                    country=doc.get("country"),
                     bot=doc.get("title") == "BOT",
                     perfs=perfs,
                     enabled=doc.get("enabled", True)
                 )
 
+        cursor = app["db"].tournament.find()
+        cursor.sort('startsAt', -1)
+        counter = 0
+        async for doc in cursor:
+            if doc["status"] in (T_CREATED, T_STARTED):
+                await load_tournament(app, doc["_id"])
+                counter += 1
+                if counter > 3:
+                    break
+
+        await generate_shield(app)
+
         db_collections = await app["db"].list_collection_names()
 
-        if "highscore" not in db_collections:
-            await generate_highscore(app["db"])
+        # if "highscore" not in db_collections:
+        # Always create new highscore lists on server start
+        await generate_highscore(app["db"])
         cursor = app["db"].highscore.find()
         async for doc in cursor:
             app["highscore"][doc["_id"]] = ValueSortedDict(neg, doc["scores"])
@@ -206,6 +246,15 @@ async def init_state(app):
         print("Maybe mongodb is not running...")
         raise
 
+    # create test tournament
+    if 1:
+        pass
+        # from test_tournament import create_arena_test
+        # await create_arena_test(app)
+
+        # from test_tournament import create_dev_arena_tournament
+        # await create_dev_arena_tournament(app)
+
 
 async def shutdown(app):
     app["data"]["kill"] = True
@@ -219,8 +268,8 @@ async def shutdown(app):
     for game in app["games"].values():
         await round_broadcast(game, app["users"], response, full=True)
 
-    # No need to wait in unit tests
-    if app["db"] is not None:
+    # No need to wait in dev mode and in unit tests
+    if not DEV and app["db"] is not None:
         print('......WAIT 25')
         await asyncio.sleep(25)
 

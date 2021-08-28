@@ -1,5 +1,5 @@
 from misc import time_control_str
-from game import new_game_id
+from newid import new_id
 
 MAX_USER_SEEKS = 10
 
@@ -13,7 +13,7 @@ class Seek:
         self.color = color
         self.fen = "" if fen is None else fen
         self.rated = rated
-        self.rating = int(round(user.get_rating(variant, chess960).mu, 0))
+        self.rating = user.get_rating(variant, chess960).rating_prov[0]
         self.base = base
         self.inc = inc
         self.byoyomi_period = byoyomi_period
@@ -40,18 +40,31 @@ class Seek:
             "color": self.color,
             "rated": self.rated,
             "rating": self.rating,
-            "tc": time_control_str(self.base, self.inc, self.byoyomi_period),
+            "base": self.base,
+            "inc": self.inc,
+            "byoyomi": self.byoyomi_period,
             "gameId": self.game_id if self.game_id is not None else "",
         }
 
+    @property
+    def discord_msg(self):
+        tc = time_control_str(self.base, self.inc, self.byoyomi_period)
+        tail960 = "960" if self.chess960 else ""
+        return "%s: **%s%s** %s" % (self.user.username, self.variant, tail960, tc)
+
 
 async def create_seek(db, invites, seeks, user, data, ws=None):
+    """ Seek can be
+        - invite (has reserved new game id strored in app['invites'], and target is 'Invite-friend')
+        - challenge (has another username as target)
+        - normal seek (no target)
+    """
     if len(user.seeks) >= MAX_USER_SEEKS:
         return
 
     target = data.get("target")
     if target == "Invite-friend":
-        game_id = await new_game_id(db)
+        game_id = await new_id(db.game)
     else:
         game_id = None
 

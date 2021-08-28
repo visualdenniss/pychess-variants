@@ -11,7 +11,7 @@ from aiohttp_sse import sse_response
 from const import STARTED, MATE, VARIANTS, INVALIDMOVE, VARIANTEND, CLAIM
 from compress import C2V, V2C, C2R
 from utils import pgn
-from misc import time_control_str
+from settings import ADMINS
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +75,10 @@ async def get_user_games(request):
     users = request.app["users"]
     db = request.app["db"]
     profileId = request.match_info.get("profileId")
+
+    if profileId is not None and profileId not in users:
+        await asyncio.sleep(3)
+        return web.json_response({})
 
     # Who made the request?
     session = await aiohttp_session.get_session(request)
@@ -217,15 +221,28 @@ async def subscribe_notify(request):
 async def get_games(request):
     games = request.app["games"]
     # TODO: filter last 10 by variant
-    return web.json_response([
-        {"gameId": game.id, "variant": game.variant, "fen": game.board.fen, "w": game.wplayer.username, "b": game.bplayer.username, "chess960": game.chess960, "tc": time_control_str(game.base, game.inc, game.byoyomi_period)}
-        for game in games.values() if game.status == STARTED][-20:])
+    return web.json_response([{
+        "gameId": game.id,
+        "variant": game.variant,
+        "fen": game.board.fen,
+        "w": game.wplayer.username,
+        "b": game.bplayer.username,
+        "chess960": game.chess960,
+        "base": game.base,
+        "inc": game.inc,
+        "byoyomi": game.byoyomi_period
+    } for game in games.values() if game.status == STARTED][-20:])
 
 
 async def export(request):
     db = request.app["db"]
+    users = request.app["users"]
     profileId = request.match_info.get("profileId")
+    if profileId is not None and profileId not in users:
+        await asyncio.sleep(3)
+        return web.Response(text="")
 
+    tournamentId = request.match_info.get("tournamentId")
     # Who made the request?
     session = await aiohttp_session.get_session(request)
     session_user = session.get("user_name")
@@ -233,12 +250,23 @@ async def export(request):
     game_list = []
     game_counter = 0
     failed = 0
-    if profileId is not None:
-        if profileId == "all_games" and session_user in request.app["fishnet_versions"]:
-            cursor = db.game.find()
-        else:
-            cursor = db.game.find({"us": profileId})
+    cursor = None
 
+    if profileId is not None:
+        cursor = db.game.find({"us": profileId})
+    elif tournamentId is not None:
+        cursor = db.game.find({"tid": tournamentId})
+    elif session_user in ADMINS:
+        yearmonth = request.match_info.get("yearmonth")
+        print("---", yearmonth[:4], yearmonth[4:])
+        filter_cond = {}
+        filter_cond["$and"] = [
+            {"$expr": {"$eq": [{"$year": "$d"}, int(yearmonth[:4])]}},
+            {"$expr": {"$eq": [{"$month": "$d"}, int(yearmonth[4:])]}},
+        ]
+        cursor = db.game.find(filter_cond)
+
+    if cursor is not None:
         async for doc in cursor:
             try:
                 # print(game_counter)

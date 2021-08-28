@@ -6,7 +6,7 @@
     <ul class="guide">
     {% for key in news %}
     <li>
-        <a href="{{ home }}/news/{{ key }}">{{ key }}</a>
+        <a href="{{ home }}/news/{{ key }}">{{ news[key] }}</a>
     </li>
     {% endfor %}
     </ul>
@@ -16,5 +16,5 @@
 </div>
 {% endblock %}
 {% block js %}
-    <script src="/static/pychess-variants.min.js"></script>
+    <script src="{{ js }}"></script>
 {% endblock %}

@@ -10,6 +10,8 @@ from login import login, logout, oauth
 from index import index, robots, select_lang
 from wsl import lobby_socket_handler
 from wsr import round_socket_handler
+from wst import tournament_socket_handler
+from twitch import twitch
 
 
 get_routes = (
@@ -30,6 +32,14 @@ get_routes = (
     ("/editor/{variant}/{fen}", index),
     (r"/{gameId:\w{8}}", index),
     (r"/embed/{gameId:\w{8}}", index),
+    ("/tournaments", index),
+    ("/tournaments/new", index),
+    (r"/tournaments/{tournamentId:\w{8}}/edit", index),
+    ("/tournaments/shields", index),
+    ("/tournaments/winners", index),
+    (r"/tournament/{tournamentId:\w{8}}", index),
+    (r"/tournament/{tournamentId:\w{8}}/pause", index),
+    (r"/tournament/{tournamentId:\w{8}}/cancel", index),
     ("/@/{profileId}", index),
     ("/@/{profileId}/tv", index),
     ("/@/{profileId}/challenge", index),
@@ -42,10 +52,11 @@ get_routes = (
     ("/patron/thanks", index),
     ("/news", index),
     ("/news/{news_item}", index),
-    ("/variant", index),
-    ("/variant/{variant}", index),
+    ("/variants", index),
+    ("/variants/{variant}", index),
     ("/wsl", lobby_socket_handler),
     ("/wsr", round_socket_handler),
+    ("/wst", tournament_socket_handler),
     ("/api/account", account),
     ("/api/account/playing", playing),
     ("/api/stream/event", event_stream),
@@ -62,8 +73,9 @@ get_routes = (
     ("/api/ongoing", subscribe_games),
     ("/api/notify", subscribe_notify),
     ("/paste", index),
+    (r"/games/export/monthly/{yearmonth:\d{6}}", export),
     ("/games/export/{profileId}", export),
-    ("/games/export/variant/{variant}", export),
+    ("/games/export/tournament/{tournamentId}", export),
     ("/fishnet/monitor", fishnet_monitor),
     ("/fishnet/key/{key}", fishnet_key),
     ("/robots.txt", robots),
@@ -88,4 +100,7 @@ post_routes = (
     ("/fishnet/abort/{workId}", fishnet_abort),
     ("/translation/select", select_lang),
     ("/import", import_game),
+    ("/tournaments/arena", index),
+    (r"/tournament/{tournamentId:\w{8}}/edit", index),
+    ("/twitch", twitch),
 )

@@ -11,18 +11,36 @@ import { VNode } from 'snabbdom/vnode';
 
 import { Chessground } from 'chessgroundx';
 
-import { _, ngettext } from './i18n';
+import { _, ngettext, pgettext } from './i18n';
 import { VARIANTS, IVariant } from './chess';
 import { renderTimeago } from './datetime';
 import { boardSettings } from './boardSettings';
 import { timeControlStr } from './view';
 
+
 export function colorNames(color: string) {
-    return _(color);
+    // We need color name tranlations in run time
+    switch (color) {
+    case "White":
+        return _("White");
+    case "Black":
+        return  _("Black");
+    case "Red":
+        return  _("Red");
+    case "Blue":
+        return  _("Blue");
+    case "Gold":
+        return  _("Gold");
+    case "Pink":
+        return  _("Pink");
+    default:
+        return color;
+    }
 }
 
 export function gameType(rated: string | number) {
     switch (rated) {
+    case "True":
     case "1":
     case 1:
         return _("Rated");
@@ -90,6 +108,9 @@ export function result(variant: IVariant, status: number, result: string) {
                 case 'orda':
                 case 'synochess':
                 case 'dobutsu':
+                case 'shinobi':
+                case 'empire':
+                case 'ordamirror':
                     text = _('Campmate');
                     break;
                 case 'atomic':
@@ -249,38 +270,10 @@ function observeSentinel(vnode: VNode, model) {
 
 export function profileView(model) {
     boardSettings.updateBoardAndPieceStyles();
-    const anon = model["anon"] === 'True';
     return [
-        h('player-head', [
-            h('player', [
-                h('a.user-link', { attrs: { href: '/@/' + model["profileid"] } }, [
-                    h('player-title', " " + model["title"] + " "),
-                    model["profileid"],
-                ]),
-            ]),
-            h('a.i-at.icon.icon-at', {
-                attrs: { href: 'https://lichess.org/@/' + model["profileid"], title: _('Lichess profile') },
-                class: { "disabled": anon },
-            }),
-            h('a.i-dl.icon.icon-cloud-upload', {
-                attrs: { href: '/paste', title: _('Import game') },
-                class: { "disabled": anon || model["title"] === 'BOT' },
-            }),
-            h('a.i-dl.icon.icon-download', {
-                attrs: { href: '/games/export/' + model["profileid"], download: model["profileid"] + '.pgn', title: _('Export games') },
-                class: { "disabled": anon || model["title"] === 'BOT' },
-            }),
-            h('a.i-tv.icon.icon-tv', {
-                attrs: { href: '/@/' + model["profileid"] + '/tv', title: _('Watch games') },
-            }),
-            h('a.i-ch.icon.icon-crossedswords', {
-                attrs: { href: '/@/' + model["profileid"] + '/challenge', title: _('Challenge to a game') },
-                class: { "disabled": anon || model["username"] === model["profileid"] }
-            }),
-        ]),
         h('div.filter-tabs', [
             h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] }, class: {"active": model["rated"] === "None"} }, _('Games'))]),
-            h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/rated' }, class: {"active": model["rated"] === "1" } }, _('Rated'))]),
+            h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/rated' }, class: {"active": model["rated"] === "1" } }, pgettext('UsePluralFormIfNeeded', 'Rated'))]),
             h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/import' }, class: {"active": model["rated"] === "2" } }, _('Imported'))]),
         ]),
         h('table#games'),

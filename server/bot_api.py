@@ -188,9 +188,6 @@ async def event_stream(request):
         if doc is None:
             result = await db.user.insert_one({
                 "_id": username,
-                "first_name": None,
-                "last_name": None,
-                "country": None,
                 "title": "BOT",
             })
             print("db insert user result %s" % repr(result.inserted_id))
@@ -453,8 +450,4 @@ async def bot_pong(request):
         log.error("BOT account auth with token %s failed", token)
         return web.HTTPForbidden()
 
-    user_agent = request.headers.get("User-Agent")
-    username = user_agent[user_agent.find("user:") + 5:]
-    users = request.app["users"]
-    bot_player = users[username]
     return web.json_response({"ok": True})

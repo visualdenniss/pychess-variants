@@ -12,7 +12,7 @@ The server code is written in Python.
 
 *What is the difference between this and the software?*
 
-Both are designed to play chess, and both share the same developer ([gbtami](https://www.github.com/gbtami)). However, the differences end there. The full name for this site is "Pychess Variants" for distinction, but is often just called Pychess. The site for the desktop application is [here](https://pychess.github.io/).
+Both are designed to play chess, and both share the same developer ([gbtami](https://www.github.com/gbtami)). However, the similitudes end there. The full name for this site is "Pychess Variants" for distinction, but is often just called Pychess. The site for the desktop application is [here](https://pychess.github.io/).
 
 *What is the relationship to [Lichess](https://lichess.org/)?*
 
@@ -34,11 +34,11 @@ Ultimately it needs to be filed in Github issue tracker. Ideally, try to find a 
 
 *What games are available?*
 
-Check out the [Learn page](https://www.pychess.org/variant).
+Check out the [Variants page](https://www.pychess.org/variants).
 
 *How do you play XXX?*
 
-Check out the [Learn page](https://www.pychess.org/variant). Also, within a game, you can click the variant name at the top left to be taken to that game's learn page.
+Check out the [Variants page](https://www.pychess.org/variants). Also, within a game, you can click the variant name at the top left to be taken to that game's learn page.
 
 *How do you choose which variants to add?*
 
@@ -66,7 +66,7 @@ Same answer as above, and then click on "Board Settings." All Asian variants hav
 
 Use the right click. Clicking gives you a circle, and dragging gives you an arrow. These are green by default. You can make them red by holding Shift or Ctrl, and you can make them blue by holding Alt.
 
-*What does "5+3" mean for time?"*
+*What does "5+3" mean for time?*
 
 Those are the time controls for the game. By default we use an increment system. "5+3" means each player has 5 *minutes*, and after each move adds 3 *seconds* to the clock. You can set the time control to be whatever you want when creating the game. The 5+3 is just the default for random mover.
 
