@@ -1,0 +1,6 @@
+.ordamirror piece.white {
+    background-image: url('../../images/pieces/disguised/w.svg');
+}
+.ordamirror piece.black {
+    background-image: url('../../images/pieces/disguised/g.svg');
+}

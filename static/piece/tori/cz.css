@@ -1,0 +1,55 @@
+.tori piece.s-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Swallow.svg');
+}
+.tori piece.ps-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Goose.svg');
+}
+.tori piece.l-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0LeftQuail.svg');
+}
+.tori piece.r-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0RightQuail.svg');
+}
+.tori piece.p-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Pheasant.svg');
+}
+.tori piece.c-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Crane.svg');
+}
+.tori piece.f-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Falcon.svg');
+}
+.tori piece.pf-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Eagle.svg');
+}
+.tori piece.k-piece.ally {
+    background-image: url('../../images/pieces/tori/cz/0Phoenix.svg');
+}
+
+.tori piece.s-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Swallow.svg');
+}
+.tori piece.ps-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Goose.svg');
+}
+.tori piece.l-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1LeftQuail.svg');
+}
+.tori piece.r-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1RightQuail.svg');
+}
+.tori piece.p-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Pheasant.svg');
+}
+.tori piece.c-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Crane.svg');
+}
+.tori piece.f-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Falcon.svg');
+}
+.tori piece.pf-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Eagle.svg');
+}
+.tori piece.k-piece.enemy {
+    background-image: url('../../images/pieces/tori/cz/1Phoenix.svg');
+}

@@ -1,0 +1,1 @@
+<svg viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><pattern id="a" height="100" patternUnits="userSpaceOnUse" width="100"><path d="m0 0h100v100h-100z" fill="#008b8b" stroke="#000" stroke-width="2"/></pattern><path d="m0 0h700v700h-700z" fill="url(#a)"/></svg>

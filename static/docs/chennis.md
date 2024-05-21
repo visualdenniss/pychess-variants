@@ -16,7 +16,7 @@ When you capture a piece, it goes into your hand. On a future turn, you can drop
 
 ### Board
 
-Chennis is played on a 7x7 board as seen below:
+Chennis is played on a 7x7 board as shown below:
 
 ![Chak](https://github.com/gbtami/pychess-variants/blob/master/static/images/ChennisGuide/ChennisCourt.png)
 
@@ -42,19 +42,16 @@ There are three ways to win:
 
 ## Pieces
 
-The King (K) is the same as in any form of chess and can move on square in any direction as long as it's within the the legal area (see above). Keep in mind that a king can mate another king that's at the net.
+The King (K) is the same as in any form of chess and can move on square in any direction as long as it's within the legal area (see above). Keep in mind that a king can mate another king that's at the net.
 
 There are four piece pairs:
 
-Rook-Pawn
-
-Bishop-Soldier
-
-Knight-Mayor
-
+Rook-Pawn  
+Bishop-Soldier  
+Knight-Mayor  
 Cannon-Ferz
 
-The rook, pawn, knight, and bishop move exactly as in chess. If you are not familiar with these pieces, please check out of a chess guide. The only exception is that the pawn does not have the two step move as in chess.
+The rook, pawn, knight, and bishop move exactly as in chess. If you are not familiar with these pieces, please check out a chess guide. The only exception is that the pawn does not have the two step move as in chess.
 
 In general, each pair has opposite movement: Diagonally-attacking pieces turn into orthogonally-attacking pieces and vice-versa.
 
@@ -89,3 +86,6 @@ Accurate piece values are unknown. In general, for dropping games such as Chenni
 Strategy is still being developed as the game is quite new.
 
 For beginners, I can't stress enough to remember where the king can move. That means pieces can be dropped on the sideline and threaten the king without retaliation from the king.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/_Mis4iWRHws" frameborder="0" allowfullscreen></iframe>
+

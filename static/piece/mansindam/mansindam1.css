@@ -1,0 +1,97 @@
+.mansindam piece.a-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wa.svg');
+}
+.mansindam piece.c-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wc.svg');
+}
+.mansindam piece.m-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wm.svg');
+}
+.mansindam piece.pc-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/w+c.svg');
+}
+.mansindam piece.pm-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/w+m.svg');
+}
+.mansindam piece.a-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/ba.svg');
+}
+.mansindam piece.c-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bc.svg');
+}
+.mansindam piece.m-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bm.svg');
+}
+.mansindam piece.pc-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/b+c.svg');
+}
+.mansindam piece.pm-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/b+m.svg');
+}
+
+.mansindam piece.p-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wp.svg');
+}
+.mansindam piece.b-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wb.svg');
+}
+.mansindam piece.n-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wn.svg');
+}
+.mansindam piece.r-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wr.svg');
+}
+.mansindam piece.pp-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/w+p.svg');
+}
+.mansindam piece.pb-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/w+b.svg');
+}
+.mansindam piece.pn-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/w+n.svg');
+}
+.mansindam piece.pr-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/w+r.svg');
+}
+.mansindam piece.q-piece.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wq.svg');
+}
+.mansindam piece.k-piece.white.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wk.svg');
+}
+.mansindam piece.k-piece.white.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/wk reversed.svg');
+}
+.mansindam piece.p-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bp.svg');
+}
+.mansindam piece.b-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bb.svg');
+}
+.mansindam piece.n-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bn.svg');
+}
+.mansindam piece.r-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/br.svg');
+}
+.mansindam piece.pp-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/b+p.svg');
+}
+.mansindam piece.pb-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/b+b.svg');
+}
+.mansindam piece.pn-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/b+n.svg');
+}
+.mansindam piece.pr-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/b+r.svg');
+}
+.mansindam piece.q-piece.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bq.svg');
+}
+.mansindam piece.k-piece.black.enemy {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bk.svg');
+}
+.mansindam piece.k-piece.black.ally {
+    background-image: url('../../images/pieces/mansindam/YuGothic/bk reversed.svg');
+}

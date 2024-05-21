@@ -1,0 +1,9 @@
+.ataxx piece.white {
+    background-image: url('../../images/pieces/ataxx/cat-dog/cat.svg');
+}
+.ataxx piece.black {
+    background-image: url('../../images/pieces/ataxx/cat-dog/dog.svg');
+}
+.ataxx piece._-piece {
+    background-image: url('../../images/pieces/brick.svg');
+}

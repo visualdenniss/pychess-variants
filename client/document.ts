@@ -1,12 +1,9 @@
 import { VNode, init, classModule, attributesModule, propsModule, eventListenersModule, styleModule } from 'snabbdom';
 
-import * as cg from "chessgroundx/types";
-
 export const patch = init([classModule, attributesModule, propsModule, eventListenersModule, styleModule]);
 
 export function downloadPgnText(filename: string) {
-    const text = (document.getElementById('pgntext') as HTMLInputElement).value;
-
+    const text = (document.getElementById('pgntext') as HTMLInputElement).innerHTML;
     const element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', filename);
@@ -26,51 +23,6 @@ export function getDocumentData(name: string) {
     } else {
         return "";
     }
-}
-
-export function getPieceImageUrl (variant: string, role: cg.Role, color: cg.Color, side: string): string {
-    // Analysis drop move suggestion rendering needs piece images urls in chessground
-    // We can use current variant .css to find appropriate images.
-
-    const el = document.querySelector(`piece.${color}.${role}.${side}`) as HTMLElement;
-    if (el) {
-        const image = window.getComputedStyle(el, null).getPropertyValue("background-image");
-        if (image) {
-            const url = image.split('"')[1];
-            if (url) return url.slice(url.indexOf('/static'));
-        }
-    }
-    // In Kyoto Shogi and Chennis not all droppable pieces are rendered in the pockets
-    // because they may be dropped with flipped side as well. To solve this problem
-    // we will construct piece image url from unprotmoted piece urls here.
-    if (variant === "kyotoshogi") {
-        const kyotoPromotedPieceRoles = ['pp-piece', 'pl-piece', 'pn-piece', 'ps-piece'];
-        const idx = kyotoPromotedPieceRoles.indexOf(role);
-        if (idx !== -1) {
-            const unpromoted = getPieceImageUrl(variant, role.slice(1) as cg.Role, color, side);
-            const kyotoPromotedPieceNames = ['HI', 'TO', 'KI', 'KA'];
-            return unpromoted.slice(0, unpromoted.lastIndexOf('/') + 2) + kyotoPromotedPieceNames[idx] + '.svg'
-        }
-    }
-    if (variant === "chennis") {
-        const chennisPromotedPieceRoles = ['pp-piece', 'pm-piece', 'ps-piece', 'pf-piece'];
-        const idx = chennisPromotedPieceRoles.indexOf(role);
-        if (idx !== -1) {
-            const chennisPromotedPieceNames = ['R', 'N', 'B', 'C'];
-            const unpromotedLetter = role.slice(1, 2).toUpperCase();
-            const unpromotedUrl = getPieceImageUrl(variant, role.slice(1) as cg.Role, color, side);
-            if (unpromotedUrl.includes('chennis')) {
-                return unpromotedUrl.slice(0, unpromotedUrl.lastIndexOf('/') + 2) + chennisPromotedPieceNames[idx] + unpromotedLetter + '.svg'
-            } else if (unpromotedUrl.includes('merida')) {
-                const base = '/static/images/pieces/merida/'
-                return ((unpromotedLetter === 'F') ? base + 'shako/' : base) + color.slice(0, 1) + chennisPromotedPieceNames[idx] + '.svg'
-            } else {
-                const base = '/static/images/pieces/green/'
-                return ((unpromotedLetter === 'F') ? base + 'synoshako/' : base) + color.slice(0, 1) + chennisPromotedPieceNames[idx] + '.svg'
-            }
-        }
-    }
-    return '/static/images/pieces/merida/';
 }
 
 export function debounce(callback: any, wait: number) {
@@ -104,12 +56,12 @@ function changeCSS(cssLinkIndex: number, cssFile: string) {
 }
 
 // css file index in templates/base.html
-const BOARD_CSS_IDX = 1;
 const PIECE_CSS_IDX = 2;
 
 export function changeBoardCSS(assetUrl: string, family: string, cssFile: string) {
-    const sheet = document.styleSheets[BOARD_CSS_IDX];
-    const cssRules = sheet.cssRules;
+    const link = document.querySelector('link[href*=board]') as HTMLLinkElement;
+    const sheet = link!.sheet;
+    const cssRules = sheet!.cssRules;
     for (let i = 0; i < cssRules.length; i++) {
         const rule = cssRules[i];
         if (!( rule instanceof CSSStyleRule)) {
@@ -117,10 +69,10 @@ export function changeBoardCSS(assetUrl: string, family: string, cssFile: string
         }
         if (rule.selectorText === `.${family} cg-board`) {
             // console.log("changeBoardCSS", family, cssFile, i)
-            sheet.deleteRule(i)
+            sheet!.deleteRule(i)
             const newRule = `.${family} cg-board {background-image: url(${assetUrl}/images/board/${cssFile})}`;
             // console.log(newRule);
-            sheet.insertRule(newRule, i);
+            sheet!.insertRule(newRule, i);
             break;
         }
     }
@@ -151,9 +103,16 @@ export function changePieceCSS(assetUrl: string, family: string, cssFile: string
         case "ordamirror": cssLinkIndex += 19; break;
         case "chak": cssLinkIndex += 20; break;
         case "chennis": cssLinkIndex += 21; break;
+        case "spartan": cssLinkIndex += 22; break;
+        case "mansindam": cssLinkIndex += 23; break;
+        case "ataxx": cssLinkIndex += 24; break;
+        case "cannonshogi": cssLinkIndex += 25; break;
+        case "khans": cssLinkIndex += 26; break;
+        case "dragon": cssLinkIndex += 27; break;
         default: throw "Unknown piece family " + family;
     }
-    const newUrl = `${assetUrl}/piece/${family}/${cssFile}.css`;
+    let newUrl = `${assetUrl}/piece-css/${family}/${cssFile}.css`;
+    if (cssFile === 'letters') newUrl = `${assetUrl}/piece-css/letters.css`;
     // console.log("changePieceCSS", family, cssFile, newUrl)
     changeCSS(cssLinkIndex, newUrl);
 }

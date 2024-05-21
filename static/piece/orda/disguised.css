@@ -1,0 +1,6 @@
+.orda piece.white {
+    background-image: url('../../images/pieces/disguised/w.svg');
+}
+.orda piece.black {
+    background-image: url('../../images/pieces/disguised/g.svg');
+}

@@ -1,164 +1,50 @@
 import { h, VNode } from 'snabbdom';
 
 import { Chessground } from 'chessgroundx';
+import * as cg from "chessgroundx/types";
 
-import { _, ngettext, pgettext } from './i18n';
-import { uci2LastMove, VARIANTS, Variant } from './chess';
+import { _, ngettext, pgettext, languageSettings } from './i18n';
+import { uci2LastMove } from './chess';
+import { VARIANTS } from './variants';
 import { patch } from './document';
 import { renderTimeago } from './datetime';
 import { boardSettings } from './boardSettings';
 import { timeControlStr } from './view';
-import { PyChessModel } from "./main";
-import * as cg from "chessgroundx/types";
+import { PyChessModel } from "./types";
 import { Ceval } from "./messages";
-
-export function gameType(rated: string | number) {
-    switch (rated) {
-    case "True":
-    case "1":
-    case 1:
-        return _("Rated");
-    case "2":
-    case 2:
-        return _("IMPORT");
-    default:
-        return _("Casual");
-    }
-}
-
-export function aiLevel(title: string, level: number) {
-    return (title === 'BOT' && level >= 0) ? ' ' + _('level %1', level): '';
-}
-
-export function result(variant: Variant, status: number, result: string) {
-    let text = '';
-    const variantName = variant.name;
-    // console.log("result()", variantName, status, result);
-    const first = _(variant.firstColor);
-    const second = _(variant.secondColor);
-    switch (status) {
-        case -2:
-        case -1:
-            text = _('Playing right now');
-            break;
-        case 0:
-            text = _('Game aborted');
-            break;
-        case 1:
-            text = _('Checkmate');
-            break;
-        case 2:
-            text = _('%1 resigned', (result === '1-0') ? second : first);
-            break;
-        case 3:
-            text = _('Stalemate');
-            break;
-        case 4:
-            text = _('Time out');
-            break;
-        case 5:
-            text = _('Draw');
-            break;
-        case 6:
-            text = _('Time out');
-            break;
-        case 7:
-            text = _('%1 abandoned the game', (result === '1-0') ? second : first);
-            break;
-        case 8:
-            text = _('Cheat detected');
-            break;
-        case 9:
-            text = _('Not started');
-            break;
-        case 10:
-            text = _('Invalid move');
-            break;
-        case 11:
-            text = _('Unknown reason');
-            break;
-        case 12:
-            switch (variantName) {
-                case 'orda':
-                case 'synochess':
-                case 'dobutsu':
-                case 'shinobi':
-                case 'empire':
-                case 'ordamirror':
-                    text = _('Campmate');
-                    break;
-                case 'chak':
-                    text = _('Altar mate');
-                    break;
-                case 'atomic':
-                    text = _('Explosion of king');
-                    break;
-                default:
-                    text = _('Point counting');
-                    break;
-            }
-            break;
-        case 13:
-            switch (variantName) {
-                case 'janggi':
-                    text = _('Point counting');
-                    break;
-                default:
-                    text = _('Repetition');
-                    break;
-            }
-            break;
-        default:
-            text = '*';
-            break
-    }
-    return (status <= 0) ? text : text + ', ' + result;
-}
-
-export function renderRdiff(rdiff: number) {
-    if (rdiff === undefined) {
-        return h('span');
-    } else if (rdiff === 0) {
-        return h('span', '±0');
-    } else if (rdiff < 0) {
-        return h('bad', rdiff);
-    } else if (rdiff > 0) {
-        return h('good', '+' + rdiff);
-    } else {
-        return h('span');
-    }
-}
+import { aiLevel, gameType, result, renderRdiff } from './result';
 
 interface Game {
-    _id: string;
-    z: number;
-    v: string;
-    f: cg.FEN;
-    lm: string;
+    _id: string; // mongodb document id
+    z: number; // chess960 (0/1)
+    v: string; // variant name
+    f: cg.FEN; // FEN 
+    lm: string; // last move
 
-    b: number;
-    i: number;
-    bp: number;
+    b: number; // TC base
+    i: number; // TC increment
+    bp: number; // TC byoyomi period
 
-    y: string;
-    d: string;
+    y: number; // casual/rated/imported/correspondence (0/1/2/3)
+    c: boolean; // correspondence game
+    d: string; // datetime
 
-    tid?: string;
-    tn?: string;
+    tid?: string; // tournament id
+    tn?: string; // tournament name
 
-    wb?: boolean;
-    bb?: boolean;
+    wb?: boolean; // white berserk
+    bb?: boolean; // black berserk
 
-    us: string[];
-    wt: string;
-    bt: string;
-    x: number;
-    p0: Player;
-    p1: Player;
-    s: number;
-    r: string;
+    us: string[]; // users (wplayer name, bplayer name)
+    wt: string; // white title
+    bt: string; // black title
+    x: number; // Fairy level
+    p0: Player; // white performance rating (rating, diff)
+    p1: Player; // black performance rating (rating, diff)
+    s: number; // game status range(-2, 14) as CREATED, STARTED, ABORTED, MATE, ... see in const.py
+    r: string; // game result string (1-0, 0-1, 1/2-1/2, *)
     m: string[]; // moves in compressed format as they are stored in mongo. Only used for count of moves here
-    a: Ceval[];
+    a: Ceval[]; // analysis
 }
 
 interface Player {
@@ -166,7 +52,7 @@ interface Player {
     d: number;
 }
 
-function toutnamentInfo(game: Game) {
+function tournamentInfo(game: Game) {
     let elements = [h('info-date', { attrs: { timestamp: game["d"] } })];
     if (game["tid"]) {
         elements.push(h('span', " • "));
@@ -179,20 +65,20 @@ function renderGames(model: PyChessModel, games: Game[]) {
     const rows = games.map(game => {
         const variant = VARIANTS[game.v];
         const chess960 = game.z === 1;
+        const tc = timeControlStr(game["b"], game["i"], game["bp"], game["c"] === true ? game["b"] : 0);
 
         return h('tr', [h('a', { attrs: { href : '/' + game["_id"] } }, [
-            h('td.board', { class: { "with-pockets": variant.pocketRoles('white') !== undefined } }, [
-                h(`selection.${variant.board}.${variant.piece}`, [
-                    h(`div.cg-wrap.${variant.cg}.mini`, {
+            h('td.board', { class: { "with-pockets": !!variant.pocket } }, [
+                h(`selection.${variant.boardFamily}.${variant.pieceFamily}`, [
+                    h(`div.cg-wrap.${variant.board.cg}.mini`, {
                         hook: {
-                            insert: vnode => Chessground(vnode.elm as HTMLElement,  {
+                            insert: vnode => Chessground(vnode.elm as HTMLElement, {
                                 coordinates: false,
                                 viewOnly: true,
                                 fen: game["f"],
                                 lastMove: uci2LastMove(game.lm),
-                                geometry: variant.geometry,
-                                addDimensionsCssVars: true,
-                                pocketRoles: color => variant.pocketRoles(color),
+                                dimensions: variant.board.dimensions,
+                                pocketRoles: variant.pocket?.roles,
                             })
                         }
                     }),
@@ -202,8 +88,8 @@ function renderGames(model: PyChessModel, games: Game[]) {
                 h('div.info0.games.icon', { attrs: { "data-icon": variant.icon(chess960) } }, [
                     // h('div.info1.icon', { attrs: { "data-icon": (game["z"] === 1) ? "V" : "" } }),
                     h('div.info2', [
-                        h('div.tc', timeControlStr(game["b"], game["i"], game["bp"]) + " • " + gameType(game["y"]) + " • " + variant.displayName(chess960)),
-                        h('div', toutnamentInfo(game)),
+                        h('div.tc', tc + " • " + gameType(game["y"]) + " • " + variant.displayName(chess960)),
+                        h('div', tournamentInfo(game)),
                     ]),
                 ]),
                 h('div.info-middle', [
@@ -250,20 +136,24 @@ function renderGames(model: PyChessModel, games: Game[]) {
 }
 
 function loadGames(model: PyChessModel, page: number) {
+    const lang = languageSettings.value;
+
     const xmlhttp = new XMLHttpRequest();
     let url = "/api/" + model["profileid"]
     if (model.level) {
-        url = url + "/loss?x=8&p=";
+        url = `${url}/loss?l=${lang}&x=8&p=`;
     } else if (model.variant) {
-        url = url + "/perf/" + model.variant + "?p=";
+        url = `${url}/perf/${model.variant}?l=${lang}&p=`;
     } else if (model.rated === "1") {
-        url = url + "/rated" + "?p=";
+        url = `${url}/rated?l=${lang}&p=`;
     } else if (model.rated === "2") {
-        url = url + "/import" + "?p=";
-    } else if (model["rated"] === "-1") {
-        url = url + "/me" + "?p=";
+        url = `${url}/import?l=${lang}&p=`;
+    } else if (model.rated === "-2") {
+        url = `${url}/playing?l=${lang}&p=`;
+    } else if (model.rated === "-1") {
+        url = `${url}/me?l=${lang}&p=`;
     } else {
-        url = url + "/all?p=";
+        url = `${url}/all?l=${lang}&p=`;
     }
 
     xmlhttp.onreadystatechange = function() {
@@ -280,7 +170,7 @@ function loadGames(model: PyChessModel, page: number) {
             renderTimeago();
         }
     };
-    xmlhttp.open("GET", url + page, true);
+    xmlhttp.open("GET", `${url}${page}`, true);
     xmlhttp.send();
 }
 
@@ -300,6 +190,7 @@ function observeSentinel(vnode: VNode, model: PyChessModel) {
 }
 
 export function profileView(model: PyChessModel) {
+    boardSettings.assetURL = model.assetURL;
     boardSettings.updateBoardAndPieceStyles();
     let tabs: VNode[] = [];
     tabs.push(h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] }, class: {"active": model["rated"] === "None"} }, _('Games'))]));
@@ -307,6 +198,7 @@ export function profileView(model: PyChessModel) {
         tabs.push(h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/me' }, class: {"active": model["rated"] === "-1" } }, _('Games with you'))]));
     }
     tabs.push(h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/rated' }, class: {"active": model["rated"] === "1" } }, pgettext('UsePluralFormIfNeeded', 'Rated'))]));
+    tabs.push(h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/playing' }, class: {"active": model["rated"] === "-2" } }, pgettext('UsePluralFormIfNeeded', 'Playing'))]));
     tabs.push(h('div.sub-ratings', [h('a', { attrs: { href: '/@/' + model["profileid"] + '/import' }, class: {"active": model["rated"] === "2" } }, _('Imported'))]));
 
     return [

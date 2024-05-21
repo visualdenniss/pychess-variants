@@ -1,61 +1,369 @@
 # Translations template for PROJECT.
-# Copyright (C) 2022 ORGANIZATION
+# Copyright (C) 2023 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
 # 
 # Translators:
 # Leo Ha <yeoha123@gmail.com>, 2020
 # 이상백 <esangbaek@ajou.ac.kr>, 2020
-# 설월신서향雪月申瑞香, 2021
 # gbtami <gbtami@gmail.com>, 2022
+# 설월신서향雪月申瑞香（설월）, 2023
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-01-11 22:23+0100\n"
+"POT-Creation-Date: 2023-11-17 14:15+0100\n"
 "PO-Revision-Date: 2020-05-04 12:19+0000\n"
-"Last-Translator: gbtami <gbtami@gmail.com>, 2022\n"
-"Language-Team: Korean (https://www.transifex.com/gbtami/teams/14790/ko/)\n"
+"Last-Translator: 설월신서향雪月申瑞香（설월）, 2023\n"
+"Language-Team: Korean (https://app.transifex.com/gbtami/teams/14790/ko/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.12.1\n"
 "Language: ko\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+#: ../server/const.py:325
+msgid "Arena"
+msgstr "아레나"
+
+#: ../server/const.py:326
+msgid "Round-Robin"
+msgstr "연맹전"
+
+#: ../server/const.py:327
+msgid "Swiss"
+msgstr "스위스"
+
+#: ../server/const.py:331
+msgid "Hourly"
+msgstr "시간"
+
+#: ../server/const.py:332
+msgid "Daily"
+msgstr "일간"
+
+#: ../server/const.py:333
+msgid "Weekly"
+msgstr "주간"
+
+#: ../server/const.py:334
+msgid "Monthly"
+msgstr "월간"
+
+#: ../server/const.py:335
+msgid "Yearly"
+msgstr "연간"
+
+#: ../server/const.py:336
+msgid "Marathon"
+msgstr "마라톤"
+
+#: ../server/const.py:337
+msgid "Shield"
+msgstr "방패"
+
+#: ../server/const.py:338
+msgid "SEAturday"
+msgstr "SEA요일"
+
+#: ../server/const.py:342
+msgid "Chess"
+msgstr "체스"
+
+#: ../server/const.py:343
+msgid "Chess960"
+msgstr "체스960"
+
+#: ../server/const.py:344
+msgid "Crazyhouse"
+msgstr "크레이지하우스"
+
+#: ../server/const.py:345
+msgid "Crazyhouse960"
+msgstr "크레이지하우스960"
+
+#: ../server/const.py:346 ../server/videos.py:24
+msgid "Placement"
+msgstr "배치"
+
+#: ../server/const.py:347
+msgid "Atomic"
+msgstr "아토믹"
+
+#: ../server/const.py:348
+msgid "Atomic960"
+msgstr "아토믹960"
+
+#: ../server/const.py:349
+msgid "Duck Chess"
+msgstr "오리 체스"
+
+#: ../server/const.py:350 ../server/videos.py:20
+msgid "Makruk"
+msgstr "막룩"
+
+#: ../server/const.py:351
+msgid "Makpong"
+msgstr "막퐁"
+
+#: ../server/const.py:352
+msgid "Ouk Chaktrang"
+msgstr "욱 차트랑"
+
+#: ../server/const.py:353
+msgid "Sittuyin"
+msgstr "시투인"
+
+#: ../server/const.py:354
+msgid "ASEAN"
+msgstr "아세안"
+
+#: ../server/const.py:355 ../server/videos.py:21
+msgid "Shogi"
+msgstr "쇼기"
+
+#: ../server/const.py:356
+msgid "Minishogi"
+msgstr "미니쇼기"
+
+#: ../server/const.py:357
+msgid "Kyoto Shogi"
+msgstr "교토 쇼기"
+
+#: ../server/const.py:358
+msgid "Dobutsu"
+msgstr "도부츠"
+
+#: ../server/const.py:361
+msgid "Gorogoro+"
+msgstr "고로고로+"
+
+#: ../server/const.py:362
+msgid "Tori Shogi"
+msgstr "토리 쇼기"
+
+#: ../server/const.py:363 ../server/videos.py:19
+msgid "Xiangqi"
+msgstr "샹치"
+
+#: ../server/const.py:364
+msgid "Manchu"
+msgstr "만추"
+
+#: ../server/const.py:365 ../server/videos.py:18
+msgid "Janggi"
+msgstr "장기"
+
+#: ../server/const.py:366
+msgid "Minixiangqi"
+msgstr "미니샹치"
+
+#: ../server/const.py:367 ../server/videos.py:23
+msgid "Capablanca"
+msgstr "카파블랑카"
+
+#: ../server/const.py:368
+msgid "Capablanca960"
+msgstr "카파블랑카960"
+
+#: ../server/const.py:369
+msgid "Capahouse"
+msgstr "카파하우스"
+
+#: ../server/const.py:370
+msgid "Capahouse960"
+msgstr "카파하우스960"
+
+#: ../server/const.py:376 ../server/videos.py:22
+msgid "S-Chess"
+msgstr "S-체스"
+
+#: ../server/const.py:377
+msgid "S-Chess960"
+msgstr "S-체스960"
+
+#: ../server/const.py:378
+msgid "S-House"
+msgstr "S-하우스"
+
+#: ../server/const.py:379
+msgid "Grand"
+msgstr "그랜드"
+
+#: ../server/const.py:380
+msgid "Grandhouse"
+msgstr "그랜드하우스"
+
+#: ../server/const.py:381
+msgid "Shogun"
+msgstr "쇼군"
+
+#: ../server/const.py:382
+msgid "Shako"
+msgstr "샤코"
+
+#: ../server/const.py:383
+msgid "Hoppel-Poppel"
+msgstr "호플호플"
+
+#: ../server/const.py:384
+msgid "Orda Chess"
+msgstr "오르다 체스"
+
+#: ../server/const.py:385
+msgid "Synochess"
+msgstr "시노체스"
+
+#: ../server/const.py:386
+msgid "Shinobi"
+msgstr "시노비"
+
+#: ../server/const.py:387
+msgid "Shinobi+"
+msgstr "시노비+"
+
+#: ../server/const.py:388
+msgid "Empire"
+msgstr "엠파이어"
+
+#: ../server/const.py:389
+msgid "Orda Mirror"
+msgstr "오르다 거울"
+
+#: ../server/const.py:390
+msgid "Chak"
+msgstr "착"
+
+#: ../server/const.py:391
+msgid "Chennis"
+msgstr "첸니스"
+
+#: ../server/const.py:392
+msgid "Spartan"
+msgstr "스파르탄"
+
+#: ../server/const.py:393
+msgid "King of the Hill"
+msgstr "언덕의 왕"
+
+#: ../server/const.py:394
+msgid "King of the Hill 960"
+msgstr "언덕의 왕 960"
+
+#: ../server/const.py:395
+msgid "Three check"
+msgstr "3체크"
+
+#: ../server/const.py:396
+msgid "Three check 960"
+msgstr "3체크 960"
+
+#: ../server/const.py:397
+msgid "Mansindam"
+msgstr "만신담"
+
+#: ../server/videos.py:10
+msgid "Howto"
+msgstr "규칙"
+
+#: ../server/videos.py:11
+msgid "Introduction"
+msgstr "소개"
+
+#: ../server/videos.py:12
+msgid "Opening"
+msgstr "오프닝"
+
+#: ../server/videos.py:13
+msgid "Middlegame"
+msgstr "미들게임"
+
+#: ../server/videos.py:14
+msgid "Endgame"
+msgstr "엔드게임"
+
+#: ../server/videos.py:15
+msgid "Fundamentals"
+msgstr "핵심"
+
+#: ../server/videos.py:16
+msgid "Tactics"
+msgstr "전술"
+
+#: ../server/videos.py:17
+msgid "Puzzle"
+msgstr "퍼즐"
+
+#: ../server/videos.py:25
+msgid "Duck"
+msgstr "오리"
+
+#: ../server/videos.py:26
+msgid "Match"
+msgstr "경기"
+
+#: ../server/videos.py:27
+msgid "Tournament"
+msgstr "토너먼트"
+
+#: ../server/videos.py:28
+msgid "Hu Ronghua"
+msgstr "후 롱화"
+
+#: ../server/videos.py:29
+msgid "Yoshiharu Habu"
+msgstr "하부 요시하루"
+
+#: ../server/videos.py:33
+msgid "beginner"
+msgstr "초보"
+
+#: ../server/videos.py:34
+msgid "intermediate"
+msgstr "중수"
+
+#: ../server/videos.py:35
+msgid "advanced"
+msgstr "고수"
+
 #: ../templates/closed.html:8
 msgid "This account is closed."
-msgstr "이 계정은 정지되었습니다"
+msgstr "이 계정은 닫혔습니다."
 
-#: ../templates/patron.html:8
+#: ../templates/patron.html:11
 msgid ""
 "As you know, pychess-variants is a free server and it will remain free forever. However, maintaining and improving the server costs time and money.\n"
 "If you like our work and find our server useful, please donate through patreon or paypal."
 msgstr ""
-"pychess-variants 는 무료 서버이며 앞으로도 계속 무료로 운영됩니다. 하지만 서버 관리 및 향상을 위해서는 돈과 시간이 들어갑니다. \n"
-"만약 저희가 하는 일이 만족스럽고 서버가 상당히 유용하셨다면, patreon 또는 paypal 을 통해 기부 해주셨으면 합니다."
+"아시다시피, pychess-variants는 무료 서버이며, 앞으로도 영원히 무료로 유지될 예정입니다. 그러나 서버를 유지하고 개선하려면 시간과 비용이 듭니다.\n"
+"저희 작업이 마음에 들고 저희 서버가 유용하다고 생각하신다면 Patreon이나 Paypal을 통해 기부해 주세요."
 
-#: ../templates/players.html:9
-msgid "Online"
-msgstr "온라인"
-
-#: ../templates/players.html:28
-msgid "Anonymous"
-msgstr "익명"
-
-#: ../templates/players.html:35
+#: ../templates/players.html:7
 msgid "All players"
-msgstr "모든 대국자"
+msgstr "모든 플레이어"
 
-#: ../templates/players.html:36 ../templates/winners.html:6
+#: ../templates/players.html:9 ../templates/winners.html:6
 msgid "Tournament winners"
 msgstr "토너먼트 우승자"
 
-#: ../templates/players.html:37 ../templates/shields.html:6
+#: ../templates/players.html:10 ../templates/shields.html:6
 msgid "Tournament shields"
-msgstr "토너먼트 쉴드"
+msgstr "토너먼트 방패"
+
+#: ../templates/players.html:14
+msgid "Online"
+msgstr "온라인"
+
+#: ../templates/players.html:33
+msgid "Anonymous"
+msgstr "익명"
+
+#: ../templates/players50.html:6
+msgid "Top 50"
+msgstr "50위권"
 
 #: ../templates/profile.html:14
 #, python-format
@@ -65,86 +373,148 @@ msgstr[0] "%(count)s 개의 게임"
 
 #: ../templates/profile.html:42
 msgid "Watch games"
-msgstr "관전"
+msgstr "관전하기"
 
 #: ../templates/profile.html:44
 msgid "Challenge to a game"
-msgstr "대국 신청"
+msgstr "결투 신청하기"
 
 #: ../templates/profile.html:47
 msgid "Import game"
-msgstr ""
+msgstr "게임 불러오기"
 
 #: ../templates/profile.html:50
 msgid "Export games"
-msgstr ""
+msgstr "게임 내보내기"
 
-#: ../templates/profile.html:53
+#: ../templates/profile.html:54
 msgid "Lichess profile"
 msgstr "Lichess 프로필"
 
-#: ../templates/template.html:17
-msgid "Tv"
-msgstr "생중계"
+#: ../templates/puzzle_profile.html:14
+#, python-format
+msgid "%(count)s puzzle"
+msgid_plural "%(count)s puzzles"
+msgstr[0] "%(count)s 퍼즐"
+
+#: ../templates/puzzle_profile.html:23
+msgid "Puzzle history"
+msgstr "퍼즐 역사"
 
 #: ../templates/template.html:18
-msgid "Current games"
-msgstr "현재 진행 중인 게임"
+msgid "Play"
+msgstr "플레이"
 
-#: ../templates/template.html:19 ../templates/tournaments.html:6
+#: ../templates/template.html:20
+msgid "Create a game"
+msgstr "게임 만들기"
+
+#: ../templates/template.html:21 ../templates/tournaments.html:6
 msgid "Tournaments"
 msgstr "토너먼트"
 
-#: ../templates/template.html:20
+#: ../templates/template.html:25 ../templates/template.html:27
+msgid "Puzzles"
+msgstr "퍼즐"
+
+#: ../templates/template.html:31
+msgid "Learn"
+msgstr "배우기"
+
+#: ../templates/template.html:33
+msgid "Variants"
+msgstr "변형 소개"
+
+#: ../templates/template.html:34
+msgid "Memory"
+msgstr "메모리 게임"
+
+#: ../templates/template.html:38
+msgid "Watch"
+msgstr "보기"
+
+#: ../templates/template.html:40
+msgid "Tv"
+msgstr "생중계"
+
+#: ../templates/template.html:41
+msgid "Current games"
+msgstr "현재 진행 중인 게임"
+
+#: ../templates/template.html:42
+msgid "Video library"
+msgstr "영상 도서관"
+
+#: ../templates/template.html:46
+msgid "Community"
+msgstr "커뮤니티"
+
+#: ../templates/template.html:48
 msgid "Players"
-msgstr "대국자"
+msgstr "플레이어"
 
-#: ../templates/template.html:21
+#: ../templates/template.html:49
+msgid "Blog"
+msgstr "블로그"
+
+#: ../templates/template.html:50
+msgid "Donate"
+msgstr "기부하기"
+
+#: ../templates/template.html:54
+msgid "Tools"
+msgstr "도구"
+
+#: ../templates/template.html:56
 msgid "Editor"
-msgstr "판 편집"
+msgstr "편집기"
 
-#: ../templates/template.html:22
+#: ../templates/template.html:57
 msgid "Analysis"
 msgstr "분석하기"
 
-#: ../templates/template.html:23
-msgid "Variants"
-msgstr "변형"
-
-#: ../templates/template.html:29
+#: ../templates/template.html:72
 msgid "Login with Lichess"
 msgstr "Lichess로 로그인"
 
-#: ../templates/template.html:29
+#: ../templates/template.html:72
 msgid "Log in"
-msgstr "로그인"
+msgstr "로그 인"
 
-#: ../templates/tournaments.html:9
+#: ../templates/tournaments.html:8
+msgid "Tournament calendar"
+msgstr "토너먼트 달력"
+
+#: ../templates/tournaments.html:10
 msgid "CREATE A NEW TOURNAMENT"
 msgstr "새로운 토너먼트 생성"
 
-#: ../templates/tournaments.html:18
+#: ../templates/tournaments.html:19
 msgid "Now playing"
-msgstr "지금 대국 중"
+msgstr "지금 플레이 중"
 
-#: ../templates/tournaments.html:20
+#: ../templates/tournaments.html:21
 msgid "Starting soon"
 msgstr "곧 시작"
 
-#: ../templates/tournaments.html:22
+#: ../templates/tournaments.html:23
 msgid "Finished"
-msgstr "끝남"
+msgstr "종료"
 
-#: ../templates/tournaments.html:43
+#: ../templates/tournaments.html:44
 msgid "Rated"
 msgstr "승강전"
 
-#: ../templates/tournaments.html:43
+#: ../templates/tournaments.html:44
 msgid "Casual"
 msgstr "친선전"
 
-#: ../templates/tournaments.html:50
+#: ../templates/tournaments.html:51
 #, python-format
 msgid "%(count)s player"
 msgid_plural "%(count)s players"
 msgstr[0] "%(count)s 명의 플레이어"
+
+#: ../templates/videos.html:15
+msgid "Chess variant videos"
+msgstr "변형 체스 영상"

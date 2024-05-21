@@ -2,7 +2,7 @@ import { h } from "snabbdom";
 
 import { backgroundSettings } from './background';
 import { boardSettings } from './boardSettings';
-import { selectVariant } from './chess';
+import { selectVariant } from './variants';
 import { patch, getDocumentData } from './document';
 import { _, translatedLanguage, languageSettings } from './i18n';
 import { volumeSettings, soundThemeSettings } from './sound';
@@ -27,23 +27,26 @@ export function settingsView() {
 }
 
 function settingsButton() {
-    return h('button#btn-settings', { on: { click: toggleSettings } }, [
+    return h('button#btn-settings', { on: { click: toggleSettings }, attrs: { 'aria-label': "Settings" } }, [
         h('div.icon.icon-cog'),
     ]);
 }
 
 function toggleSettings() {
-    if ((document.getElementById('settings') as HTMLElement).style.display === 'flex')
+    if ((document.getElementById('settings') as HTMLElement).style.display === 'flex') {
         hideSettings();
-    else
+    } else {
         showMainSettings();
+    }
 }
 
-function hideSettings() {
+export function hideSettings() {
+    (document.getElementById('btn-settings') as HTMLElement).classList.remove('shown');
     (document.getElementById('settings') as HTMLElement).style.display = 'none';
 }
 
 function showMainSettings() {
+    (document.getElementById('btn-settings') as HTMLElement).classList.add('shown');
     (document.getElementById('settings') as HTMLElement).style.display = 'flex';
     (document.getElementById('settings-main') as HTMLElement).style.display = 'flex';
     (document.getElementById('settings-sub') as HTMLElement).style.display = 'none';
@@ -126,7 +129,7 @@ function boardSettingsView() {
     return h('div#settings-board', [
         backButton(_("Board Settings")),
         h('div', [
-            h('div', [
+            h('div.labelled', [
                 h('label', { props: { for: "settings-variant" } }, _("Variant")),
                 selectVariant(
                     "settings-variant",

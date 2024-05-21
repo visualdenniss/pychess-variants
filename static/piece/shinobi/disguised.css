@@ -1,0 +1,6 @@
+.shinobi piece.white {
+    background-image: url('../../images/pieces/disguised/p.svg');
+}
+.shinobi piece.black {
+    background-image: url('../../images/pieces/disguised/b.svg');
+}

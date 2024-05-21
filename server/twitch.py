@@ -1,5 +1,7 @@
-import hmac
+from __future__ import annotations
+import asyncio
 import hashlib
+import hmac
 import logging
 import random
 import string
@@ -11,6 +13,7 @@ from aiohttp import web
 from broadcast import broadcast_streams
 from settings import DEV, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
 from streamers import TWITCH_STREAMERS
+from pychess_global_app_state_utils import get_app_state
 
 TWITCH_OAUTH2_TOKEN_URL = "https://id.twitch.tv/oauth2/token"
 TWITCH_EVENTSUB_API_URL = "https://api.twitch.tv/helix/eventsub/subscriptions"
@@ -156,6 +159,7 @@ class Twitch:
                     log.error(
                         "No 'data' in twitch request_subscription() json response: %s",
                         response_data,
+                        exc_info=True,
                     )
 
     async def get_subscriptions(self):
@@ -209,7 +213,7 @@ class Twitch:
 
 async def twitch_request_handler(request):
     """Twitch POST request handler"""
-
+    app_state = get_app_state(request.app)
     json = await request.json()
     data = await request.text()
 
@@ -229,10 +233,17 @@ async def twitch_request_handler(request):
             return web.Response(text=challenge)
 
     elif header_msg_type == "notification":
-        twitch = request.app["twitch"]
+        twitch = app_state.twitch
         event = json.get("event")
         streamer = event["broadcaster_user_login"]
         log.debug("--- twitch notification --- %s %s", streamer, event)
+
+        async def remove(keep_time):
+            await asyncio.sleep(keep_time)
+
+            if streamer in twitch.streams:
+                del twitch.streams[streamer]
+                await broadcast_streams(request.app)
 
         if header_sub_type == "stream.online":
             if event["type"] == "live":
@@ -244,6 +255,8 @@ async def twitch_request_handler(request):
                         "title": "",
                     }
                     await broadcast_streams(request.app)
+
+                    asyncio.create_task(remove(3600))  # 1 hour
 
         elif header_sub_type == "stream.offline":
             if streamer in twitch.streams:

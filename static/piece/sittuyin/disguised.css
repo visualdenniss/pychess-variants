@@ -1,0 +1,6 @@
+.sittuyin piece.white {
+    background-image: url('../../images/pieces/disguised/sittuyin-r.svg');
+}
+.sittuyin piece.black {
+    background-image: url('../../images/pieces/disguised/sittuyin-g.svg');
+}

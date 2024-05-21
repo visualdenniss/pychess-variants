@@ -4,9 +4,9 @@ import { h, VNode } from 'snabbdom';
 
 import { _ } from './i18n';
 import { variantsIni } from './variantsIni';
-import { VARIANTS } from './chess';
+import { VARIANTS } from './variants';
 import { parseKif, resultString } from '../client/kif';
-import { PyChessModel } from "./main";
+import { PyChessModel } from "./types";
 
 const BRAINKING_SITE = '[Site "BrainKing.com (Prague, Czech Republic)"]';
 const EMBASSY_FEN = '[FEN "rnbqkmcbnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNBQKMCBNR w KQkq - 0 1"]';
@@ -25,9 +25,20 @@ export function pasteView(model: PyChessModel): VNode[] {
         // Add missing Variant tag and switch short/long castling notations
         if (pgn.indexOf(BRAINKING_SITE) !== -1 && pgn.indexOf(EMBASSY_FEN) !== -1) {
             const lines = pgn.split(/\n/);
+
+            // fix FEN
             const fenIndex = lines.findIndex((elem) => {return elem.startsWith('[FEN ');});
             lines[fenIndex] = `[FEN "${VARIANTS['embassy'].startFen}"]`;
-            lines.splice(fenIndex, 0, '[Variant "Embassy"]');
+
+            const variantIndex = lines.findIndex((elem) => {return elem.startsWith('[Variant ');});
+            if (variantIndex < 0) {
+                // add missing variant tag
+                lines.splice(variantIndex, 0, '[Variant "Capablanca"]');
+            } else {
+                // change variant to Capa
+                lines.splice(variantIndex, 1, '[Variant "Capablanca"]');
+            }
+
             lines.forEach((line, idx) => {if (idx > fenIndex) lines[idx] = line.replace(/(O-O-O|O-O)/g, (match) => { return match === 'O-O' ? 'O-O-O' : 'O-O' });});
             pgn = lines.join('\n');
         }
@@ -102,6 +113,13 @@ export function pasteView(model: PyChessModel): VNode[] {
                     const f = game.headers("FEN");
                     if (f) initialFen = f;
 
+                    const t = game.headers("Termination");
+                    //console.log("Termination:", t);
+                    if (t) {
+                        status = getStatus(t.toLowerCase());
+                        FD.append('Status', ""+status);
+                    }
+
                     // TODO: crazyhouse960 but without 960? (export to lichess hack)
                     const is960 = variant.includes("960") || variant.includes('random');
 
@@ -140,10 +158,9 @@ export function pasteView(model: PyChessModel): VNode[] {
                     }
                 }
             };
-
+            console.log(FD);
             XHR.open("POST", "/import", true);
             XHR.send(FD);
-
         }
     }
 
@@ -158,4 +175,32 @@ export function pasteView(model: PyChessModel): VNode[] {
             ])
         ])
     ])];
+}
+
+/*
+    ABORTED,
+    MATE,
+    RESIGN,
+    STALEMATE,
+    TIMEOUT,
+    DRAW,
+    FLAG,
+    ABANDON,
+    CHEAT,
+    BYEGAME,
+    INVALIDMOVE,
+    UNKNOWNFINISH,
+    VARIANTEND,
+    CLAIM,
+*/
+function getStatus(termination: string) {
+    if (termination.includes('checkmate')) return '1';
+    if (termination.includes('resign')) return '2';
+    if (termination.includes('stalemate')) return '3';
+    if (termination.includes('draw')) return '5';
+    if (termination.includes('repetition')) return '5';
+    if (termination.includes('insufficient')) return '5';
+    if (termination.includes('time')) return '6';
+    if (termination.includes('abandon')) return '7';
+    return '11';  // unknown
 }

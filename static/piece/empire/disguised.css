@@ -1,0 +1,6 @@
+.empire piece.white {
+    background-image: url('../../images/pieces/disguised/g.svg');
+}
+.empire piece.black {
+    background-image: url('../../images/pieces/disguised/b.svg');
+}

@@ -39,13 +39,51 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+.icon-dragon:before {
+  content: "\1f409";
+}
+.icon-khans:before {
+  content: "\1f40e";
+}
+.icon-CannonShogi:before {
+  content: "\1f4a3";
+}
+.icon-ataxx:before {
+  content: "\2623";
+}
+.icon-mansindam:before {
+  content: "\26f5";
+}
+.icon-check960:before {
+  content: "\2637";
+}
+.icon-check1:before {
+  content: "\2630";
+}
+.icon-koth960:before {
+  content: "\1f3c1";
+}
+.icon-koth:before {
+  content: "\1f3f4";
+}
+.icon-Bughouse960:before {
+  content: "\2300";
+}
+.icon-Bughouse:before {
+  content: "\a2";
+}
+.icon-spartan:before {
+  content: "\237a";
+}
+.icon-duck:before {
+  content: "\1f986";
+}
 .icon-Chennis:before {
   content: "\1f3be";
 }
 .icon-Chak:before {
   content: "\1f42c";
 }
-
 .icon-berserk:before {
   content: "\2963";
 }
@@ -369,4 +407,10 @@
 }
 .icon-pause:before {
   content: "\ea1d";
+}
+.icon-arrow-up-right:before {
+  content: "\2b08";
+}
+.icon-arrow-down-right:before {
+  content: "\2b0a";
 }

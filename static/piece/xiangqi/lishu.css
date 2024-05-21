@@ -1,0 +1,46 @@
+.xiangqi piece.p-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RP.svg');
+}
+.xiangqi piece.b-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RE.svg');
+}
+.xiangqi piece.n-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RH.svg');
+}
+.xiangqi piece.r-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RR.svg');
+}
+.xiangqi piece.a-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RA.svg');
+}
+.xiangqi piece.c-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RC.svg');
+}
+.xiangqi piece.k-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RK.svg');
+}
+.xiangqi piece.m-piece.white {
+    background-image: url('../../images/pieces/xiangqi/lishu/RR.svg');
+}
+
+.xiangqi piece.p-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BP.svg');
+}
+.xiangqi piece.b-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BE.svg');
+}
+.xiangqi piece.n-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BH.svg');
+}
+.xiangqi piece.r-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BR.svg');
+}
+.xiangqi piece.a-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BA.svg');
+}
+.xiangqi piece.c-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BC.svg');
+}
+.xiangqi piece.k-piece.black {
+    background-image: url('../../images/pieces/xiangqi/lishu/BK.svg');
+}

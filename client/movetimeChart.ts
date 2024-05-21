@@ -2,7 +2,9 @@ import Highcharts from "highcharts";
 
 import { _ } from './i18n';
 import { selectMove } from './movelist';
-import AnalysisController from './analysisCtrl';
+import { AnalysisController } from './analysisCtrl';
+import { Step } from "./messages";
+import { WHITE, BLACK } from './chess';
 
 export interface MovePoint {
   y: number;
@@ -35,10 +37,10 @@ export function movetimeChart(ctrl: AnalysisController) {
 
     const logC = Math.pow(Math.log(3), 2);
 
-    ctrl.steps.forEach((step, ply) => {
+    ctrl.steps.forEach((step: Step, ply: number) => {
         const turn = (ply + 1) >> 1;
-        const color = ply & 1;
-        const colorName = color ? 'white' : 'black';
+        const color = ((ply & 1) === 1) ? 0 : 1;
+        const colorName = color ? 'black' : 'white';
 
         if (ply === 0) {
             //moveSeries[colorName].push({y: 0});
@@ -47,32 +49,32 @@ export function movetimeChart(ctrl: AnalysisController) {
 
         // const hasClocks = (msg.steps[1].clocks?.white !== undefined);
 
-        if (ply <= 2) {step.clocks!.movetime = 0;
+        if (ply <= 2) {step.movetime = 0;
         } else {
-            step.clocks!.movetime = (ply % 2 === 1) ?
-                (ctrl.steps[ply-1].clocks?.white! - ctrl.steps[ply].clocks?.white!) :
-                (ctrl.steps[ply-1].clocks?.black! - ctrl.steps[ply].clocks?.black!);
+            step.movetime = (ply % 2 === 1) ?
+                (ctrl.steps[ply-2]?.clocks![WHITE] - (ctrl.steps[ply]?.clocks![WHITE] - ctrl.inc * 1000)) :
+                (ctrl.steps[ply-2]?.clocks![BLACK] - (ctrl.steps[ply]?.clocks![BLACK] - ctrl.inc * 1000));
         }
 
-        const y = Math.pow(Math.log(0.005 * Math.min(step.clocks!.movetime, 12e4) + 3), 2) - logC;
+        const y = Math.pow(Math.log(0.005 * Math.min(step.movetime, 12e4) + 3), 2) - logC;
         maxMove = Math.max(y, maxMove);
 
         let label = turn + (color ? '. ' : '... ') + step.san;
         const movePoint = {
             name: label,
             x: ply,
-            y: color ? y : -y,
+            y: color ? -y : y,
         };
         moveSeries[colorName].push(movePoint);
 
-        let clock = step.clocks![colorName];
+        let clock = step.clocks![color];
         if (clock !== undefined) {
             label += '<br />' + formatClock(clock);
             maxTotal = Math.max(clock, maxTotal);
             totalSeries[colorName].push({
                 name: label,
                 x: ply,
-                y: color ? clock : -clock,
+                y: color ? -clock : clock,
             });
         }
 
@@ -116,7 +118,7 @@ export function movetimeChart(ctrl: AnalysisController) {
         },
     };
 
-    const chart = Highcharts.chart('chart-movetime', {
+    ctrl.movetimeChart = Highcharts.chart('chart-movetime', {
         chart: { type: 'column',
             alignTicks: false,
             spacing: [2, 0, 2, 0],
@@ -169,7 +171,7 @@ export function movetimeChart(ctrl: AnalysisController) {
                 format = format.replace('{series.name}', '');
                 const self: Highcharts.Point = this;
                 const step = ctrl.steps[self.x];
-                const movetime = step?.clocks?.movetime;
+                const movetime = step?.movetime;
                 if (movetime === undefined) return '';
                 else return format.replace('{point.y}', (movetime / 1000).toFixed(1) + "s");
             } as Highcharts.FormatterCallbackFunction<Highcharts.Point>
@@ -245,8 +247,6 @@ export function movetimeChart(ctrl: AnalysisController) {
             },
         ]
     });
-
-    ctrl.movetimeChart = chart;
 }
 
 const formatClock = (movetime: number) => {

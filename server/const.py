@@ -1,13 +1,33 @@
+from __future__ import annotations
+from datetime import timedelta
+
 from settings import static_url
 
+# https://medium.com/quick-code/python-type-hinting-eliminating-importerror-due-to-circular-imports-265dfb0580f8
+TYPE_CHECKING = False
+
+DASH = "–"
+ANON_PREFIX = "Anon" + DASH
+
+NONE_USER = "None" + DASH + "User"
+
 SCHEDULE_MAX_DAYS = 7
-TOURNAMENT_SPOTLIGHTS_MAX = 4
+TOURNAMENT_SPOTLIGHTS_MAX = 3
+
+# Max notify documents TTL (time to live) weeks
+NOTIFY_EXPIRE_WEEKS = timedelta(weeks=4)
+NOTIFY_PAGE_SIZE = 7
+
+# Max corr seek documents TTL (time to live) weeks
+CORR_SEEK_EXPIRE_WEEKS = timedelta(weeks=2)
 
 # Max number of lobby chat lines (deque limit)
 MAX_CHAT_LINES = 100
 
 # Minimum number of rated games needed
 HIGHSCORE_MIN_GAMES = 10
+
+MAX_HIGHSCORE_ITEM_LIMIT = 50
 
 # Show the number of spectators only after this limit
 MAX_NAMED_SPECTATORS = 20
@@ -16,7 +36,7 @@ MAX_NAMED_SPECTATORS = 20
 T_CREATED, T_STARTED, T_ABORTED, T_FINISHED, T_ARCHIVED = range(5)
 
 # tournament frequency
-DAILY, WEEKLY, MONTHLY, YEARLY, MARATHON, SHIELD = "d", "w", "m", "y", "a", "s"
+HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY, MARATHON, SHIELD = "h", "d", "w", "m", "y", "a", "s"
 
 # tournament pairing
 ARENA, RR, SWISS = range(3)
@@ -38,7 +58,9 @@ LANGUAGES = [
     "ru",
     "th",
     "tr",
-    "zh",
+    "vi",
+    "zh_CN",
+    "zh_TW",
 ]
 
 # fishnet work types
@@ -58,7 +80,7 @@ CASUAL, RATED, IMPORTED = 0, 1, 2
     TIMEOUT,
     DRAW,
     FLAG,
-    ABANDONE,
+    ABANDON,
     CHEAT,
     BYEGAME,
     INVALIDMOVE,
@@ -68,7 +90,7 @@ CASUAL, RATED, IMPORTED = 0, 1, 2
 ) = range(-2, 14)
 
 LOSERS = {
-    "abandone": ABANDONE,
+    "abandon": ABANDON,
     "abort": ABORTED,
     "resign": RESIGN,
     "flag": FLAG,
@@ -83,9 +105,14 @@ VARIANTS = (
     "chess960",
     "crazyhouse",
     "crazyhouse960",
-    "placement",
     "atomic",
     "atomic960",
+    "kingofthehill",
+    "kingofthehill960",
+    "3check",
+    "3check960",
+    "placement",
+    "duck",
     "makruk",
     "makpong",
     "cambodian",
@@ -99,6 +126,7 @@ VARIANTS = (
     # "gorogoro",
     "gorogoroplus",
     "torishogi",
+    "cannonshogi",
     "xiangqi",
     "manchu",
     "janggi",
@@ -112,6 +140,7 @@ VARIANTS = (
     # "gothic",
     # "gothhouse",
     # "embassy",
+    "dragon",
     "seirawan",
     "seirawan960",
     "shouse",
@@ -120,16 +149,23 @@ VARIANTS = (
     "shogun",
     "shako",
     "hoppelpoppel",
+    "mansindam",
     "orda",
+    "khans",
     "synochess",
-    "shinobi",
+    # Shinobi is superseded by Shinobiplus Plus
+    # "shinobi",
+    "shinobiplus",
     "empire",
     "ordamirror",
     "chak",
     "chennis",
+    "spartan",
+    "ataxx",
 )
 
 VARIANT_ICONS = {
+    "ataxx": "☣",
     "makruk": "Q",
     "makpong": "O",
     "sittuyin": ":",
@@ -141,6 +177,7 @@ VARIANT_ICONS = {
     "placement": "S",
     "capablanca": "P",
     "capahouse": "&",
+    "dragon": "🐉",
     "seirawan": "L",
     "seirawan960": "}",
     "shouse": "$",
@@ -149,11 +186,13 @@ VARIANT_ICONS = {
     "gothic": "P",
     "gothhouse": "&",
     "embassy": "P",
+    "embassyhouse": "&",
     "minishogi": "6",
     "dobutsu": "8",
     "gorogoro": "🐱",
     "gorogoroplus": "🐱",
     "torishogi": "🐦",
+    "cannonshogi": "💣",
     "cambodian": "!",
     "shako": "9",
     "minixiangqi": "7",
@@ -164,17 +203,26 @@ VARIANT_ICONS = {
     "kyotoshogi": ")",
     "shogun": "-",
     "orda": "R",
+    "khans": "🐎",
     "synochess": "_",
     "hoppelpoppel": "`",
     "manchu": "{",
     "atomic": "~",
     "atomic960": "\\",
     "shinobi": "🐢",
+    "shinobiplus": "🐢",
     "empire": "♚",
     "ordamirror": "◩",
     "asean": "♻",
     "chak": "🐬",
     "chennis": "🎾",
+    "mansindam": "⛵",
+    "duck": "🦆",
+    "spartan": "⍺",
+    "kingofthehill": "🏴",
+    "kingofthehill960": "🏁",
+    "3check": "☰",
+    "3check960": "☷",
 }
 
 VARIANT_960_TO_PGN = {
@@ -183,6 +231,8 @@ VARIANT_960_TO_PGN = {
     "capahouse": "Capahouse960",
     "crazyhouse": "Crazyhouse",  # to let lichess import work
     "atomic": "Atomic",  # to let lichess import work
+    "kingofthehill": "King of the Hill",  # to let lichess import work
+    "3check": "Three-check",  # to let lichess import work
     "seirawan": "Seirawan960",
     # some early game is accidentally saved as 960 in mongodb
     "shogi": "Shogi",
@@ -201,12 +251,18 @@ CATEGORIES = {
         "placement",
         "atomic",
         "atomic960",
+        "kingofthehill",
+        "kingofthehill960",
+        "3check",
+        "3check960",
+        "duck",
     ),
     "fairy": (
         "capablanca",
         "capablanca960",
         "capahouse",
         "capahouse960",
+        "dragon",
         "seirawan",
         "seirawan960",
         "shouse",
@@ -215,8 +271,19 @@ CATEGORIES = {
         "shako",
         "shogun",
         "hoppelpoppel",
+        "mansindam",
     ),
-    "army": ("orda", "synochess", "shinobi", "empire", "ordamirror", "chak", "chennis"),
+    "army": (
+        "orda",
+        "khans",
+        "synochess",
+        "empire",
+        "ordamirror",
+        "chak",
+        "chennis",
+        "shinobiplus",
+        "spartan",
+    ),
     "makruk": ("makruk", "makpong", "cambodian", "sittuyin", "asean"),
     "shogi": (
         "shogi",
@@ -225,8 +292,10 @@ CATEGORIES = {
         "dobutsu",
         "gorogoroplus",
         "torishogi",
+        "cannonshogi",
     ),
     "xiangqi": ("xiangqi", "manchu", "janggi", "minixiangqi"),
+    "other": ("ataxx"),
 }
 
 VARIANT_GROUPS = {}
@@ -254,7 +323,7 @@ def variant_display_name(variant):
     elif variant == "shouse":
         return "S-HOUSE"
     elif variant == "cambodian":
-        return "OUK CHATRANG"
+        return "OUK CHAKTRANG"
     elif variant == "ordamirror":
         return "ORDA MIRROR"
     elif variant == "gorogoroplus":
@@ -263,16 +332,105 @@ def variant_display_name(variant):
         return "KYOTO SHOGI"
     elif variant == "torishogi":
         return "TORI SHOGI"
+    elif variant == "cannonshogi":
+        return "CANNON SHOGI"
+    elif variant == "duck":
+        return "DUCK CHESS"
+    elif variant == "kingofthehill":
+        return "KING OF THE HILL"
+    elif variant == "3check":
+        return "THREE-CHECK"
+    elif variant == "dragon":
+        return "DRAGON CHESS"
     else:
         return variant.upper()
 
 
-def pairing_system_name(system):
-    if system == 0:
-        return "Arena"
-    elif system == 1:
-        return "Round-Robin"
-    elif system == 2:
-        return "Swiss"
-    else:
-        return ""
+#  Deferred translations!
+
+
+def _(message):
+    return message
+
+
+TRANSLATED_PAIRING_SYSTEM_NAMES = {
+    0: _("Arena"),
+    1: _("Round-Robin"),
+    2: _("Swiss"),
+}
+
+TRANSLATED_FREQUENCY_NAMES = {
+    "h": _("Hourly"),
+    "d": _("Daily"),
+    "w": _("Weekly"),
+    "m": _("Monthly"),
+    "y": _("Yearly"),
+    "a": _("Marathon"),
+    "s": _("Shield"),
+    "S": _("SEAturday"),
+}
+
+TRANSLATED_VARIANT_NAMES = {
+    "ataxx": _("Ataxx"),
+    "chess": _("Chess"),
+    "chess960": _("Chess960"),
+    "crazyhouse": _("Crazyhouse"),
+    "crazyhouse960": _("Crazyhouse960"),
+    "placement": _("Placement"),
+    "atomic": _("Atomic"),
+    "atomic960": _("Atomic960"),
+    "duck": _("Duck Chess"),
+    "makruk": _("Makruk"),
+    "makpong": _("Makpong"),
+    "cambodian": _("Ouk Chaktrang"),
+    "sittuyin": _("Sittuyin"),
+    "asean": _("ASEAN"),
+    "shogi": _("Shogi"),
+    "minishogi": _("Minishogi"),
+    "kyotoshogi": _("Kyoto Shogi"),
+    "dobutsu": _("Dobutsu"),
+    # Gorogoro is superseded by Gorogoro Plus
+    # "gorogoro",
+    "gorogoroplus": _("Gorogoro+"),
+    "torishogi": _("Tori Shogi"),
+    "cannonshogi": _("Cannon Shogi"),
+    "xiangqi": _("Xiangqi"),
+    "manchu": _("Manchu"),
+    "janggi": _("Janggi"),
+    "minixiangqi": _("Minixiangqi"),
+    "capablanca": _("Capablanca"),
+    "capablanca960": _("Capablanca960"),
+    "capahouse": _("Capahouse"),
+    "capahouse960": _("Capahouse960"),
+    # We support to import/store/analyze these variants
+    # but don't support to add them to leaderboard page
+    # "gothic",
+    # "gothhouse",
+    # "embassy",
+    "dragon": _("Dragon Chess"),
+    "seirawan": _("S-Chess"),
+    "seirawan960": _("S-Chess960"),
+    "shouse": _("S-House"),
+    "grand": _("Grand"),
+    "grandhouse": _("Grandhouse"),
+    "shogun": _("Shogun"),
+    "shako": _("Shako"),
+    "hoppelpoppel": _("Hoppel-Poppel"),
+    "orda": _("Orda Chess"),
+    "khans": _("Khan's Chess"),
+    "synochess": _("Synochess"),
+    "shinobi": _("Shinobi"),
+    "shinobiplus": _("Shinobi+"),
+    "empire": _("Empire"),
+    "ordamirror": _("Orda Mirror"),
+    "chak": _("Chak"),
+    "chennis": _("Chennis"),
+    "spartan": _("Spartan"),
+    "kingofthehill": _("King of the Hill"),
+    "kingofthehill960": _("King of the Hill 960"),
+    "3check": _("Three check"),
+    "3check960": _("Three check 960"),
+    "mansindam": _("Mansindam"),
+}
+
+del _

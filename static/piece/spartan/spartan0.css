@@ -1,0 +1,36 @@
+.spartan piece.p-piece.white {
+    background-image: url('../../images/pieces/merida/wP.svg');
+}
+.spartan piece.b-piece.white {
+    background-image: url('../../images/pieces/merida/wB.svg');
+}
+.spartan piece.n-piece.white {
+    background-image: url('../../images/pieces/merida/wN.svg');
+}
+.spartan piece.r-piece.white {
+    background-image: url('../../images/pieces/merida/wR.svg');
+}
+.spartan piece.q-piece.white {
+    background-image: url('../../images/pieces/merida/wQ.svg');
+}
+.spartan piece.k-piece.white {
+    background-image: url('../../images/pieces/merida/wK.svg');
+}
+.spartan piece.h-piece.black {
+    background-image: url('../../images/pieces/spartan/bP.svg');
+}
+.spartan piece.l-piece.black {
+    background-image: url('../../images/pieces/spartan/bLieutenant.svg');
+}
+.spartan piece.w-piece.black {
+    background-image: url('../../images/pieces/spartan/bWarlord.svg');
+}
+.spartan piece.g-piece.black {
+    background-image: url('../../images/pieces/spartan/bGeneral.svg');
+}
+.spartan piece.c-piece.black {
+    background-image: url('../../images/pieces/spartan/bCaptain.svg');
+}
+.spartan piece.k-piece.black {
+    background-image: url('../../images/pieces/spartan/bK.svg');
+}

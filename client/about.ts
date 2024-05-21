@@ -1,10 +1,10 @@
 import { h, VNode } from 'snabbdom';
 
 import { _ } from './i18n';
-import { model } from './main';
+import { PyChessModel } from "./types";
 
 
-export function aboutView(): VNode[] {
+export function aboutView(model: PyChessModel): VNode[] {
     const untitled = [
         _("\"To me, how we've got here today is owing to Stockfish in a BIG way. They rallied global volunteers to come together in the open-source spirit and create such a powerful engine for FREE. That's a lot of great minds and computing power they've managed to harness."),
         _("Then we've got Lichess to thank. Lichess was also born out of the same open-source spirit, and it too drew in great people as well. Once Lichess incorporated Stockfish as its brains, the rest is history."),
@@ -14,7 +14,7 @@ export function aboutView(): VNode[] {
     ]
     return [
         h('div.about', [
-            h('img.center', { attrs: { src: `${model["asset-url"]}/favicon/favicon-96x96.png` } }),
+            h('img.center', { attrs: { src: `${model.assetURL}/favicon/favicon-96x96.png` } }),
             h('h1', { attrs: { align: 'center' } }, _('About pychess')),
             h('p', _('Pychess is a free, open-source chess server designed to play several chess variants.')),
             h('p', [
@@ -24,7 +24,7 @@ export function aboutView(): VNode[] {
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/makpong' } }, 'Makpong'),
                 ", ",
-                h('a', { attrs: { href: 'https://www.pychess.org/variants/cambodian' } }, 'Ouk Chatrang'),
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/cambodian' } }, 'Ouk Chaktrang'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/sittuyin' } }, 'Sittuyin'),
                 ", ",
@@ -38,7 +38,11 @@ export function aboutView(): VNode[] {
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/dobutsu' } }, 'Dobutsu shogi'),
                 ", ",
-                h('a', { attrs: { href: 'https://www.pychess.org/variants/gorogoro' } }, 'Gorogoro shogi'),
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/gorogoroplus' } }, 'Gorogoro+ shogi'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/torishogi' } }, 'Tori shogi'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/cannonshogi' } }, 'Cannon shogi'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/xiangqi' } }, 'Xiangqi'),
                 ", ",
@@ -54,11 +58,15 @@ export function aboutView(): VNode[] {
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/atomic' } }, 'Atomic'),
                 ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/3check' } }, 'Three check'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/kingofthehill' } }, 'King of the Hill'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/duck' } }, 'Duck chess'),
+                ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/seirawan' } }, 'S-chess'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/capablanca' } }, 'Capablanca'),
-                ", ",
-                h('a', { attrs: { href: 'https://www.pychess.org/variants/gothic' } }, 'Gothic'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/grand' } }, 'Grand'),
                 ", ",
@@ -66,13 +74,17 @@ export function aboutView(): VNode[] {
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/shogun' } }, 'Shogun'),
                 ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/mansindam' } }, 'Mansindam'),
+                ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/orda' } }, 'Orda'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/khans' } }, 'Khan\'s chess'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/synochess' } }, 'Synochess'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/hoppelpoppel' } }, 'Hoppel-Poppel'),
                 ", ",
-                h('a', { attrs: { href: 'https://www.pychess.org/variants/shinobi' } }, 'Shinobi'),
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/shinobiplus' } }, 'Shinobi+'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/empire' } }, 'Empire'),
                 ", ",
@@ -82,16 +94,22 @@ export function aboutView(): VNode[] {
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/chennis' } }, 'Chennis'),
                 ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/spartan' } }, 'Spartan chess'),
+                ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/shouse' } }, 'S-house (S-chess+Crazyhouse)'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/capahouse' } }, 'Capahouse (Capablanca+Crazyhouse)'),
                 ", ",
                 h('a', { attrs: { href: 'https://www.pychess.org/variants/grandhouse' } }, 'Grandhouse (Grand+Crazyhouse)'),
-                ", and ",
-                h('a', { attrs: { href: 'https://www.pychess.org/variants/chess' } }, 'Chess.'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/dragon' } }, 'Dragon chess'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/ataxx' } }, 'Ataxx'),
+                ", ",
+                h('a', { attrs: { href: 'https://www.pychess.org/variants/chess' } }, 'Chess'),
             ]),
             h('p', [
-                _('Additionally, you can check the Chess960 option for Chess, Crazyhouse, Atomic, S-chess, Capablanca, and Capahouse to start games from random positions with '),
+                _('Additionally, you can check the Chess960 option for Chess, Crazyhouse, Atomic, Three check, King of the Hill, S-chess, Capablanca, and Capahouse to start games from random positions with '),
                 h('a', { attrs: { href: 'https://en.wikipedia.org/wiki/Fischer_random_chess#Castling_rules' } }, _('Chess960 castling rules.'))
             ]),
             h('p', [

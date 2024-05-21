@@ -1,19 +1,25 @@
 import { h } from "snabbdom";
 
 import { _ } from './i18n';
-import RoundController from './roundCtrl';
-import AnalysisController from './analysisCtrl';
-import TournamentController from './tournament';
-import { LobbyController } from './lobby';
 import { patch } from './document';
 
-export function chatView(ctrl: RoundController | AnalysisController | TournamentController | LobbyController, chatType: string) { // TODO: instead of | better have some IChatController interface implemented by these classes
+export interface ChatController {
+    anon: boolean;
+    doSend: any;
+    spectator?: boolean;
+    gameId?: string;
+    tournamentId?: string;
+}
+
+export function chatView(ctrl: ChatController, chatType: string) {
+    const spectator = ("spectator" in ctrl && ctrl.spectator);
+
     function onKeyPress (e: KeyboardEvent) {
         if (!(<HTMLInputElement>document.getElementById('checkbox')).checked)
             return;
         const message = (e.target as HTMLInputElement).value.trim();
         if ((e.keyCode === 13 || e.which === 13) && message.length > 0) {
-            const m: any = {type: chatType, message: message, room: ("spectator" in ctrl && ctrl.spectator) ? "spectator" : "player"};
+            const m: any = {type: chatType, message: message, room: spectator ? "spectator" : "player"};
             if ("gameId" in ctrl)
                 m["gameId"] = ctrl.gameId;
             if ("tournamentId" in ctrl)
@@ -32,7 +38,7 @@ export function chatView(ctrl: RoundController | AnalysisController | Tournament
     const anon = ctrl.anon;
     return h(`div#${chatType}.${chatType}.chat`, [
         h('div.chatroom', [
-            ((ctrl instanceof RoundController || ctrl instanceof AnalysisController) && ctrl.spectator) ? _('Spectator room') : _('Chat room'),
+            (spectator) ? _('Spectator room') : _('Chat room'),
             h('input#checkbox', { props: { title: _("Toggle the chat"), name: "checkbox", type: "checkbox", checked: "true" }, on: { click: onClick } })
         ]),
         // TODO: lock/unlock chat to spectators
@@ -47,6 +53,7 @@ export function chatView(ctrl: RoundController | AnalysisController | Tournament
             },
             attrs: {
                 maxlength: 140,
+                'aria-label': "Chat input",
             },
             on: { keypress: onKeyPress },
         })
@@ -69,7 +76,7 @@ export function chatMessage (user: string, message: string, chatType: string, ti
         const colonIndex = message.indexOf(':'); // Discord doesn't allow colons in usernames so the first colon signifies the start of the message
         const discordUser = message.substring(0, colonIndex);
         const discordMessage = message.substring(colonIndex + 2);
-        patch(container, h('div#messages', [ h("li.message", [h("div.time", localTime), h("div.discord-icon-container", h("img.icon-discord-icon", { attrs: { src: '/static/icons/discord.svg' } })), h("user", discordUser), h("t", discordMessage)]) ]));
+        patch(container, h('div#messages', [ h("li.message", [h("div.time", localTime), h("div.discord-icon-container", h("img.icon-discord-icon", { attrs: { src: '/static/icons/discord.svg', alt: "" } })), h("user", discordUser), h("t", discordMessage)]) ]));
     } else {
         patch(container, h('div#messages', [ h("li.message", [h("div.time", localTime), h("user", h("a", { attrs: {href: "/@/" + user} }, user)), h("t", message)]) ]));
     }

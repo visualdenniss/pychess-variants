@@ -1,0 +1,39 @@
+.standard piece._-piece {
+    background-image: url('../../images/pieces/duck.svg');
+}
+.standard piece.p-piece.white {
+    background-image: url('../../images/pieces/dubrovny/wP.svg');
+}
+.standard piece.b-piece.white {
+    background-image: url('../../images/pieces/dubrovny/wB.svg');
+}
+.standard piece.n-piece.white {
+    background-image: url('../../images/pieces/dubrovny/wN.svg');
+}
+.standard piece.r-piece.white {
+    background-image: url('../../images/pieces/dubrovny/wR.svg');
+}
+.standard piece.q-piece.white {
+    background-image: url('../../images/pieces/dubrovny/wQ.svg');
+}
+.standard piece.k-piece.white {
+    background-image: url('../../images/pieces/dubrovny/wK.svg');
+}
+.standard piece.p-piece.black {
+    background-image: url('../../images/pieces/dubrovny/bP.svg');
+}
+.standard piece.b-piece.black {
+    background-image: url('../../images/pieces/dubrovny/bB.svg');
+}
+.standard piece.n-piece.black {
+    background-image: url('../../images/pieces/dubrovny/bN.svg');
+}
+.standard piece.r-piece.black {
+    background-image: url('../../images/pieces/dubrovny/bR.svg');
+}
+.standard piece.q-piece.black {
+    background-image: url('../../images/pieces/dubrovny/bQ.svg');
+}
+.standard piece.k-piece.black {
+    background-image: url('../../images/pieces/dubrovny/bK.svg');
+}

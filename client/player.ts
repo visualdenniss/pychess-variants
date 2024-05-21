@@ -1,6 +1,6 @@
 import { h } from 'snabbdom';
 
-import { aiLevel } from './profile';
+import { aiLevel } from './result';
 
 export function player(id: string, title: string, name: string, rating: string, level: number) {
     return h('round-' + id, [
@@ -8,7 +8,7 @@ export function player(id: string, title: string, name: string, rating: string, 
             h('i-side#' + id + '.online.icon', { class: { "icon-online": false, "icon-offline": true } }),
             h('player', [
                 h('a.user-link', { attrs: {href: '/@/' + name} }, [
-                    h('player-title', " " + title + " "),
+                    (title !== '') ? h('player-title', title + ' ') : '',
                     name + aiLevel(title, level),
                 ]),
                 h('rating', title !== 'BOT' ? rating : ''),

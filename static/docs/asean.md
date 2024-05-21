@@ -10,13 +10,13 @@ The general rules are extremely similar to Chess, so this guide will focus on th
 
 ### Different Pieces
 
-Two pieces are different from their Western Chess counterpart
+Two pieces are different from their Western Chess counterparts.
 
 #### Queen
 
 ![Queen](https://github.com/gbtami/pychess-variants/blob/master/static/images/CVariantsGuide/Duchess.png?raw=true) 
 
-The Queen can only move one space diagonally. This is much weaker than in International Chess. On a historical note, this was the original form of the Queen (Fers/Ferz)
+The Queen can only move one space diagonally. This is much weaker than in International Chess. On a historical note, this was the original form of the Queen (Fers/Ferz).
 
 #### Bishop
 
@@ -46,3 +46,4 @@ Bishops can sometimes prove slow/awkward to maneuver or retreat. It is therefore
 - If the opponent has at least one **rook**: 16 moves
 - If the opponent has at least one **bishop**: 44 moves
 - If the opponent has at least one **knight**: 64 moves
+<iframe width="560" height="315" src="https://www.youtube.com/embed/WmMw97hp8C0" frameborder="0" allowfullscreen></iframe>

@@ -2,10 +2,10 @@ import { h, VNode } from 'snabbdom';
 
 import { Howl } from 'howler';
 
-import { Variant } from './chess';
+import { _ } from './i18n';
+import { Variant } from './variants';
 import { StringSettings, NumberSettings } from './settings';
 import { radioList, slider } from './view';
-import { model } from './main';
 
 
 class Sounds {
@@ -42,19 +42,19 @@ class Sounds {
         });
     }
 
-    updateSoundTheme() {
+    updateSoundTheme(assetURL: string) {
         Object.keys(Sounds.trackNames).forEach( (key: keyof typeof Sounds.trackNames) => {
-            this.tracks[key] = this.buildSound(Sounds.trackNames[key]);
+            this.tracks[key] = this.buildSound(assetURL, Sounds.trackNames[key]);
         });
     }
 
-    private buildSound(trackName: string) {
+    private buildSound(assetURL: string, trackName: string) {
         const soundTheme = soundThemeSettings.value;
         const soundTrack = (soundTheme === 'silent') ? 'Silence' : trackName;
         const sound = new Howl({
             src: [
-                model["asset-url"] + '/sound/' + soundTheme + '/' + soundTrack + '.ogg',
-                model["asset-url"] + '/sound/' + soundTheme + '/' + soundTrack + '.mp3'
+                assetURL + '/sound/' + soundTheme + '/' + soundTrack + '.ogg',
+                assetURL + '/sound/' + soundTheme + '/' + soundTrack + '.mp3'
             ],
             onplayerror: function() {
                 sound.once('unlock', function() {
@@ -94,7 +94,7 @@ class Sounds {
     };
 
     moveSound(variant: Variant, capture: boolean) {
-        const soundSet = variant.pieceSound in this.moveSoundSet? this.moveSoundSet[variant.pieceSound] : this.moveSoundSet.regular ;
+        const soundSet = variant.ui.pieceSound in this.moveSoundSet? this.moveSoundSet[variant.ui.pieceSound] : this.moveSoundSet.regular;
         if (capture)
             soundSet.capture();
         else
@@ -134,24 +134,30 @@ class VolumeSettings extends NumberSettings {
     }
 
     view(): VNode {
-        return slider(this, 'sound-volume', 0, 1, 0.01);
+        return h('div', slider(this, 'sound-volume', 0, 1, 0.01, _('Volume')));
     }
 }
 
 const soundThemes = {
     silent: "Silent",
     standard: "Standard",
+    piano: "Piano",
+    nes: "NES",
+    sfx: "SFX",
+    futuristic: "Futuristic",
+    lisp: "Lisp",
     robot: "Robot",
 };
 
 class SoundThemeSettings extends StringSettings {
-    
+    assetURL: string;
+
     constructor() {
         super('soundtheme', 'standard');
     }
 
     update(): void {
-        sound.updateSoundTheme();
+        sound.updateSoundTheme(this.assetURL);
     }
 
     view(): VNode {

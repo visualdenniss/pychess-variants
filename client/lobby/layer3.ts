@@ -1,10 +1,10 @@
 import { h } from 'snabbdom';
 
 import { _ } from '../i18n';
-import { LobbyController } from '../lobby';
+import { createModeStr, LobbyController } from '../lobby';
 import { patch } from '../document';
-import { Variant, VARIANTS } from '../chess';
-import { variantBoard } from './layer1';
+import { Variant, VARIANTS } from '../variants';
+import { variantBoard } from './util';
 import { layer2chess } from './layer2chess';
 import { layer2fairy } from './layer2fairy';
 import { layer2army } from './layer2army';
@@ -37,10 +37,9 @@ export function layer3variant (container2Id: string, lobbyCtrl: LobbyController,
                 h('div.icon', { attrs: { 'data-icon': variant.icon(chess960) } }, variant.displayName(chess960)),
             ]),
             h('ul.l3links-cont', [
-                h('li.l3links', { class: {"icon": true, "icon-crossedswords": true}, on: { click: () => lobbyCtrl.createGame(variantName, chess960) } }, _('Create a game')),
-                h('li.l3links', { class: {"icon": true, "icon-crossedswords": true}, on: { click: () => lobbyCtrl.playFriend(variantName, chess960) } }, _('Challenge a friend')),
-                h('li.l3links', { class: {"icon": true, "icon-bot": true}, on: { click: () => lobbyCtrl.playAI(variantName, chess960) } }, _('Play with AI')),
-//                h('li.l3links', { class: {"icon": true, "icon-droid": true}, on: { click: () => lobbyCtrl.playRM(variantName, chess960) } }, _('Practice with Random-Mover')),
+                h('li.l3links', { class: {"icon": true, "icon-crossedswords": true}, on: { click: () => lobbyCtrl.createGame(variantName, chess960) } }, createModeStr('createGame')),
+                h('li.l3links', { class: {"icon": true, "icon-crossedswords": true}, on: { click: () => lobbyCtrl.playFriend(variantName, chess960) } }, createModeStr('playFriend')),
+                h('li.l3links', { class: {"icon": true, "icon-bot": true}, on: { click: () => lobbyCtrl.playAI(variantName, chess960) } }, createModeStr('playAI')),
             ]),
             h('h5#chessl3back', { class: {"icon": true, "icon-reply": true}, on: { click: () => leve2func(lobbyCtrl, container3Id) } }, _('Go Back')),
         ]),
@@ -48,8 +47,8 @@ export function layer3variant (container2Id: string, lobbyCtrl: LobbyController,
             variantBoard(variant, variant.startFen),
         ]),
         h('button.layer-2-category l3t', [
-            h('p.variant-extra-info', (chess960) ? chess960Tooltip(variant.name) : variant.tooltip()),
-            h('a.variant-extra-info', { class: {"icon": true, "icon-book": true}, attrs: { href: lobbyCtrl.model['home'] + '/variants/' + variant.name, target: '_blank' } }, _('Rules')),
+            h('p.variant-extra-info', (chess960) ? chess960Tooltip(variant.name) : variant.tooltip),
+            h('a.variant-extra-info', { class: {"icon": true, "icon-book": true}, attrs: { href: lobbyCtrl.home + '/variants/' + variant.name + (chess960 ? '960': ''), target: '_blank' } }, _('Rules')),
             h('p.variant-extra-info', _('Tip: ') + proTip(variant.name, chess960)),
         ]),
     ]);
@@ -66,6 +65,16 @@ function chess960Tooltip(variant: string) {
         return _('Crazyhouse with random back row.');
     case 'atomic':
         return _('Atomic Chess with random back row.');
+    case 'kingofthehill':
+        return _('King of The Hill with random back row.');
+    case '3check':
+        return _('Three-Check with random back row.');
+    case 'seirawan':
+        return _('S-chess with random back row.');
+    case 'capablanca':
+        return _('Capablanca with random back row.');
+    case 'capahouse':
+        return _('Capahouse with random back row.');
     default:
         return '';
     }
@@ -73,10 +82,15 @@ function chess960Tooltip(variant: string) {
 
 function proTip (variant: string, chess960: boolean) {
     switch (variant) {
+    case 'ataxx':
+        return _('Quack.');
 // chess
+    case 'kingofthehill':
+        return _('Immediately moving your king to the centre of the board is a bad idea.');
     case 'chess':
     case 'crazyhouse':
     case 'atomic':
+    case '3check':
         if (chess960) {
             return _('Move the king on top of the rook to castle.');
         } else {
@@ -84,6 +98,8 @@ function proTip (variant: string, chess960: boolean) {
         }
     case 'placement':
         return _('Castling is only possible if the king and rook are dropped to their usual places like in standard Chess.');
+    case 'duck':
+        return _('Quack.');
 // fairy
     case 'capablanca':
         return _('You can choose different starting setups including Embassy Chess and Gothic Chess.');
@@ -91,6 +107,12 @@ function proTip (variant: string, chess960: boolean) {
         return _('For a drop version, choose GRANDHOUSE from the dropdown menu.');
     case 'seirawan':
         return _('For a drop version, choose S-HOUSE from the dropdown menu.');
+    case 'dragon':
+        return _("Dropping your Dragon too early may not be the best idea.");
+    case 'grandhouse':
+    case 'capahouse':
+    case 'shouse':
+        return _('Initiative is everything!');
     case 'shogun':
         return _('The queen actually demotes upon capture, so it is not worth as much.');
     case 'shako':
@@ -99,13 +121,18 @@ function proTip (variant: string, chess960: boolean) {
         return _('Other piece sets are available, which may help avoid confusion.');
 // army
     case 'orda':
-    case 'shinobi':
+    case 'khans':
+    case 'shinobiplus':
     case 'empire':
     case 'synochess':
     case 'ordamirror':
         return _('Be aware of campmate - victory by moving your king into the 8th rank.');
     case 'chak':
         return _('Promoting the king prematurely can be dangerous.');
+    case 'chennis':
+        return _('Make sure to consider both forms of each piece.');
+    case 'spartan':
+        return _('Spartan kings can be a powerful addition to an offensive.');
 // makruk
     case 'makruk':
         return _('Maximizing khon and met\'s effectiveness is the key.');
@@ -118,9 +145,11 @@ function proTip (variant: string, chess960: boolean) {
     case 'asean':
         return _('The ability to promote to rook makes for a dynamic endgame.');
 // shogi
+    case 'mansindam':
     case 'shogi':
     case 'minishogi':
     case 'gorogoroplus':
+    case 'cannonshogi':
         return _('Internationalized sets are available by going to settings.');
     case 'dobutsu':
         return _('Despite the simple appearance, there is still quite a bit of depth underlying this game.');

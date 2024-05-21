@@ -1,0 +1,55 @@
+.chennis piece.k-piece.ally {
+    background-image: url('../../images/pieces/green/bK.svg');
+}
+.chennis piece.p-piece.ally {
+    background-image: url('../../images/pieces/chennis/bPR.svg');
+}
+.chennis piece.pp-piece.ally {
+    background-image: url('../../images/pieces/chennis/bRP.svg');
+}
+.chennis piece.m-piece.ally {
+    background-image: url('../../images/pieces/chennis/bMN.svg');
+}
+.chennis piece.pm-piece.ally {
+    background-image: url('../../images/pieces/chennis/bNM.svg');
+}
+.chennis piece.s-piece.ally {
+    background-image: url('../../images/pieces/chennis/bSB.svg');
+}
+.chennis piece.ps-piece.ally {
+    background-image: url('../../images/pieces/chennis/bBS.svg');
+}
+.chennis piece.f-piece.ally {
+    background-image: url('../../images/pieces/chennis/bFC.svg');
+}
+.chennis piece.pf-piece.ally {
+    background-image: url('../../images/pieces/chennis/bCF.svg');
+}
+
+.chennis piece.k-piece.enemy {
+    background-image: url('../../images/pieces/green/bK_r.svg');
+}
+.chennis piece.p-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bPR_r.svg');
+}
+.chennis piece.pp-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bRP_r.svg');
+}
+.chennis piece.m-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bMN_r.svg');
+}
+.chennis piece.pm-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bNM_r.svg');
+}
+.chennis piece.s-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bSB_r.svg');
+}
+.chennis piece.ps-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bBS_r.svg');
+}
+.chennis piece.f-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bFC_r.svg');
+}
+.chennis piece.pf-piece.enemy {
+    background-image: url('../../images/pieces/chennis/bCF_r.svg');
+}

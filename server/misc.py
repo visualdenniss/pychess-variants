@@ -1,8 +1,15 @@
+from __future__ import annotations
 import asyncio
-import time
 import cProfile
 import pstats
+import time
 from timeit import default_timer
+from collections import UserDict
+
+from const import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pychess_global_app_state import PychessGlobalAppState
 
 
 def timeit(func):
@@ -69,7 +76,10 @@ class Timer:
         print("---- elapsed time: %f ms - %s" % (self.elapsed, self.text))
 
 
-def time_control_str(base, inc, byo):
+def time_control_str(base, inc, byo, day=0):
+    if day > 0:
+        return f"{day} day" if day == 1 else f"{day} days"
+
     if base == 1 / 4:
         base = "¼"
     elif base == 1 / 2:
@@ -87,25 +97,38 @@ def time_control_str(base, inc, byo):
     return base + "+" + inc_str
 
 
-def server_state(app, amount=3):
+def server_state(app_state: PychessGlobalAppState, amount=3):
     print("=" * 40)
-    for akey in app:
-        length = len(app[akey]) if hasattr(app[akey], "__len__") else 1
-        print("--- %s %s ---" % (akey, length))
-        if isinstance(app[akey], dict):
-            items = list(app[akey].items())[: min(length, amount)]
-            for key, value in items:
-                print("   %s %s" % (key, value))
-        elif isinstance(app[akey], list):
-            for item in app[akey][: min(length, amount)]:
+    for attr in vars(app_state):
+        attrib = getattr(app_state, attr)
+        length = len(attrib) if hasattr(attrib, "__len__") else 1
+        print("--- %s %s ---" % (attr, length))
+        if isinstance(attrib, dict) or isinstance(attrib, UserDict):
+            for item in list(attrib.items())[: min(length, amount)]:
+                print("   %s %s" % item)
+            if length > amount:
+                last = list(attrib.items())[-1]
+                print("   ...")
+                print("   %s %s" % last)
+        elif isinstance(attrib, list):
+            for item in attrib[: min(length, amount)]:
                 print("   %s" % item)
+            if length > amount:
+                last = attrib[-1]
+                print("   ...")
+                print("   %s %s" % last)
         else:
-            print(app[akey])
+            print(attrib)
     print("=" * 40)
 
-    q = app["users"]["Random-Mover"].event_queue
+    q = app_state.users["Random-Mover"].event_queue
+    gq = app_state.users["Random-Mover"].game_queues
     print(" ... Random-Mover ...")
     print(q)
-    q = app["users"]["Fairy-Stockfish"].event_queue
+    print(gq)
+    q = app_state.users["Fairy-Stockfish"].event_queue
+    gq = app_state.users["Fairy-Stockfish"].game_queues
     print(" ... Fairy-Stockfish ...")
     print(q)
+    print(gq)
+    print("=" * 40)

@@ -1,0 +1,6 @@
+.chak piece.white {
+    background-image: url('../../images/pieces/disguised/chak-w.svg');
+}
+.chak piece.black {
+    background-image: url('../../images/pieces/disguised/chak-g.svg');
+}

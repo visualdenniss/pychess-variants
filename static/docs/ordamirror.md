@@ -10,10 +10,10 @@ Orda Mirror is a chess variant designed in 2020 by Couch Tomato and is a derivat
 4.	Neither side can castle.
 6.	Pawns can promote to any Horde piece.
 7.	An additional method of victory is available: called **campmate**. Campmate is achieved by moving one’s king into the final rank without moving into check.
-8.	Other rules, including stalemate and repetition are as in chess.
+8.	Other rules, including stalemate and repetition, are as in chess.
 
 ## Horde Pieces
-There are four new units unique* to the Horde: 2 Lancers, 2 Horse Archers, 2 Kheshigs, and 1 Falcon (the Falcon being unique to Orda Mirror). The Kheshigs are the strongest piece (knight + king movement) and lead each flank. 
+There are four new units unique to the Horde: 2 Lancers, 2 Horse Archers, 2 Kheshigs, and 1 Falcon (the Falcon being unique to Orda Mirror). The Kheshigs are the strongest piece (knight + king movement) and lead each flank. 
 The Horde’s "king" is called the Khan and has a different symbol, but is essentially the same as a classic King, also using the same abbreviation (K) – the change is purely aesthetic and thematic. 
 The Horde's Lancer and Horse Archer capture differently than movement ("divergent" pieces, like the pawn). Remember that the Horde is horse-based, so the Lancer and Horse Archer both move like knights. They capture/check like rooks and bishops, respectively. The Falcon replaces the Queen. Unlike the other two pieces, it retains the movement of the Queen, but instead *captures/checks* like a knight. The Kheshig is more traditional in that it captures where it moves; it combines the movements of the knight and king. 
 
@@ -36,7 +36,7 @@ The Falcon is a unique divergent piece that moves and attacks differently. It mo
 
 ![Kheshig](https://github.com/gbtami/pychess-variants/blob/master/static/images/CVariantsGuide/Kheshig.png)
  
-The Kheshig is a hybrid piece that moves and captures as a knight and king combined. This piece type is also generically called the centaur. The kheshig starts in the knight’s spot, but unlike the knight, is the strongest Horde piece. It can be thought of the general that leads its own troops on each flank.
+The Kheshig is a hybrid piece that moves and captures as a knight and king combined. This piece type is also generically called the centaur. The kheshig starts in the knight’s spot, but unlike the knight, is the strongest Horde piece. It can be thought of as the general that leads its own troops on each flank.
 
 ### Horse Archer (A)
 

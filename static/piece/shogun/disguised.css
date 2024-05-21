@@ -1,0 +1,6 @@
+.shogun piece.black {
+    background-image: url('../../images/pieces/disguised/b.svg');
+}
+.shogun piece.white {
+    background-image: url('../../images/pieces/disguised/w.svg');
+}

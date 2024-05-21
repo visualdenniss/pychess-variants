@@ -1,15 +1,16 @@
+from __future__ import annotations
+import base64
+import hashlib
 import logging
 import secrets
-import hashlib
-import base64
 from urllib.parse import urlencode
 
 import aiohttp
-from aiohttp import web
 import aiohttp_session
+from aiohttp import web
 
 from broadcast import round_broadcast
-from const import STARTED
+from const import NONE_USER, STARTED
 from settings import (
     CLIENT_ID,
     CLIENT_SECRET,
@@ -20,6 +21,7 @@ from settings import (
     LICHESS_ACCOUNT_API_URL,
     DEV,
 )
+from pychess_global_app_state_utils import get_app_state
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +31,7 @@ RESERVED_USERS = (
     "Discord-Relay",
     "Invite-friend",
     "PyChess",
+    NONE_USER,
 )
 
 
@@ -94,6 +97,7 @@ async def oauth(request):
 
 async def login(request):
     """Login with lichess.org oauth."""
+    app_state = get_app_state(request.app)
     if REDIRECT_PATH is None:
         log.error("Set REDIRECT_PATH env var if you want lichess OAuth login!")
         return web.HTTPFound("/")
@@ -140,27 +144,30 @@ async def login(request):
         return web.HTTPFound("/")
 
     log.info("+++ Lichess authenticated user: %s", username)
-    users = request.app["users"]
+    users = app_state.users
 
     prev_session_user = session.get("user_name")
-    prev_user = users.get(prev_session_user)
+    prev_user = await users.get(prev_session_user)
     if prev_user is not None:
+        # todo: is consistency with app_state.lobby.lobbysockets lost here?
+        #       also don't we want to close all these sockets - lobby, tournament and game?
         prev_user.lobby_sockets = set()  # make it offline
         prev_user.game_sockets = {}
+        prev_user.tournament_sockets = {}
         prev_user.update_online()
 
     session["user_name"] = username
     session["title"] = title
 
     if username:
-        db = request.app["db"]
-        doc = await db.user.find_one({"_id": username})
+        doc = await app_state.db.user.find_one({"_id": username})
         if doc is None:
-            result = await db.user.insert_one(
+            result = await app_state.db.user.insert_one(
                 {
                     "_id": username,
                     "title": session.get("title"),
                     "perfs": {},
+                    "pperfs": {},
                 }
             )
             print("db insert user result %s" % repr(result.inserted_id))
@@ -173,35 +180,45 @@ async def login(request):
     return web.HTTPFound("/")
 
 
-async def logout(request):
-    users = request.app["users"]
+async def logout(request, user=None):
+    app_state = get_app_state(request.app)
+    if request is not None:
+        session = await aiohttp_session.get_session(request)
+        session_user = session.get("user_name")
+        user = await app_state.users.get(session_user)
 
-    session = await aiohttp_session.get_session(request)
-    session_user = session.get("user_name")
-    user = users.get(session_user)
+    if user is None:
+        return web.HTTPFound("/")
+    response = {"type": "logout"}
 
     # close lobby socket
-    if session_user in request.app["lobbysockets"]:
-        ws_set = request.app["lobbysockets"][session_user]
-        response = {"type": "logout"}
+    ws_set = user.lobby_sockets
+    for ws in ws_set:
+        try:
+            await ws.send_json(response)
+        except ConnectionResetError as e:
+            log.error(e, exc_info=True)
+
+    # close tournament sockets
+    for ws_set in user.tournament_sockets.values():
         for ws in ws_set:
             try:
                 await ws.send_json(response)
-            except ConnectionResetError:
-                pass
+            except ConnectionResetError as e:
+                log.error(e, exc_info=True)
 
     # lose and close game sockets
     # TODO: this can't end game if logout came from an ongoing game
     # because its ws was already closed and removed from game_sockets
-    if user is not None:
-        for gameId in user.game_sockets:
-            if gameId in request.app["games"]:
-                game = request.app["games"][gameId]
-                if game.status <= STARTED:
-                    response = await game.game_ended(user, "abandone")
-                    await round_broadcast(game, response, full=True)
+    for gameId in user.game_sockets:
+        if gameId in app_state.games:
+            game = app_state.games[gameId]
+            if game.status <= STARTED:
+                response = await game.game_ended(user, "abandon")
+                await round_broadcast(game, response, full=True)
 
-    session.invalidate()
+    if request is not None:
+        session.invalidate()
 
     return web.HTTPFound("/")
 

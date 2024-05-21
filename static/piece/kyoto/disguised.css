@@ -1,0 +1,6 @@
+.kyoto piece.ally {
+    background-image: url('../../images/pieces/disguised/shogi-ally.svg');
+}
+.kyoto piece.enemy {
+    background-image: url('../../images/pieces/disguised/shogi-enemy.svg');
+}

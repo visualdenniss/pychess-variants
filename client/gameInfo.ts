@@ -1,11 +1,12 @@
 import { h, VNode } from "snabbdom";
 
 import { _ } from './i18n';
-import { VARIANTS } from './chess';
-import { aiLevel, gameType, renderRdiff } from './profile';
+import { colorIcon } from './chess';
+import { aiLevel, gameType, renderRdiff } from './result';
 import { timeago, } from './datetime';
 import { timeControlStr } from "./view";
-import { PyChessModel } from "./main";
+import { PyChessModel } from "./types";
+import { VARIANTS } from "./variants";
 
 
 export function gameInfo(model: PyChessModel): VNode {
@@ -13,15 +14,14 @@ export function gameInfo(model: PyChessModel): VNode {
     const variant = VARIANTS[model.variant];
     const chess960 = model.chess960 === 'True';
     const dataIcon = variant.icon(chess960);
-    const fc = variant.firstColor;
-    const sc = variant.secondColor;
+    const tc = timeControlStr(model["base"], model["inc"], model["byo"], model["corr"] === "True" ? model["base"] : 0)
 
     return h('div.game-info', [
         h('section', [
         h('div.info0.icon', { attrs: { "data-icon": dataIcon } }, [
             h('div.info2', [
                 h('div.tc', [
-                    timeControlStr(model["base"], model["inc"], model["byo"]) + " • " + gameType(model["rated"]) + " • ",
+                    tc + " • " + gameType(model["rated"]) + " • ",
                     h('a.user-link', {
                         attrs: {
                             target: '_blank',
@@ -34,31 +34,11 @@ export function gameInfo(model: PyChessModel): VNode {
             ]),
         ]),
         h('div.player-data', [
-            h('i-side.icon', {
-                class: {
-                    "icon-white": fc === "White",
-                    "icon-black": fc === "Black",
-                    "icon-red":   fc === "Red",
-                    "icon-blue":  fc === "Blue",
-                    "icon-gold":  fc === "Gold",
-                    "icon-pink":  fc === "Pink",
-                    "icon-green": fc === "Green",
-                }
-            }),
+            h('i-side.icon', {class: {[colorIcon(model.variant, variant.colors.first)]: true}}),
             h('player', playerInfo(model, 'w')),
         ]),
         h('div.player-data', [
-            h('i-side.icon', {
-                class: {
-                    "icon-white": sc === "White",
-                    "icon-black": sc === "Black",
-                    "icon-red":   sc === "Red",
-                    "icon-blue":  sc === "Blue",
-                    "icon-gold":  sc === "Gold",
-                    "icon-pink":  sc === "Pink",
-                    "icon-green": sc === "Green",
-                }
-            }),
+            h('i-side.icon', {class: {[colorIcon(model.variant, variant.colors.second)]: true}}),
             h('player', playerInfo(model, 'b')),
         ]),
         ]),
@@ -79,7 +59,7 @@ function playerInfo(model: PyChessModel, color: string) {
     const berserk = model[color === "w"? "wberserk": "bberserk"];
 
     return h('a.user-link', { attrs: { href: '/@/' + username } }, [
-        h('player-title', " " + title + " "),
+        (title !== '') ? h('player-title', title + ' ') : '',
         username + aiLevel(title, level) + (title !== 'BOT' ? (" (" + rating + ") ") : ''),
         model["status"] < 1 || model["rated"] !== '1' ? h('rdiff#' + color + 'rdiff') : renderRdiff(rdiff),
         (berserk === "True") ? h('icon.icon-berserk') : h('berserk#' + color + 'berserk'),

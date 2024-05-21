@@ -1,23 +1,21 @@
-import Sockette from 'sockette';
-
 import { h, VNode } from 'snabbdom';
 
 import { Chessground } from 'chessgroundx';
+import { Api } from "chessgroundx/api";
 
-import { JSONObject } from './types';
+import { newWebsocket } from './socket';
+import { JSONObject, PyChessModel } from './types';
 import { _ } from './i18n';
 import { patch } from './document';
-import { chatMessage, chatView } from './chat';
-//import { sound } from './sound';
-import { VARIANTS, uci2LastMove, Variant } from './chess';
+import { chatMessage, chatView, ChatController } from './chat';
+import { colorIcon, uci2LastMove } from './chess';
+import { VARIANTS, Variant } from './variants';
 import { timeControlStr } from "./view";
-import { initializeClock, localeOptions } from './datetime';
-import { gameType } from './profile';
+import { initializeClock, localeOptions } from './tournamentClock';
+import { gameType } from './result';
 import { boardSettings } from './boardSettings';
-import { Api } from "chessgroundx/api";
-import { PyChessModel } from "./main";
 import { MsgBoard, MsgChat, MsgFullChat, MsgSpectators, MsgGameEnd, MsgNewGame } from "./messages";
-import * as cg from 'chessgroundx/types';
+import { MsgUserStatus, MsgGetGames, TournamentGame, MsgTournamentStatus, MsgUserConnectedTournament, MsgGetPlayers, TournamentPlayer, MsgError, MsgPing, TopGame } from './tournamentType';
 
 const T_STATUS = {
     0: "created",
@@ -33,106 +31,8 @@ const SCORE_SHIFT = 100000;
 
 const SHIELD = 's';
 
-interface MsgUserStatus {
-    ustatus: string;
-}
 
-interface MsgGetGames {
-    rank: number;
-    name: string;
-    title: string;
-    games: TournamentGame[];
-    perf: number;
-    nbWin: number;
-    nbGames: number;
-    nbBerserk: number;
-}
-
-interface TournamentGame {
-    gameId: string;
-    title: string;
-    name: string;
-    result: string;
-    color: string;
-    rating: number;
-}
-
-interface MsgTournamentStatus {
-    tstatus: number;
-    secondsToFinish: number;
-    nbPlayers: number;
-    sumRating: number;
-    nbGames: number;
-    wWin: number;
-    bWin: number;
-    draw: number;
-    berserk: number;
-}
-
-interface MsgUserConnectedTournament {
-    tsystem: number;
-    tminutes: number;
-    frequency: string;
-    startsAt: string;
-    startFen: cg.FEN;
-
-    username: string;
-    ustatus: string;
-    urating: number;
-    tstatus: number;
-    description: string;
-    defender_name: string;
-    defender_title: string;
-    secondsToStart: number;
-    secondsToFinish: number;
-}
-
-interface MsgGetPlayers {
-    page: number;
-    requestedBy: string;
-    nbPlayers: number;
-    nbGames: number;
-
-    players: TournamentPlayer[];
-    podium?: TournamentPlayer[];
-}
-
-interface TournamentPlayer {
-    name: string;
-    score: number;
-    paused: boolean;
-    title: string;
-    rating: number;
-    points: any[]; // TODO: I am not sure what elements can be in here. most of the time i see 2-element arrays (i think first is the result, second a streak flag or somthing). But i've seen also string '*' as well and there is that chck about isArray that might mean more cases with numeric scalars exist
-    fire: number;
-    perf: number;
-    nbGames: number;
-    nbWin: number;
-    nbBerserk: number;
-}
-
-interface MsgError {
-    message: string;
-}
-interface MsgPing {
-    timestamp: string;
-}
-
-interface TopGame {
-    gameId: string;
-    variant: string;
-    fen: cg.FEN;
-    w: string;
-    b: string;
-    wr: number;
-    br: number;
-    chess960: boolean;
-    base: number;
-    inc: number;
-    byoyomi: number;
-}
-
-export default class TournamentController {
+export class TournamentController implements ChatController {
     sock;
     tournamentId: string;
     readyState: number; // seems unused
@@ -159,7 +59,6 @@ export default class TournamentController {
     secondsToFinish: number;
     username: string;
     anon: boolean;
-    
 
     constructor(el: HTMLElement, model: PyChessModel) {
         console.log("TournamentController constructor", el, model);
@@ -172,26 +71,14 @@ export default class TournamentController {
         this.secondsToStart = 0;
         this.secondsToFinish = 0;
 
-        const onOpen = (evt: Event) => {
-            this.readyState = (evt.target as EventSource).readyState;
-            console.log('onOpen()');
+        const onOpen = () => {
             this.doSend({ type: "tournament_user_connected", username: model["username"], tournamentId: model["tournamentId"]});
             this.doSend({ type: "get_players", "tournamentId": model["tournamentId"], page: this.page });
         }
 
-        this.readyState = -1;
-        const opts = {
-            maxAttempts: 20,
-            onopen: (e: Event) => onOpen(e),
-            onmessage: (e: MessageEvent) => this.onMessage(e),
-            onreconnect: (e: Event | CloseEvent) => console.log('Reconnecting in tournament...', e),
-            onmaximum: (e: CloseEvent) => console.log('Stop Attempting!', e),
-            onclose: (e: CloseEvent) => {console.log('Closed!', e);},
-            onerror: (e: Event) => console.log('Error:', e),
-        };
-
-        const ws = location.host.includes('pychess') ? 'wss://' : 'ws://';
-        this.sock = new Sockette(ws + location.host + "/wst", opts);
+        this.sock = newWebsocket('wst');
+        this.sock.onopen = () => onOpen();
+        this.sock.onmessage = (e: MessageEvent) => this.onMessage(e);
 
         this.variant = VARIANTS[model["variant"]];
         this.chess960 = model["chess960"] === "True";
@@ -206,6 +93,7 @@ export default class TournamentController {
         this.username = model["username"];
         this.anon = model["anon"] === "True";
 
+        boardSettings.assetURL = model.assetURL;
         boardSettings.updateBoardAndPieceStyles();
     }
 
@@ -276,7 +164,7 @@ export default class TournamentController {
             }
             break;
         case 'started':
-            if ('spectator|paused'.includes(this.userStatus)) {
+            if ('spectator|paused|withdrawn'.includes(this.userStatus)) {
                 button = h('button#action', { on: { click: () => this.join() }, class: {"icon": true, "icon-play": true} }, _('JOIN'));
             } else {
                 button = h('button#action', { on: { click: () => this.pause() }, class: {"icon": true, "icon-pause": true} }, _('PAUSE'));
@@ -301,8 +189,8 @@ export default class TournamentController {
                 h('tr', [h('th', _('Players')), h('td', msg.nbPlayers)]),
                 h('tr', [h('th', _('Average rating')), h('td', Math.round(msg.sumRating / msg.nbPlayers))]),
                 h('tr', [h('th', _('Games played')), h('td', msg.nbGames)]),
-                h('tr', [h('th', _('%1 wins', _(this.variant.firstColor))), h('td', this.calcRate(msg.nbGames, msg.wWin))]),
-                h('tr', [h('th', _('%1 wins', _(this.variant.secondColor))), h('td', this.calcRate(msg.nbGames, msg.bWin))]),
+                h('tr', [h('th', _('%1 wins', _(this.variant.colors.first))), h('td', this.calcRate(msg.nbGames, msg.wWin))]),
+                h('tr', [h('th', _('%1 wins', _(this.variant.colors.second))), h('td', this.calcRate(msg.nbGames, msg.bWin))]),
                 h('tr', [h('th', _('Draws')), h('td', this.calcRate(msg.nbGames, msg.draw))]),
                 h('tr', [h('div', _('Berserk rate')), h('td', this.calcRate(msg.nbGames * 2, msg.berserk))]),
             ]),
@@ -427,7 +315,7 @@ export default class TournamentController {
                 h('td.result', '-')
             ]);
         } else {
-            const color = (game.color === 'w') ? this.variant.firstColor : this.variant.secondColor;
+            const color = (game.color === 'w') ? this.variant.colors.first : this.variant.colors.second;
             return h('tr', { on: { click: () => { window.open('/' + game.gameId, '_blank', 'noopener'); }}}, [
                 h('th', index),
                 h('td.player', [
@@ -436,17 +324,7 @@ export default class TournamentController {
                 ]),
                 h('td', game.rating),
                 h('td', [
-                    h('i-side.icon', {
-                        class: {
-                            "icon-white": color === "White",
-                            "icon-black": color === "Black",
-                            "icon-red":   color === "Red",
-                            "icon-blue":  color === "Blue",
-                            "icon-gold":  color === "Gold",
-                            "icon-pink":  color === "Pink",
-                            "icon-green": color === "Green",
-                        }
-                    }),
+                    h('i-side.icon', {class: {[colorIcon(this.variant.name, color)]: true}}),
                 ]),
                 this.result(game.result, game.color),
             ]);
@@ -456,11 +334,11 @@ export default class TournamentController {
     private tSystem(system: number) {
         switch (system) {
         case 0:
-            return "Arena";
+            return _('Arena');
         case 1:
-            return "Round-Robin";
+            return _('Round-Robin');
         default:
-            return "Swiss";
+            return _('Swiss');
         }
     }
 
@@ -468,12 +346,8 @@ export default class TournamentController {
         const games = msg.games.filter(game => game.result !== '-');
         const gamesLen = games.length;
         const avgOp = gamesLen
-            ? Math.round(
-                games.reduce(function (a, b) {
-                    return a + b.rating;
-                }, 0) / gamesLen
-            )
-            : 0;
+            ? Math.round(games.reduce((a, b) => a + b.rating, 0) / gamesLen)
+            : undefined;
 
         return [
             h('span.close', {
@@ -505,21 +379,21 @@ export default class TournamentController {
         const variant = VARIANTS[game.variant];
         const elements = [
         h('div.player', [h('user', [h('rank', '#' + game.br), game.b]), h('div#bresult')]),
-        h(`div#mainboard.${variant.board}.${variant.piece}.${variant.boardMark}`, {
-            class: { "with-pockets": variant.pocketRoles('white') !== undefined },
+        h(`div#mainboard.${variant.boardFamily}.${variant.pieceFamily}.${variant.ui.boardMark}`, {
+            class: { "with-pockets": !!variant.pocket },
             on: { click: () => window.location.assign('/' + game.gameId) }
             }, [
-                h(`div.cg-wrap.${variant.cg}.mini`, {
+                h(`div.cg-wrap.${variant.board.cg}.mini`, {
                     hook: {
                         insert: vnode => {
                             const cg = Chessground(vnode.elm as HTMLElement,  {
                                 fen: game.fen,
-                                // lastMove: game.lastMove,// TODO: i dont see such property in python searching for "top_game"
-                                geometry: variant.geometry,
+                                lastMove: game.lastMove,
+                                dimensions: variant.board.dimensions,
                                 coordinates: false,
                                 viewOnly: true,
-                                addDimensionsCssVars: true,
-                                pocketRoles: color => variant.pocketRoles(color),
+                                addDimensionsCssVarsTo: document.body,
+                                pocketRoles: variant.pocket?.roles,
                             });
                             this.topGameChessground = cg;
                             this.topGameId = game.gameId;
@@ -669,6 +543,12 @@ export default class TournamentController {
             ]));
         }
 
+        if (msg.defender_name !== undefined) {
+            msg.description = _(
+                'This Shield trophy is unique. The winner keeps it for one month, then must defend it during the next %1 Shield tournament!',
+                this.variant.displayName(chess960)
+            ) + ' ' + msg.description;
+        }
         const description = document.getElementById('description') as Element;
         if (msg.description.length > 0 && description) patch(description, this.renderDescription(msg.description));
 
@@ -753,9 +633,6 @@ export default class TournamentController {
 
     private onMsgChat(msg: MsgChat) {
         chatMessage(msg.user, msg.message, "lobbychat", msg.time);
-        // seems this is annoying for most of the users
-        //if (msg.user.length !== 0 && msg.user !== '_server')
-        //    sound.socialNotify();
     }
     private onMsgFullChat(msg: MsgFullChat) {
         // To prevent multiplication of messages we have to remove old messages div first
@@ -774,6 +651,7 @@ export default class TournamentController {
 
     onMessage(evt: MessageEvent) {
         //console.log("<+++ tournament onMessage():", evt.data);
+        if (evt.data === '/n') return;
         const msg = JSON.parse(evt.data);
         switch (msg.type) {
             case "ustatus":
@@ -835,7 +713,7 @@ export function tournamentView(model: PyChessModel): VNode[] {
     const variant = VARIANTS[model.variant];
     const chess960 = model.chess960 === 'True';
     const dataIcon = variant.icon(chess960);
-    document.body.setAttribute('style', `--ranks: ${variant.boardHeight}; --files: ${variant.boardWidth};`);
+    document.body.setAttribute('style', `--ranks: ${variant.board.dimensions.height}; --files: ${variant.board.dimensions.width};`);
     return [
         h('aside.sidebar-first', [
             h('div.game-info', [

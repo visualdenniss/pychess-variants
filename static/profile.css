@@ -1,19 +1,3 @@
-@media (max-width: 799px) and (orientation: portrait) {
-    ul.perfs {
-        margin: 4vmin;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        padding: 0;
-        grid-gap: 6px;
-    }
-    .sub-ratings a span rating {
-        display: flex;
-    }
-    .sub-ratings h3, rating span, .sub-ratings a span rating span {
-        display: none;
-    }
-}
-
 /* profile games */
 .filter-tabs {
     display: flex;
@@ -22,6 +6,18 @@
 div.filter-tabs div.sub-ratings {
     flex: auto;
     font-size: 1.2em;
+}
+div.filter-tabs a {
+    justify-content: center;
+}
+div.versus player:nth-of-type(1) {
+  text-align: end;
+  white-space: normal;
+}
+div.versus vs-swords {
+  font-size: 2em;
+  width: 2.5em;
+  text-align: center;
 }
 .player-sum {
     display: flex;
@@ -45,6 +41,9 @@ div.filter-tabs div.sub-ratings {
     display: flex;
     background: var(--bg-color2);
     justify-content: flex-end;
+}
+player-title {
+  white-space: normal;
 }
 .trophies {
     height: 40px;
@@ -97,11 +96,9 @@ div.filter-tabs div.sub-ratings {
     margin: 1em;
 }
 .btn-rack a {
-    justify-content: center;
     padding: 0 0.6em;
     text-align: center;
     line-height: 2rem;
-    cursor: pointer;
     border-right: 1px solid var(--border-color);
     color: var(--font-color);
 }
@@ -186,4 +183,39 @@ td.player-data {
 }
 #games tr a .icon-trophy::before {
     padding-right: 4px;
+}
+#games a:hover {
+  color: var(--font-hover);
+}
+#games .games-info a:hover {
+  color: var(--link-hover);
+}
+@media (max-width: 799px) and (orientation: portrait) {
+    ul.perfs {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10ch, 1fr));
+    padding-right: 0rem;
+    }
+    .sub-ratings a span rating {
+    display: flex;
+    }
+    .sub-ratings h3, rating span, .sub-ratings a span rating span {
+    display: none;
+    }
+    a.info0.icon {
+    font-size: 0.6rem;
+    }
+    strong.user-rating-strong {
+    font-size: 1rem;
+    }
+    td.board {
+    display:none;
+    }
+    .sub-ratings a::before {
+    margin-right: 0px;
+    }
+    .trophies {
+    display: none;
+    }
 }

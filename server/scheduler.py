@@ -1,3 +1,4 @@
+from __future__ import annotations
 import calendar
 from collections import namedtuple
 import datetime as dt
@@ -12,14 +13,21 @@ from const import (
     SHIELD,
     variant_display_name,
     SCHEDULE_MAX_DAYS,
+    TYPE_CHECKING,
 )
 
+if TYPE_CHECKING:
+    from pychess_global_app_state import PychessGlobalAppState
+
 from tournaments import new_tournament
+import logging
+
+log = logging.getLogger(__name__)
 
 MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 Plan = namedtuple("Plan", "freq, date, hour, variant, is960, base, inc, byo, duration")
 
-SHIELDS = ["crazyhouse960", "atomic960", "makruk", "shinobi"]
+SHIELDS = ["crazyhouse960", "atomic960", "kingofthehill960", "3check960", "makruk"]
 SEATURDAY = ["makruk", "makpong", "sittuyin", "cambodian", "asean"]
 
 MONTHLY_VARIANTS = (
@@ -39,7 +47,6 @@ MONTHLY_VARIANTS = (
     "kyotoshogi",
     "placement",
     "ordamirror",
-    "capahouse960",
     "minixiangqi",
     "synochess",
     "grandhouse",
@@ -49,10 +56,25 @@ MONTHLY_VARIANTS = (
     "chennis",
     "capablanca",
     "xiangqi",
+    "shinobiplus",
+    "spartan",
+    "kingofthehill960",
+    "3check960",
+    "mansindam",
+)
+
+# Old MONTHLY tournaments, needed to create translated tourney names
+PAUSED_MONTHLY_VARIANTS = ("shinobi", "manchu", "duck", "capahouse960")
+
+# Old WEEKLY tournaments, paused atm., but needed to create translated tourney names
+WEEKLY_VARIANTS = (
+    "crazyhouse960",
+    "atomic960",
+    "duck",
 )
 
 # Monthly Variant Tournaments need different TC
-TC_MONTHLY_VARIANTS = {v: (3, 2, 0) for v in MONTHLY_VARIANTS}
+TC_MONTHLY_VARIANTS: dict[str, tuple[int, int, int]] = {v: (3, 2, 0) for v in MONTHLY_VARIANTS}
 
 for v in CATEGORIES["fairy"]:
     TC_MONTHLY_VARIANTS[v] = (3, 3, 0)
@@ -124,15 +146,26 @@ class Scheduler:
         """Create planned tournament plan list for one full month"""
         SEA = self.get_next_variant(self.now.month, ("sittuyin", "cambodian"))
         plans = []
+        number_of_days = calendar.monthrange(self.now.year, self.now.month)[1]
         for i, v in enumerate(MONTHLY_VARIANTS):
+            if i + 1 > number_of_days:
+                break
             is_960 = v.endswith("960")
             base, inc, byo = TC_MONTHLY_VARIANTS[v]
-            date = dt.datetime(self.now.year, self.now.month, i + 1, tzinfo=dt.timezone.utc)
+            try:
+                date = dt.datetime(self.now.year, self.now.month, i + 1, tzinfo=dt.timezone.utc)
+            except ValueError as e:
+                log.error(e, exc_info=True)
+                break
             plans.append(Plan(MONTHLY, date, 16, v.rstrip("960"), is_960, base, inc, byo, 90))
 
         plans += [
+            Plan(
+                SHIELD, self.first_monthly(MONDAY), 18, "kingofthehill", True, 3, 2, 0, 180
+            ),  # 960
             Plan(SHIELD, self.second_monthly(MONDAY), 18, "crazyhouse", True, 3, 2, 0, 180),  # 960
-            Plan(SHIELD, self.second_monthly(THURSDAY), 18, "shinobi", False, 3, 4, 0, 180),
+            Plan(SHIELD, self.third_monthly(MONDAY), 18, "3check", True, 3, 2, 0, 180),  # 960
+            # Plan(SHIELD, self.second_monthly(THURSDAY), 18, "shinobi", False, 3, 4, 0, 180),
             Plan(SHIELD, self.second_monthly(SATURDAY), 12, "makruk", False, 5, 3, 0, 180),
             Plan(SHIELD, self.third_monthly(SUNDAY), 12, "atomic", True, 3, 2, 0, 180),  # 960
             Plan(MONTHLY, self.first_monthly(SATURDAY), 12, "asean", False, 3, 2, 0, 90),
@@ -142,6 +175,7 @@ class Scheduler:
             # Plan(WEEKLY, self.next_day_of_week(FRIDAY), 18, "crazyhouse", True, 3, 0, 0, 60),  # 960
             # Plan(WEEKLY, self.next_day_of_week(TUESDAY), 18, "atomic", True, 3, 0, 0, 60),  # 960
             Plan(WEEKLY, self.next_day_of_week(THURSDAY), 14, "makruk", False, 3, 2, 0, 90),
+            Plan(WEEKLY, self.next_day_of_week(SUNDAY), 18, "duck", False, 3, 5, 0, 90),
         ]
 
         return plans
@@ -183,10 +217,10 @@ def new_scheduled_tournaments(already_scheduled, now=None):
             and (plan.freq, plan.variant, plan.is960, starts_at, plan.duration)
             not in already_scheduled
         ):
-
             variant_name = variant_display_name(
                 plan.variant + ("960" if plan.is960 else "")
             ).title()
+
             if plan.freq == SHIELD:
                 name = "%s Shield Arena" % variant_name
             elif plan.freq == MONTHLY:
@@ -220,6 +254,6 @@ def new_scheduled_tournaments(already_scheduled, now=None):
     return new_tournaments_data
 
 
-async def create_scheduled_tournaments(app, new_tournaments_data):
+async def create_scheduled_tournaments(app_state: PychessGlobalAppState, new_tournaments_data):
     for data in new_tournaments_data:
-        await new_tournament(app, data)
+        await new_tournament(app_state, data)

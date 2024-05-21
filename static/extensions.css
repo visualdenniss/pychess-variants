@@ -17,8 +17,8 @@
     width: 100%;
     justify-content: center;
 }
-.mini .pocket piece {
-    flex: 0 0 calc(100% / var(--files));
+.mini .pocket square {
+    flex: 0 0 calc(100% / max(var(--files), var(--pocketLength)));
 }
 .mini .pocket.top {
     border-radius: 3px 3px 0px 0px;
@@ -61,6 +61,10 @@
   width: 10%;
 }
 .cg-576 #extension_choice square {
+  height: 11.11%;
+  width: 11.11%;
+}
+.cg-540 #extension_choice square {
   height: 11.11%;
   width: 11.11%;
 }
@@ -132,37 +136,42 @@
   width: calc(var(--editorLength) * (var(--cg-width) / var(--files)));
 }
 
-.pocket piece {
+.pocket square, .pocket nosquare {
   flex: 0 0 calc(100% / var(--pocketLength));
-  height: 100%!important;
-  width: 100%!important;
-  position: relative!important;
-  background-position: center;
+  position: relative !important;
+  pointer-events: none;
 }
 
-.pocket piece.selected-square{
+.pocket piece {
+  height: 100% !important;
+  width: 100% !important;
+  background-position: center;
+  pointer-events: auto;
+}
+
+.pocket square.selected-square{
   background-color: #14551e80 !important;
 }
 
-.pocket .editor piece {
-  flex: 0 0 calc(100% / var(--editorLength));
-}
-.pocket.usable piece:first-child:hover {
+.pocket.usable square:first-child:hover {
   border-radius: 3px 0 0 3px;
 }
-.pocket.usable piece:not(.no-piece) {
+.pocket.usable square {
   cursor: pointer;
-  pointer-events: auto;
 }
-.pocket.usable piece:not(.no-piece):hover {
+.pocket.usable square:hover {
   background-color: #999;
   transition: background-color 0.13s;
 }
-.pocket.usable piece.premove {
+.pocket.usable square.premove {
   background-color: #555;
 }
-.pocket.usable piece.premove:hover {
+.pocket.usable square.premove:hover {
   background-color: #666;
+}
+.pocket square.last-move {
+  will-change: transform;
+  background-color: rgba(155, 199, 0, 0.41);
 }
 .pocket piece[data-nb='0'] {
   cursor: auto;
@@ -199,7 +208,7 @@
   box-shadow: 0 3px 4px rgba(0, 0, 0, 0.15) inset !important;
 }
 
-.campmate .cg-512 cg-container::before {
+.campmate .cg-512 cg-board::before {
   width: 100%;
   height: 12.5%;
   top: 0%;
@@ -212,7 +221,7 @@
   pointer-events: none;
 }
 
-.campmate .cg-512 cg-container::after {
+.campmate .cg-512 cg-board::after {
   width: 100%;
   height: 12.5%;
   top: 87.5%;
@@ -222,5 +231,44 @@
   content: '';
   z-index: 1;
   position: absolute;
+  pointer-events: none;
+}
+
+.campmate .cg-540 cg-board::before {
+  width: 100%;
+  height: 11%;
+  top: 0%;
+  left: 0%;
+  background: rgba(230, 230, 230, 0.2);
+  box-shadow: 0 0 10px rgb(0 0 0 / 70%);
+  content: '';
+  z-index: 1;
+  position: absolute;
+  pointer-events: none;
+}
+
+.campmate .cg-540 cg-board::after {
+  width: 100%;
+  height: 11%;
+  top: 89%;
+  left: 0%;
+  background: rgba(230, 230, 230, 0.2);
+  box-shadow: 0 0 10px rgb(0 0 0 / 70%);
+  content: '';
+  z-index: 1;
+  position: absolute;
+  pointer-events: none;
+}
+
+.kingofthehill .cg-512 cg-board::before {
+  width: 25%;
+  height: 25%;
+  box-shadow: 0 0 10px rgba(0,0,0,.7);
+  background: rgba(230,230,230,.2);
+  content: "";
+  position: absolute;
+  top: 37.5%;
+  left: 37.5%;
+  z-index: 1;
   pointer-events: none;
 }

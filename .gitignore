@@ -3,17 +3,19 @@ node_modules/
 templates/docs/
 templates/news/
 static/pychess-variants.js
-static/pychess-variants.js.br
+static/pychess-variants.js.*
 static/ffish.js
 static/ffish.wasm
 static/ffish.worker.js
+static/stockfish.js
+static/stockfish.wasm
+static/stockfish.worker.js
 package-lock.json
 game.json
 user.json
 crosstable.json
 highscore.json
 tournament*.json
-yarn.lock
 /*.py
 /*.sh
 *.pgn
@@ -22,4 +24,3 @@ yarn.lock
 .env
 yarn-error.log
 .idea/
-
