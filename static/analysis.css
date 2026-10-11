@@ -10,6 +10,9 @@
     grid-area: main;
     display: grid;
 }
+.analysis-app.gauge-off {
+    --gauge-gap: 4px;
+}
 
 /* DuckInput uses a0 as a temporary off-board holding square before
    the first duck placement. Clip the analysis board so that fake
@@ -96,6 +99,9 @@ div.ctable-container {
     width: var(--gauge-gap);
     overflow: hidden;
     position: relative;
+}
+.analysis-app.gauge-off #gauge {
+    display: none;
 }
 .flipped {
     transform: rotateX(180deg);

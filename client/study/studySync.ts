@@ -154,6 +154,7 @@ export interface StudySyncOptions {
     onConcealChanged?: (concealPly: number, revision: number) => void;
     concealPly?: number;
     onServerEvalChanged?: (serverEval: StudyServerEval | undefined) => void;
+    onServerAnalysisVisibilityChanged?: () => void;
     onServerAnalysisUnavailable?: (reason: string) => void;
     onGamebookScriptChanged?: () => void;
     onOrientationChanged?: (orientation: 'white' | 'black') => void;
@@ -975,6 +976,10 @@ export class StudyAnalysisExtension implements AnalysisExtension {
     onEvaluation(): boolean {
         if (this.options.rootOnlyPreview) return false;
         return this.policy?.tools.evaluationDisplay ?? true;
+    }
+
+    onServerAnalysisVisibilityChanged(): void {
+        this.options.onServerAnalysisVisibilityChanged?.();
     }
 
     onNodeAdded(parentPath: string, node: AnalysisTreeNode): void {

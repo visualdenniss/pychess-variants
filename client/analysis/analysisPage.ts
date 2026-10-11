@@ -30,7 +30,7 @@ export function renderAnalysisPage(model: PyChessModel, parts: AnalysisPageParts
     const isOngoingGame = parts.ongoing;
 
     return [
-        h('div.analysis-app', [
+        h('div.analysis-app', { class: { 'gauge-off': !analysisSettings.settings['showGauge'].value } }, [
             h('aside.sidebar-first', parts.side),
             h(`selection#mainboard.${variant.boardFamily}.${variant.pieceFamily}.${variant.ui.boardMark}`, [
                 parts.boardTop ?? h('div#anal-clock-top'),

@@ -31,6 +31,8 @@ class AnalysisSettings {
 
     constructor() {
         this.settings = {};
+        this.settings['showServerAnalysis'] = new ServerAnalysisSettings(this);
+        this.settings['showGauge'] = new GaugeSettings();
         this.settings['arrow'] = new ArrowSettings(this);
         this.settings['inlineNotation'] = new InlineNotationSettings(this);
         this.settings['disclosureMode'] = new DisclosureModeSettings(this);
@@ -59,6 +61,9 @@ class AnalysisSettings {
 
         const settingsList: VNode[] = [];
 
+        settingsList.push(this.settings['showServerAnalysis'].view());
+        settingsList.push(this.settings['showGauge'].view());
+
         settingsList.push(this.settings['multipv'].view());
 
         settingsList.push(this.settings['threads'].view());
@@ -84,6 +89,38 @@ class AnalysisSettings {
         settingsList.push();
 
         return h('div.analysis-settings', settingsList);
+    }
+}
+
+class ServerAnalysisSettings extends BooleanSettings {
+    constructor(private readonly analysisSettings: AnalysisSettings) {
+        super('showServerAnalysis', true);
+    }
+
+    update(): void {
+        this.analysisSettings.ctrl.setServerAnalysisVisibility(this.value);
+    }
+
+    view(): VNode {
+        return h(
+            'div.serverAnalysis-toggle',
+            toggleSwitch(this, 'serverAnalysis-enabled', _('Show server analysis'), false),
+        );
+    }
+}
+
+class GaugeSettings extends BooleanSettings {
+    constructor() {
+        super('showGauge', true);
+    }
+
+    update(): void {
+        document.querySelector('.analysis-app')?.classList.toggle('gauge-off', !this.value);
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    view(): VNode {
+        return h('div.gauge-toggle', toggleSwitch(this, 'gauge-enabled', _('Show evaluation gauge'), false));
     }
 }
 
