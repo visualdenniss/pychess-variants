@@ -393,8 +393,8 @@ export class SimulController implements ChatController {
         this.redraw();
     }
 
-    onMsgChat(msg: MsgChat) {
-        chatMessage(msg.user, msg.message, 'lobbychat', msg.time);
+    onMsgChat(msg: MsgChat, history = false) {
+        chatMessage(msg.user, msg.message, 'lobbychat', msg.time, history);
     }
 
     onMsgFullChat(msg: MsgFullChat) {
@@ -405,7 +405,7 @@ export class SimulController implements ChatController {
             const cleared = document.getElementById('messages-clear');
             if (cleared) patch(cleared, h('div#messages', { attrs: { role: 'none' } }));
         }
-        msg.lines.forEach(line => this.onMsgChat(line));
+        msg.lines.forEach(line => this.onMsgChat(line, true));
     }
 
     approve(username: string) {

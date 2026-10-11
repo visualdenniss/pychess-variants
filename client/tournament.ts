@@ -1121,7 +1121,7 @@ export class TournamentController implements ChatController {
         patch(document.getElementById('messages') as HTMLElement, h('div#messages-clear'));
         // then create a new one
         patch(document.getElementById('messages-clear') as HTMLElement, h('div#messages', { attrs: { role: 'none' } }));
-        msg.lines.forEach(line => chatMessage(line.user, line.message, 'lobbychat', line.time));
+        msg.lines.forEach(line => chatMessage(line.user, line.message, 'lobbychat', line.time, true));
     }
 
     private onMsgPing(msg: MsgPing) {

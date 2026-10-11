@@ -152,15 +152,12 @@ export function chatView(ctrl: ChatController, chatType: string, opts: ChatViewO
 //     chatMessage('', '…', 'bugroundchat', undefined, idx, this)
 // where the `undefined` only existed to step over a `time` they had no value for on
 // the way to arguments that were never read.
-/** Chat history resent on load or reconnect is not news: the list stays silent while it refills. */
+/** Chat history resent on load or reconnect is not news: the list stays silent until the next live message. */
 export function replayingChat(chatType: string): void {
-    const list = document.getElementById(chatType + '-messages');
-    if (!list) return;
-    list.setAttribute('aria-live', 'off');
-    setTimeout(() => list.setAttribute('aria-live', 'polite'), 1000);
+    document.getElementById(chatType + '-messages')?.setAttribute('aria-live', 'off');
 }
 
-export function chatMessage(user: string, message: string, chatType: string, time?: number) {
+export function chatMessage(user: string, message: string, chatType: string, time?: number, history = false) {
     if (shouldSkipMessage(message)) return;
 
     // when the first duck placement starts, DuckInput.start() calls:
@@ -169,6 +166,7 @@ export function chatMessage(user: string, message: string, chatType: string, tim
     const chatDiv = document.getElementById(chatType + '-messages') as HTMLElement | null;
     const container = document.getElementById('messages') as HTMLElement | null;
     if (!chatDiv || !container) return;
+    if (!history) chatDiv.setAttribute('aria-live', 'polite');
 
     const isBottom = chatDiv.scrollHeight - (chatDiv.scrollTop + chatDiv.offsetHeight) < 80;
     const localTime = time

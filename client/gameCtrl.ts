@@ -807,7 +807,7 @@ export abstract class GameController extends ChessgroundController implements Ch
                     (!this.spectator && line.room !== 'spectator') ||
                     line.user.length === 0
                 ) {
-                    chatMessage(line.user, line.message, 'roundchat', line.time);
+                    chatMessage(line.user, line.message, 'roundchat', line.time, true);
                 }
             });
         }
