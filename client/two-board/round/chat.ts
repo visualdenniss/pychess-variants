@@ -16,7 +16,7 @@ export function resetChat() {
 export function chatMessageBug(ply: number, ctrl: RoundControllerBughouse, x: StepChat, history = false) {
     //TODO: first lines and very last copied from chat.ts
     const chatDiv = document.getElementById('bugroundchat-messages') as HTMLElement;
-    if (!history) chatDiv.setAttribute('aria-live', 'polite');
+    chatDiv.setAttribute('aria-live', history ? 'off' : 'polite');
     // You must add border widths, padding and margins to the right.
     // Only scroll the chat on a new message if the user is at the very bottom of the chat
     const isBottom = chatDiv.scrollHeight - (chatDiv.scrollTop + chatDiv.offsetHeight) < 80;

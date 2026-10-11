@@ -10,7 +10,7 @@ import { Seat } from '../common/seat';
 import { Clock } from '../../clock';
 import { RoundControllerBughouseSocket } from '../socket/sockets';
 import { MovePlace, ReconnectController } from '../socket/reconnectController';
-import { ChatController, chatMessage, chatSender, replayingChat } from '../../chat';
+import { ChatController, chatMessage, chatSender } from '../../chat';
 import { MovelistView } from '../common/movelist';
 import { GameInfoView } from '../common/gameInfo';
 import { SpectatorsView } from '../common/spectatorsView';
@@ -768,7 +768,6 @@ export class RoundControllerBughouse extends TwoBoardController implements ChatC
             // Clearing the flag lets the rebuild re-announce into the fresh chat, below.
             this.resultAnnounced = false;
             resetMovelistDom();
-            replayingChat('bugroundchat');
 
             steps.forEach((step, idx) => {
                 if (idx === 0) {

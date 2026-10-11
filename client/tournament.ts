@@ -7,7 +7,7 @@ import { JSONObject, PyChessModel } from './types';
 import { _ } from './i18n';
 import { patch } from './document';
 import { alertDialog } from './alertDialog';
-import { chatMessage, chatView, ChatController, replayingChat } from './chat';
+import { chatMessage, chatView, ChatController } from './chat';
 import { colorIcon } from './chess';
 import { getLastMoveFen, VARIANTS, Variant, variantKey } from './variants';
 import { timeControlStr } from './view';
@@ -1117,7 +1117,6 @@ export class TournamentController implements ChatController {
     }
     private onMsgFullChat(msg: MsgFullChat) {
         // To prevent multiplication of messages we have to remove old messages div first
-        replayingChat('lobbychat');
         patch(document.getElementById('messages') as HTMLElement, h('div#messages-clear'));
         // then create a new one
         patch(document.getElementById('messages-clear') as HTMLElement, h('div#messages', { attrs: { role: 'none' } }));

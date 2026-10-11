@@ -19,7 +19,7 @@ import { ChessgroundController } from './cgCtrl';
 import { BoardName, JSONObject, PyChessModel } from './types';
 import { updateCount, updatePoint } from './info';
 import { sound } from './sound';
-import { chatMessage, ChatController, replayingChat } from './chat';
+import { chatMessage, ChatController } from './chat';
 import { selectMove } from './movelist';
 import { Api } from 'chessgroundx/api';
 import { Chessground } from 'chessgroundx/chessground';
@@ -797,7 +797,6 @@ export abstract class GameController extends ChessgroundController implements Ch
         const container = document.getElementById('messages') as HTMLElement;
         if (container) {
             // To prevent multiplication of messages we have to remove old messages div first
-            replayingChat('roundchat');
             patch(container, h('div#messages-clear'));
             // then create a new one
             patch(document.getElementById('messages-clear') as HTMLElement, h('div#messages', { attrs: { role: 'none' } }));

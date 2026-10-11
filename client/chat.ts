@@ -152,11 +152,6 @@ export function chatView(ctrl: ChatController, chatType: string, opts: ChatViewO
 //     chatMessage('', '…', 'bugroundchat', undefined, idx, this)
 // where the `undefined` only existed to step over a `time` they had no value for on
 // the way to arguments that were never read.
-/** Chat history resent on load or reconnect is not news: the list stays silent until the next live message. */
-export function replayingChat(chatType: string): void {
-    document.getElementById(chatType + '-messages')?.setAttribute('aria-live', 'off');
-}
-
 export function chatMessage(user: string, message: string, chatType: string, time?: number, history = false) {
     if (shouldSkipMessage(message)) return;
 
@@ -166,7 +161,8 @@ export function chatMessage(user: string, message: string, chatType: string, tim
     const chatDiv = document.getElementById(chatType + '-messages') as HTMLElement | null;
     const container = document.getElementById('messages') as HTMLElement | null;
     if (!chatDiv || !container) return;
-    if (!history) chatDiv.setAttribute('aria-live', 'polite');
+    // History resent on load or reconnect is not news: silent until the next live message.
+    chatDiv.setAttribute('aria-live', history ? 'off' : 'polite');
 
     const isBottom = chatDiv.scrollHeight - (chatDiv.scrollTop + chatDiv.offsetHeight) < 80;
     const localTime = time
