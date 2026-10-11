@@ -211,6 +211,7 @@ export class MovelistView {
             this.selectMove(ctrl, goToStart ? 0 : ctrl.steps.length - 1);
         };
 
+        const hidden = () => ({ attrs: { 'aria-hidden': 'true' } });
         let buttons = [
             h(
                 'button',
@@ -218,7 +219,7 @@ export class MovelistView {
                     on: { click: () => ctrl.flipBoards() },
                     props: { title: _('Flip boards') },
                 },
-                [h('i.icon.icon-refresh')],
+                [h('i.icon.icon-refresh', hidden())],
             ),
             h(
                 'button',
@@ -226,9 +227,11 @@ export class MovelistView {
                     on: { click: () => ctrl.switchBoards() },
                     props: { title: _('Switch boards') },
                 },
-                [h('i.icon.icon-exchange')],
+                [h('i.icon.icon-exchange', hidden())],
             ),
-            h('button', { on: { click: () => selectVariationBound(true) } }, [h('i.icon.icon-fast-backward')]),
+            h('button', { on: { click: () => selectVariationBound(true) }, props: { title: _('First move') } }, [
+                h('i.icon.icon-fast-backward', hidden()),
+            ]),
             h(
                 'button',
                 {
@@ -242,8 +245,9 @@ export class MovelistView {
                             }
                         },
                     },
+                    props: { title: _('Previous move') },
                 },
-                [h('i.icon.icon-step-backward')],
+                [h('i.icon.icon-step-backward', hidden())],
             ),
             h(
                 'button',
@@ -259,10 +263,13 @@ export class MovelistView {
                             }
                         },
                     },
+                    props: { title: _('Next move') },
                 },
-                [h('i.icon.icon-step-forward')],
+                [h('i.icon.icon-step-forward', hidden())],
             ),
-            h('button', { on: { click: () => selectVariationBound(false) } }, [h('i.icon.icon-fast-forward')]),
+            h('button', { on: { click: () => selectVariationBound(false) }, props: { title: _('Last move') } }, [
+                h('i.icon.icon-fast-forward', hidden()),
+            ]),
         ];
         patch(container, h('div#btn-controls-top.btn-controls', buttons));
     }

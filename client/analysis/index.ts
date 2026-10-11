@@ -215,7 +215,7 @@ export function analysisUnderboard(
                 h('div#fentext', [
                     h('strong', 'FEN'),
                     h('input#fullfen', {
-                        attrs: { readonly: true, spellcheck: false },
+                        attrs: { readonly: true, spellcheck: false, 'aria-label': 'FEN' },
                         on: { click: onClickFullfen },
                     }),
                 ]),

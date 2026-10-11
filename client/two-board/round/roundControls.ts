@@ -151,7 +151,7 @@ export class RoundControlsView {
                 // be asked. It says `Draw`, not what the title says: the title changes with the
                 // offer state and this must not, or the button would resize under a player
                 // reaching for it, which is the one thing its fixed size exists to prevent.
-                [h('i', '½'), h('span.control-label', _('Draw'))],
+                [h('i', { attrs: { 'aria-hidden': 'true' } }, '½'), h('span.control-label', _('Draw'))],
             ),
             h(
                 'button#resign',
@@ -161,7 +161,10 @@ export class RoundControlsView {
                     on: { click: spec.onResign },
                     props: { title: resignConfirm ? _('Confirm resignation') : _('Resign') },
                 },
-                [h('i', { class: { icon: true, 'icon-flag-o': true } }), h('span.control-label', _('Resign'))],
+                [
+                    h('i', { class: { icon: true, 'icon-flag-o': true }, attrs: { 'aria-hidden': 'true' } }),
+                    h('span.control-label', _('Resign')),
+                ],
             ),
         ];
         this.gameControls = patch(this.gameControls, h('div.btn-controls', buttons));

@@ -398,6 +398,7 @@ export class RoundController extends GameController {
                     h('div#more-time', [
                         h('button.icon.icon-plus-square', {
                             props: { type: 'button', title: _('Give 15 seconds') },
+                            attrs: { 'aria-label': _('Give 15 seconds') },
                             on: { click: () => onMoreTime() },
                         }),
                     ]),
@@ -495,12 +496,14 @@ export class RoundController extends GameController {
                 );
             } else if (!this.variant.rules.noDrawOffer) {
                 buttons.push(
-                    h('button#draw', { on: { click: () => this.draw() }, props: { title: _('Draw') } }, h('i', '½')),
+                    h('button#draw', { on: { click: () => this.draw() }, props: { title: _('Draw') } },
+                        h('i', { attrs: { 'aria-hidden': 'true' } }, '½'),
+                    ),
                 );
             }
             buttons.push(
                 h('button#resign', { on: { click: () => this.resign() }, props: { title: _('Resign') } }, [
-                    h('i', { class: { icon: true, 'icon-flag-o': true } }),
+                    h('i', { class: { icon: true, 'icon-flag-o': true }, attrs: { 'aria-hidden': 'true' } }),
                 ]),
             );
 
@@ -624,7 +627,7 @@ export class RoundController extends GameController {
 
     buttonAbort() {
         return h('button#abort', { on: { click: () => this.abort() }, props: { title: _('Abort') } }, [
-            h('i', { class: { icon: true, 'icon-abort': true } }),
+            h('i', { class: { icon: true, 'icon-abort': true }, attrs: { 'aria-hidden': 'true' } }),
         ]);
     }
 

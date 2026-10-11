@@ -709,6 +709,7 @@ export class EngineSettings extends BooleanSettings {
                     !this.ctrl.localEngine ||
                     !this.ctrl.isEngineReady ||
                     !this.ctrl.variantSupportedByFSF,
+                _('Computer analysis'),
             ),
         );
     }

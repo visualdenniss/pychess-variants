@@ -283,7 +283,7 @@ export function analysisView(model: PyChessModel): VNode[] {
                         h('div#fentext', [
                             h('strong', 'BFEN'),
                             h('input#fullfen', {
-                                attrs: { readonly: true, spellcheck: false },
+                                attrs: { readonly: true, spellcheck: false, 'aria-label': 'BFEN' },
                                 on: { click: onClickFullfen },
                             }),
                         ]),

@@ -379,6 +379,7 @@ export class EngineController {
         return {
             attrs: {
                 disabled: false,
+                'aria-label': _('Computer analysis'),
             },
             on: {
                 change: () => {
