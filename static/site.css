@@ -1014,32 +1014,8 @@ ul.guide li {
     color: white;
   }
 
-  /* HOVER IS NOT THE ONLY WAY IN. `visibility: hidden` takes a subtree out of the tab order AND
-     out of the accessibility tree, so with `:hover` alone every submenu link was unreachable
-     without a mouse. Measured on the lobby before this rule: of the links in this bar only EIGHT
-     could be focused — Home, the six section titles, and Donate — and every submenu link was
-     unreachable, so Tournaments, Simuls, Forum, Teams, Studies, Import game and Advanced search
-     could not be got to at all. WCAG 2.1.1 Keyboard, Level A. After it, all of them can.
-
-     `:focus-within` costs nothing visually — it fires only when something inside is focused, which
-     never happens under a mouse — and it is already the idiom this file uses for the challenge
-     notification (`.notification.challenge:focus-within`, line ~1231).
-
-     IT IS HALF THE FIX, AND THE HALF THAT IS FREE. A screen reader in BROWSE mode focuses nothing,
-     so this rule never fires for it and the submenu stays out of the tree. Being discoverable there
-     needs the section title to announce a collapsed/expanded state, which is a markup change. */
-  /* ARIA IS THE STATE, AND CSS READS IT. `aria-expanded` on the section's button is the single
-     source of truth for whether this menu is open, so what a screen reader is told and what is on
-     screen cannot drift apart. There is deliberately no companion `.open` class to keep in step.
-
-     `:hover` stays as a stateless preview for pointers, which means a hovered menu shows while its
-     button still says `aria-expanded="false"`. Accepted: nothing hovering is running a screen
-     reader, and the LATCHED state -- the only one a keyboard or AT interaction can produce -- is
-     always truthful. `topNav.ts` closes on `mouseleave` so a clicked-open menu never latches for a
-     mouse user.
-
-     `:focus-within` USED TO BE HERE and goes with the button (4e7e6f04d, superseded): focus that
-     opens fights activation that toggles -- Tab would open and Enter would immediately close. */
+  /* aria-expanded on the section button is the open state, so readers and screen agree;
+     :hover is only a pointer preview, and topNav.ts closes on mouseleave. */
   .topnav section:hover .drp,
   .topnav section > .nav-section[aria-expanded='true'] + .drp {
     visibility: visible;
