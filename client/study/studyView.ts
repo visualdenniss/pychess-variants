@@ -2683,6 +2683,7 @@ function runStudyGround(
                     study.serverAnalysisError = undefined;
                     updateStudyServerEvalContent(study, modeActions);
                 },
+                onServerAnalysisVisibilityChanged: () => modeActions.showServerAnalysis?.(),
                 onServerAnalysisUnavailable: reason => {
                     study.serverAnalysisError = reason;
                     updateStudyServerEvalContent(study, modeActions);
@@ -3260,6 +3261,7 @@ export function studyView(model: PyChessModel): VNode[] {
     page[0].data = {
         ...page[0].data,
         class: {
+            ...page[0].data?.class,
             'study-app': true,
             'has-players': studyHasGamePlayers(study),
             'study-conceal-playback': isConcealPlayback(effectiveStudySessionPolicy(study)),

@@ -31,6 +31,8 @@ class AnalysisSettings {
 
     constructor() {
         this.settings = {};
+        this.settings['showServerAnalysis'] = new ServerAnalysisSettings(this);
+        this.settings['showGauge'] = new GaugeSettings();
         this.settings['arrow'] = new ArrowSettings(this);
         this.settings['inlineNotation'] = new InlineNotationSettings(this);
         this.settings['disclosureMode'] = new DisclosureModeSettings(this);
@@ -57,33 +59,58 @@ class AnalysisSettings {
     }) {
         if (!variant.name) return h('div.analysis-settings');
 
-        const settingsList: VNode[] = [];
-
-        settingsList.push(this.settings['multipv'].view());
-
-        settingsList.push(this.settings['threads'].view());
-
-        settingsList.push(this.settings['hash'].view());
-
-        settingsList.push(this.settings['arrow'].view());
-
-        settingsList.push(this.settings['inlineNotation'].view());
-
-        settingsList.push(this.settings['disclosureMode'].view());
-
-        settingsList.push(this.settings['infiniteAnalysis'].view());
-
-        settingsList.push(this.settings['nnue'].view());
-
         const nnueFileSettings = this.getSettings(variant.name);
         nnueFileSettings.setLookupContext(nnueLookupContextForVariant(variant));
-        settingsList.push(nnueFileSettings.view());
 
-        settingsList.push(this.settings['fsfDebug'].view());
+        return h('div.analysis-settings', [
+            h('div.analysis-settings-group', [
+                this.settings['multipv'].view(),
+                this.settings['threads'].view(),
+                this.settings['hash'].view(),
+            ]),
+            h('div.analysis-settings-group', [
+                this.settings['showServerAnalysis'].view(),
+                this.settings['showGauge'].view(),
+                this.settings['arrow'].view(),
+                this.settings['inlineNotation'].view(),
+                this.settings['disclosureMode'].view(),
+                this.settings['infiniteAnalysis'].view(),
+            ]),
+            h('div.analysis-settings-group', [this.settings['nnue'].view(), nnueFileSettings.view()]),
+            h('div.analysis-settings-group', [this.settings['fsfDebug'].view()]),
+        ]);
+    }
+}
 
-        settingsList.push();
+class ServerAnalysisSettings extends BooleanSettings {
+    constructor(private readonly analysisSettings: AnalysisSettings) {
+        super('showServerAnalysis', true);
+    }
 
-        return h('div.analysis-settings', settingsList);
+    update(): void {
+        this.analysisSettings.ctrl.setServerAnalysisVisibility(this.value);
+    }
+
+    view(): VNode {
+        return h(
+            'div.serverAnalysis-toggle',
+            toggleSwitch(this, 'serverAnalysis-enabled', _('Show server analysis'), false),
+        );
+    }
+}
+
+class GaugeSettings extends BooleanSettings {
+    constructor() {
+        super('showGauge', true);
+    }
+
+    update(): void {
+        document.querySelector('.analysis-app')?.classList.toggle('gauge-off', !this.value);
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    view(): VNode {
+        return h('div.gauge-toggle', toggleSwitch(this, 'gauge-enabled', _('Show evaluation gauge'), false));
     }
 }
 
@@ -294,13 +321,7 @@ class NnueSettings extends BooleanSettings {
     }
 
     view(): VNode {
-        return h('div.nnue-toggle-settings', [
-            h('div.nnue-toggle', toggleSwitch(this, 'nnue-enabled', _('Use NNUE'), false)),
-            h(
-                'small.nnue-toggle-help',
-                _('Uses the installed NNUE network when available. Downloads are managed separately.'),
-            ),
-        ]);
+        return h('div.nnue-toggle', toggleSwitch(this, 'nnue-enabled', _('Use NNUE'), false));
     }
 }
 

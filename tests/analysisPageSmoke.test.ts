@@ -33,6 +33,7 @@ jest.unstable_mockModule('../client/roundCtrl', () => ({
 }));
 jest.unstable_mockModule('../client/analysis/analysisSettings', () => ({
     analysisSettings: {
+        settings: { showGauge: { value: true } },
         view: () => h('div.analysis-settings'),
     },
     EngineSettings: class EngineSettings {

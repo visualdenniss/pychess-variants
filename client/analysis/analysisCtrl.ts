@@ -96,6 +96,7 @@ export class AnalysisController extends GameController {
     isAnalysisBoard: boolean;
     isEngineReady: boolean;
     arrow: boolean;
+    showServerAnalysis: boolean;
     multipv: number;
     threads: number;
     hash: number;
@@ -168,6 +169,7 @@ export class AnalysisController extends GameController {
         };
 
         this.ongoing = this.analysisContext.ongoing;
+        this.showServerAnalysis = analysisSettings.settings['showServerAnalysis'].value as boolean;
 
         // is local stockfish.wasm engine supported at all
         this.localEngine = false;
@@ -661,7 +663,36 @@ export class AnalysisController extends GameController {
     }
 
     shouldDisplayAnalysisEvaluation(evaluation: AnalysisEvaluationDelivery): boolean {
-        return this.analysisExtension?.onEvaluation?.(evaluation) !== false;
+        const allowed = this.analysisExtension?.onEvaluation?.(evaluation) !== false;
+        return allowed && (evaluation.source === 'local' || this.showServerAnalysis !== false);
+    }
+
+    setServerAnalysisVisibility(visible: boolean): void {
+        this.showServerAnalysis = visible;
+        updateMovelist(this, true, false);
+        const chartEl = document.getElementById('chart-analysis');
+        if (chartEl) {
+            chartEl.style.display = visible && this.steps.some(step => step.analysis !== undefined) ? 'block' : 'none';
+        }
+        if (visible && chartEl && this.analysisContext.capabilities.evalCharts) analysisChart(this);
+        this.analysisExtension?.onServerAnalysisVisibilityChanged?.();
+        if (!this.localAnalysis && this.analysisContext.capabilities.positionEvaluation) {
+            this.clearPvlines();
+            this.autoShapes = Array.from({ length: this.multipv }, () => []);
+            this.chessground.setAutoShapes([]);
+            const step = this.getTreeNodeAtPath(this.analysisPath ?? '')?.step ?? this.steps[this.ply];
+            const allowed =
+                visible &&
+                step &&
+                this.shouldDisplayAnalysisEvaluation({
+                    source: 'stored',
+                    ply: this.ply,
+                    fen: step.fen,
+                    ceval: step.ceval,
+                    scoreStr: step.scoreStr,
+                });
+            this.drawEval(allowed ? step.ceval : undefined, allowed ? step.scoreStr : undefined, this.turnColor);
+        }
     }
 
     toggleSettings() {
@@ -863,8 +894,8 @@ export class AnalysisController extends GameController {
             loaderEl.style.display = 'block';
         }
         const chartEl = document.getElementById('chart-analysis') as HTMLElement;
-        chartEl.style.display = 'block';
-        analysisChart(this);
+        chartEl.style.display = this.showServerAnalysis ? 'block' : 'none';
+        if (this.showServerAnalysis) analysisChart(this);
     };
 
     checkStatus(msg: MsgBoard | MsgAnalysisBoard) {
@@ -1299,8 +1330,8 @@ export class AnalysisController extends GameController {
         const gaugeEl = document.getElementById('gauge') as HTMLElement | null;
         if (gaugeEl) {
             const fillEl = gaugeEl.querySelector('div.fill') as HTMLElement | null;
-            if (fillEl && ceval !== undefined) {
-                const score = ceval.s;
+            if (fillEl) {
+                const score = ceval?.s;
                 if (score !== undefined) {
                     const ev = povChances(turnColor, score);
                     fillEl.style.height = String(100 - (ev + 1) * 50) + '%';
@@ -1415,6 +1446,7 @@ export class AnalysisController extends GameController {
 
     // Updates chart and score in movelist
     drawServerEval = (ply: number, scoreStr?: string) => {
+        if (this.showServerAnalysis === false) return;
         if (ply > 0) {
             const evalEl = document.getElementById('ply' + String(ply)) as HTMLElement;
             if (evalEl) patch(evalEl, h('eval#ply' + String(ply), scoreStr));
@@ -1703,6 +1735,8 @@ export class AnalysisController extends GameController {
                 if (displayEvaluation) {
                     this.drawEval(step.ceval, step.scoreStr, step.turnColor);
                     if (node.mainlinePly !== undefined) this.drawServerEval(node.mainlinePly, step.scoreStr);
+                } else if (this.showServerAnalysis === false) {
+                    this.drawEval(undefined, undefined, step.turnColor);
                 }
             }
 
@@ -1767,6 +1801,8 @@ export class AnalysisController extends GameController {
             if (displayEvaluation) {
                 this.drawEval(step.ceval, step.scoreStr, step.turnColor);
                 this.drawServerEval(ply, step.scoreStr);
+            } else if (this.showServerAnalysis === false) {
+                this.drawEval(undefined, undefined, step.turnColor);
             }
         }
 

@@ -10,6 +10,9 @@
     grid-area: main;
     display: grid;
 }
+.analysis-app.gauge-off {
+    --gauge-gap: 4px;
+}
 
 /* DuckInput uses a0 as a temporary off-board holding square before
    the first duck placement. Clip the analysis board so that fake
@@ -97,6 +100,9 @@ div.ctable-container {
     overflow: hidden;
     position: relative;
 }
+.analysis-app.gauge-off #gauge {
+    display: none;
+}
 .flipped {
     transform: rotateX(180deg);
 }
@@ -162,6 +168,26 @@ div.analysis-settings {
   padding: 2vmin;
   background: var(--bg-color0);
   border-bottom: 3px solid var(--green-switch);
+}
+.analysis-settings-group {
+    display: flex;
+    flex-direction: column;
+}
+.analysis-settings-group + .analysis-settings-group {
+    margin-top: .5rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--border-color);
+}
+.analysis-settings :is(.serverAnalysis-toggle, .gauge-toggle) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.analysis-settings .arrow-toggle {
+    margin-top: 0;
+}
+.analysis-settings :is(.infiniteAnalysis-toggle, .nnue-file-settings) {
+    margin-bottom: 0;
 }
 
 button#bars {

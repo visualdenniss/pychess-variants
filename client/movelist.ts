@@ -14,6 +14,7 @@ type TreeCtrl = GameController & {
     analysisTree?: { root: AnalysisTreeNode };
     analysisContext?: AnalysisContext;
     analysisExtension?: AnalysisExtension;
+    showServerAnalysis?: boolean;
     hasAnalysisTree?: () => boolean;
     isTreeInlineNotation?: () => boolean;
     isTreeDisclosureMode?: () => boolean;
@@ -63,7 +64,10 @@ interface ParsedTreeMove {
 }
 
 function treeNodeVisible(ctrl: TreeCtrl, node: AnalysisTreeNode): boolean {
-    return ctrl.analysisExtension?.isTreeNodeVisible?.(node) !== false;
+    return (
+        !(ctrl.showServerAnalysis === false && node.serverAnalysis) &&
+        ctrl.analysisExtension?.isTreeNodeVisible?.(node) !== false
+    );
 }
 
 function treeNodeConcealed(ctrl: TreeCtrl, node: AnalysisTreeNode): boolean {
@@ -139,6 +143,16 @@ function renderTreeMoveText(move: string | undefined, nags: number[] = []): VNod
     }
 
     return nodes;
+}
+
+function treeMoveText(ctrl: TreeCtrl, node: AnalysisTreeNode, move: string | undefined): VNode[] {
+    let nags = treeNodeAnnotationsVisible(ctrl, node) ? node.annotations?.nags : undefined;
+    if (ctrl.showServerAnalysis === false) {
+        const advice = node.step.analysis?.advice;
+        if (advice) nags = nags?.filter(nag => nag !== advice.nag);
+        if (node.step.analysis) move = parseTreeMove(move).san;
+    }
+    return renderTreeMoveText(move, nags);
 }
 
 function asTreeCtrl(ctrl: GameController): TreeCtrl | undefined {
@@ -352,16 +366,18 @@ export function createMovelistButtons(ctrl: GameController) {
 // variations, preserve authored line breaks, and safely autolink URLs.
 function renderTreeComments(ctrl: TreeCtrl, node: AnalysisTreeNode): VNode[] {
     if (!treeNodeAnnotationsVisible(ctrl, node)) return [];
-    return (node.annotations?.comments ?? []).map(comment =>
-        h(
-            'comment.tree-comment',
-            {
-                class: { conceal: treeNodeConcealed(ctrl, node) },
-                attrs: { title: comment.sourceAuthor ? `PGN: ${comment.sourceAuthor}` : comment.author },
-            },
-            renderLinkifiedText(comment.text),
-        ),
-    );
+    return (node.annotations?.comments ?? [])
+        .filter(comment => ctrl.showServerAnalysis !== false || comment.id !== `server-analysis-${node.mainlinePly}`)
+        .map(comment =>
+            h(
+                'comment.tree-comment',
+                {
+                    class: { conceal: treeNodeConcealed(ctrl, node) },
+                    attrs: { title: comment.sourceAuthor ? `PGN: ${comment.sourceAuthor}` : comment.author },
+                },
+                renderLinkifiedText(comment.text),
+            ),
+        );
 }
 
 function renderTreeMove(
@@ -387,7 +403,7 @@ function renderTreeMove(
         prefix = `${Math.floor((node.ply + 1) / 2)}... `;
     }
 
-    const scoreStr = node.step.scoreStr ?? '';
+    const scoreStr = ctrl.showServerAnalysis === false ? '' : (node.step.scoreStr ?? '');
     const evalNode = node.mainlinePly !== undefined ? h(`eval#ply${node.mainlinePly}`, scoreStr) : h('eval', scoreStr);
 
     const recordedMainlinePly = (ctrl as GameController & { recordedMainlinePly?: number }).recordedMainlinePly;
@@ -435,12 +451,7 @@ function renderTreeMove(
                 },
             },
         },
-        [
-            disclosureButton,
-            prefix ? h('index', prefix) : undefined,
-            ...renderTreeMoveText(move, treeNodeAnnotationsVisible(ctrl, node) ? node.annotations?.nags : undefined),
-            evalNode,
-        ],
+        [disclosureButton, prefix ? h('index', prefix) : undefined, ...treeMoveText(ctrl, node, move), evalNode],
     );
 }
 
@@ -595,7 +606,7 @@ function renderTreeColumnMove(
     const move =
         ctrl.fog && ctrl.status < 0 && (node.step.turnColor === ctrl.mycolor || ctrl.spectator) ? '?' : node.step.san;
     const activePath = ctrl.getTreeActivePath?.();
-    const scoreStr = node.step.scoreStr ?? '';
+    const scoreStr = ctrl.showServerAnalysis === false ? '' : (node.step.scoreStr ?? '');
     const evalNode = node.mainlinePly !== undefined ? h(`eval#ply${node.mainlinePly}`, scoreStr) : h('eval', scoreStr);
 
     const recordedMainlinePly = (ctrl as GameController & { recordedMainlinePly?: number }).recordedMainlinePly;
@@ -643,11 +654,7 @@ function renderTreeColumnMove(
                 },
             },
         },
-        [
-            disclosureButton,
-            ...renderTreeMoveText(move, treeNodeAnnotationsVisible(ctrl, node) ? node.annotations?.nags : undefined),
-            evalNode,
-        ],
+        [disclosureButton, ...treeMoveText(ctrl, node, move), evalNode],
     );
 }
 
@@ -957,7 +964,7 @@ export function updateMovelist(ctrl: GameController, full = true, activate = tru
 
         const whiteMove = ctrl.steps[ply].turnColor === 'black';
         const moveEl = [h('san', move)];
-        const scoreStr = ctrl.steps[ply]['scoreStr'] ?? '';
+        const scoreStr = (ctrl as TreeCtrl).showServerAnalysis === false ? '' : (ctrl.steps[ply]['scoreStr'] ?? '');
         moveEl.push(h('eval#ply' + ply, scoreStr));
 
         if (whiteMove) moves.push(h('move.counter', Math.ceil((ply + 1) / 2)));

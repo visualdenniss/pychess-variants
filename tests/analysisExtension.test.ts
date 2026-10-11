@@ -100,6 +100,21 @@ test('evaluation delivery can be observed and suppress ordinary presentation', (
     expect(onEvaluation).toHaveBeenCalledWith(delivery);
 });
 
+test('hiding server analysis suppresses stored and server scores while allowing local evaluations', () => {
+    const ctrl = Object.create(AnalysisController.prototype) as any;
+    const onEvaluation = jest.fn(() => true);
+    Object.defineProperty(ctrl, 'analysisExtension', { value: { onEvaluation } });
+    const evaluation = { ply: 1, fen: 'position', ceval: { s: { cp: 23 } }, scoreStr: '0.2' };
+    ctrl.showServerAnalysis = false;
+    for (const source of ['stored', 'server']) {
+        expect(ctrl.shouldDisplayAnalysisEvaluation({ ...evaluation, source })).toBe(false);
+    }
+    expect(ctrl.shouldDisplayAnalysisEvaluation({ ...evaluation, source: 'local' })).toBe(true);
+    expect(onEvaluation).toHaveBeenCalledTimes(3);
+    ctrl.showServerAnalysis = true;
+    expect(ctrl.shouldDisplayAnalysisEvaluation({ ...evaluation, source: 'stored' })).toBe(true);
+});
+
 test('move application can be rejected before the analysis board is mutated', () => {
     const beforeMoveApplied = jest.fn(() => false);
     const ctrl = Object.create(AnalysisController.prototype) as any;
