@@ -6,6 +6,7 @@ import { Api } from 'chessgroundx/api';
 import { JSONObject, PyChessModel } from './types';
 import { _ } from './i18n';
 import { patch } from './document';
+import { ariaHiddenAttr } from './accessibility/aria';
 import { alertDialog } from './alertDialog';
 import { chatMessage, chatView, ChatController } from './chat';
 import { colorIcon } from './chess';
@@ -245,10 +246,10 @@ export class TournamentController implements ChatController {
         return h('div#page-controls.btn-controls', [
             h('div.pager', [
                 h('button', { on: { click: () => this.goToPage(1) }, props: { title: _('First') } }, [
-                    h('i.icon.icon-fast-backward', { attrs: { 'aria-hidden': 'true' } }),
+                    h('i.icon.icon-fast-backward', ariaHiddenAttr()),
                 ]),
                 h('button', { on: { click: () => this.goToPage(this.page - 1) }, props: { title: _('Prev') } }, [
-                    h('i.icon.icon-step-backward', { attrs: { 'aria-hidden': 'true' } }),
+                    h('i.icon.icon-step-backward', ariaHiddenAttr()),
                 ]),
                 // TODO: update
                 h(
@@ -256,13 +257,13 @@ export class TournamentController implements ChatController {
                     `${(this.page - 1) * 10 + 1} - ${Math.min(this.page * 10, this.nbPlayers)} / ${this.nbPlayers}`,
                 ),
                 h('button', { on: { click: () => this.goToPage(this.page + 1) }, props: { title: _('Next') } }, [
-                    h('i.icon.icon-step-forward', { attrs: { 'aria-hidden': 'true' } }),
+                    h('i.icon.icon-step-forward', ariaHiddenAttr()),
                 ]),
                 h('button', { on: { click: () => this.goToPage(10000) }, props: { title: _('Last') } }, [
-                    h('i.icon.icon-fast-forward', { attrs: { 'aria-hidden': 'true' } }),
+                    h('i.icon.icon-fast-forward', ariaHiddenAttr()),
                 ]),
                 h('button', { on: { click: () => this.goToMyPage() }, props: { title: _('Scroll to your player') } }, [
-                    h('i.icon.icon-target', { attrs: { 'aria-hidden': 'true' } }),
+                    h('i.icon.icon-target', ariaHiddenAttr()),
                 ]),
             ]),
             h('div#action'),

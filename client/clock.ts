@@ -4,6 +4,7 @@ import { h, VNode } from 'snabbdom';
 
 import { sound } from './sound';
 import { patch } from './document';
+import { ariaHiddenAttr } from './accessibility/aria';
 
 import { ngettext } from './i18n';
 
@@ -14,7 +15,6 @@ export type Millis = number;
 const HURRY = 10000;
 
 // Read as "05", ":", "23" with no owner; the board summary says the time in words instead.
-const hiddenFromReaders = () => ({ attrs: { 'aria-hidden': 'true' } });
 
 const prefixInteger = (num: number, length: number): string => (num / Math.pow(10, length)).toFixed(length).substr(2);
 
@@ -230,7 +230,7 @@ export class Clock {
 
     view(time: number) {
         if (this.corr) {
-            return h('div#' + this.id, hiddenFromReaders(), [
+            return h('div#' + this.id, ariaHiddenAttr(), [
                 h(
                     'div.clock.corr-clock',
                     {
@@ -248,7 +248,7 @@ export class Clock {
 
         const printed = this.printTime(time);
         const millis = new Date(time).getUTCMilliseconds();
-        return h('div#' + this.id, hiddenFromReaders(), [
+        return h('div#' + this.id, ariaHiddenAttr(), [
             h(
                 'div.clock',
                 {

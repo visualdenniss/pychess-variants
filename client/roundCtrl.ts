@@ -8,6 +8,7 @@ import { read as fenRead } from 'chessgroundx/fen';
 import { JSONObject } from './types';
 import { _, ngettext } from './i18n';
 import { patch } from './document';
+import { ariaHiddenAttr } from './accessibility/aria';
 import { boardSettings } from './boardSettings';
 import { Clock } from './clock';
 import { materializeGameHistory } from './analysis/gameHistory';
@@ -497,13 +498,13 @@ export class RoundController extends GameController {
             } else if (!this.variant.rules.noDrawOffer) {
                 buttons.push(
                     h('button#draw', { on: { click: () => this.draw() }, props: { title: _('Draw') } },
-                        h('i', { attrs: { 'aria-hidden': 'true' } }, '½'),
+                        h('i', ariaHiddenAttr(), '½'),
                     ),
                 );
             }
             buttons.push(
                 h('button#resign', { on: { click: () => this.resign() }, props: { title: _('Resign') } }, [
-                    h('i', { class: { icon: true, 'icon-flag-o': true }, attrs: { 'aria-hidden': 'true' } }),
+                    h('i', { class: { icon: true, 'icon-flag-o': true }, ...ariaHiddenAttr() }),
                 ]),
             );
 
@@ -627,7 +628,7 @@ export class RoundController extends GameController {
 
     buttonAbort() {
         return h('button#abort', { on: { click: () => this.abort() }, props: { title: _('Abort') } }, [
-            h('i', { class: { icon: true, 'icon-abort': true }, attrs: { 'aria-hidden': 'true' } }),
+            h('i', { class: { icon: true, 'icon-abort': true }, ...ariaHiddenAttr() }),
         ]);
     }
 
