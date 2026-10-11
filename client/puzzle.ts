@@ -7,7 +7,7 @@ import { PyChessModel } from './types';
 import { analysisTools, gauge } from './analysis';
 import { analysisSettings } from './analysis/analysisSettings';
 import { BoardSummaryView } from './accessibility/boardSummary';
-import { pageHeading } from './view';
+import { pageHeading } from './accessibility/headings';
 
 function runPuzzle(vnode: VNode, model: PyChessModel) {
     const el = vnode.elm as HTMLElement;

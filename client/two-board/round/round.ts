@@ -12,7 +12,7 @@ import { trackSquareUnit } from '../squareUnit';
 import { boardZoom } from '@/boardSettings';
 import { TabbedPanels } from '../common/tabs';
 import { BoardSummaryView } from '../../accessibility/boardSummary';
-import { pageHeading, srHeading } from '../../view';
+import { pageHeading, srHeading } from '../../accessibility/headings';
 import { registerStandingTab } from '../common/toolsPlacement';
 
 // The partner board's position in the tab list below — FIRST. Named because two places need it and

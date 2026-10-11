@@ -1,6 +1,6 @@
 import { h, VNode } from 'snabbdom';
 import { BoardSummaryView } from '../../accessibility/boardSummary';
-import { pageHeading } from '../../view';
+import { pageHeading } from '../../accessibility/headings';
 
 import { _ } from '../../i18n';
 import { GameInfoView } from '../common/gameInfo';

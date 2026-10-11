@@ -30,7 +30,8 @@ import { Ceval, MsgBoard, MsgUserConnected, Step, CrossTable } from '../messages
 import { MsgAnalysis, MsgAnalysisBoard } from './analysisType';
 import { GameController } from '../gameCtrl';
 import { analysisSettings, EngineSettings } from './analysisSettings';
-import { pvLine, pvLinePending, setAriaTabClick } from '../view';
+import { setAriaTabClick } from '../view';
+import { pvLine, pvLinePending } from '../common/engineView';
 import { createWebsocket } from '@/socket/webSocketUtils';
 import { setPocketRowCssVars } from '../pocketRow';
 import { updateCount, updatePoint } from '../info';

@@ -2,7 +2,7 @@ import Highcharts from 'highcharts';
 
 import { h, VNode } from 'snabbdom';
 
-import { pageHeading } from './view';
+import { pageHeading } from './accessibility/headings';
 
 function createPeriods() {
     const periodList: string[] = [];

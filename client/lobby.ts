@@ -24,7 +24,8 @@ import {
     variantGroups,
     variantKey,
 } from './variants';
-import { timeControlStr, changeTabs, setAriaTabClick, srHeading } from './view';
+import { timeControlStr, changeTabs, setAriaTabClick } from './view';
+import { srHeading } from './accessibility/headings';
 import { notify } from './notification';
 import { PyChessModel } from './types';
 import { model } from './main';

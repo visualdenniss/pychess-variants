@@ -7,7 +7,7 @@ import { VARIANTS } from '../variants';
 import { gaugeSideColors } from '../variantColor';
 import { analysisSettings } from './analysisSettings';
 import { BoardSummaryView } from '../accessibility/boardSummary';
-import { pageHeading, srHeading } from '../view';
+import { pageHeading, srHeading } from '../accessibility/headings';
 
 export type AnalysisPageParts = {
     side: VNode | VNode[];

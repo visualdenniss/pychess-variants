@@ -7,7 +7,7 @@ import { VARIANTS } from './variants';
 import { PyChessModel } from './types';
 import { BoardSummaryView } from './accessibility/boardSummary';
 import { _ } from './i18n';
-import { pageHeading, srHeading } from './view';
+import { pageHeading, srHeading } from './accessibility/headings';
 
 function runGround(vnode: VNode, model: PyChessModel, aliceBoardVNode?: VNode) {
     const el = vnode.elm as HTMLElement;
