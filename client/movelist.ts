@@ -9,6 +9,7 @@ import type { AnalysisContext } from './analysis/analysisContext';
 import type { AnalysisExtension } from './analysis/analysisExtension';
 import { GLYPHS } from './analysis/glyphs';
 import { renderLinkifiedText } from './richTextEnhance';
+import { ariaHiddenAttr } from './accessibility/aria';
 
 type TreeCtrl = GameController & {
     analysisTree?: { root: AnalysisTreeNode };
@@ -261,15 +262,12 @@ export function createMovelistButtons(ctrl: GameController) {
         selectMove(ctrl, target.ply, target.plyVari);
     };
 
-    // The icon font's glyph would otherwise be read as the button's name, hiding the title.
-    const hidden = () => ({ attrs: { 'aria-hidden': 'true' } });
-
     let buttons = [
         h('button', { on: { click: () => ctrl.toggleOrientation() }, props: { title: _('Flip board') } }, [
-            h('i.icon.icon-refresh', hidden()),
+            h('i.icon.icon-refresh', ariaHiddenAttr()),
         ]),
         h('button', { on: { click: () => selectVariationBound(true) }, props: { title: _('First move') } }, [
-            h('i.icon.icon-fast-backward', hidden()),
+            h('i.icon.icon-fast-backward', ariaHiddenAttr()),
         ]),
         h(
             'button',
@@ -285,7 +283,7 @@ export function createMovelistButtons(ctrl: GameController) {
                 },
                 props: { title: _('Previous move') },
             },
-            [h('i.icon.icon-step-backward', hidden())],
+            [h('i.icon.icon-step-backward', ariaHiddenAttr())],
         ),
         h(
             'button',
@@ -301,16 +299,16 @@ export function createMovelistButtons(ctrl: GameController) {
                 },
                 props: { title: _('Next move') },
             },
-            [h('i.icon.icon-step-forward', hidden())],
+            [h('i.icon.icon-step-forward', ariaHiddenAttr())],
         ),
         h('button', { on: { click: () => selectVariationBound(false) }, props: { title: _('Last move') } }, [
-            h('i.icon.icon-fast-forward', hidden()),
+            h('i.icon.icon-fast-forward', ariaHiddenAttr()),
         ]),
     ];
     if (ctrl.variant.name === 'alice') {
         buttons.push(
             h('button#alice', { on: { click: () => ctrl.switchAliceBoards() }, props: { title: _('Switch boards') } }, [
-                h('i.icon.icon-exchange', hidden()),
+                h('i.icon.icon-exchange', ariaHiddenAttr()),
             ]),
         );
         if (ctrl.aliceSplitBoard) {
@@ -324,7 +322,7 @@ export function createMovelistButtons(ctrl: GameController) {
                             title: ctrl.aliceSplitBoards ? _('Show merged board (S)') : _('Show separate boards (S)'),
                         },
                     },
-                    [h('span.alice-split-icon', hidden(), '▥')],
+                    [h('span.alice-split-icon', ariaHiddenAttr(), '▥')],
                 ),
             );
         }
@@ -343,7 +341,7 @@ export function createMovelistButtons(ctrl: GameController) {
                         ),
                     },
                 },
-                [h('i.icon.icon-bars', hidden())],
+                [h('i.icon.icon-bars', ariaHiddenAttr())],
             ),
         );
     } else {
@@ -353,7 +351,7 @@ export function createMovelistButtons(ctrl: GameController) {
                 h(
                     'button#corr',
                     { on: { click: () => window.location.assign(url) }, props: { title: _('Analysis board') } },
-                    [h('i.icon.icon-microscope', hidden())],
+                    [h('i.icon.icon-microscope', ariaHiddenAttr())],
                 ),
             );
         }
