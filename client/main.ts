@@ -249,7 +249,7 @@ export function view(el: HTMLElement, model: PyChessModel): VNode {
         case 'my-variants':
             return h('div#main-wrap', myVariantsView(model));
         case 'stats':
-            return h('div#stats', statsView());
+            return h('main#stats', statsView());
         case 'inbox':
             return h('div#main-wrap', [inboxView(model)]);
         case 'forum':

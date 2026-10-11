@@ -109,6 +109,7 @@ export class EditorController extends ChessgroundController {
                         'select#turn',
                         {
                             props: { name: 'turn' },
+                            attrs: { 'aria-label': _('Color') },
                             on: { change: e => this.onChangeTurn(e) },
                         },
                         [
@@ -129,7 +130,7 @@ export class EditorController extends ChessgroundController {
                               h('label.OOO', { attrs: { for: 'wOOO' } }, 'O-O-O'),
                               h('input#wOOO', {
                                   props: { name: 'wOOO', type: 'checkbox' },
-                                  attrs: { checked: this.parts[2].includes('Q') },
+                                  attrs: { checked: this.parts[2].includes('Q'), 'aria-label': _('White') + ' O-O-O' },
                                   on: { change: () => this.onChangeCastling() },
                               }),
                           ]),
@@ -145,7 +146,7 @@ export class EditorController extends ChessgroundController {
                               h('label.OOO', { attrs: { for: 'bOOO' } }, 'O-O-O'),
                               h('input#bOOO', {
                                   props: { name: 'bOOO', type: 'checkbox' },
-                                  attrs: { checked: this.parts[2].includes('q') },
+                                  attrs: { checked: this.parts[2].includes('q'), 'aria-label': _('Black') + ' O-O-O' },
                                   on: { change: () => this.onChangeCastling() },
                               }),
                           ]),

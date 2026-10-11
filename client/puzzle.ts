@@ -7,6 +7,7 @@ import { PyChessModel } from './types';
 import { analysisTools, gauge } from './analysis';
 import { analysisSettings } from './analysis/analysisSettings';
 import { BoardSummaryView } from './accessibility/boardSummary';
+import { pageHeading } from './view';
 
 function runPuzzle(vnode: VNode, model: PyChessModel) {
     const el = vnode.elm as HTMLElement;
@@ -43,6 +44,7 @@ export function puzzleView(model: PyChessModel): VNode[] {
     const variant = VARIANTS[model.variant];
     return [
         h('main.analysis-app', [
+            pageHeading(),
             h('aside.sidebar-first', leftSide(model)),
             h(`selection#mainboard.${variant.boardFamily}.${variant.pieceFamily}.${variant.ui.boardMark}`, [
                 h('div.cg-wrap.' + variant.board.cg, { hook: { insert: vnode => runPuzzle(vnode, model) } }),

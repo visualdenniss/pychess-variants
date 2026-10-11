@@ -24,7 +24,7 @@ import {
     variantGroups,
     variantKey,
 } from './variants';
-import { timeControlStr, changeTabs, setAriaTabClick } from './view';
+import { timeControlStr, changeTabs, setAriaTabClick, srHeading } from './view';
 import { notify } from './notification';
 import { PyChessModel } from './types';
 import { model } from './main';
@@ -1551,7 +1551,7 @@ export class LobbyController {
 
         return h('div#leaders.lobby-ranking', [
             h('a.lobby-ranking-top', { attrs: { href: '/players' } }, [
-                h('strong', _('Leaderboard')),
+                h('strong', { attrs: { role: 'heading', 'aria-level': '2' } }, _('Leaderboard')),
                 h('span.more', _('More') + ' »'),
             ]),
             h('div.lobby-ranking-content', [h('table', [h('tbody', rows)])]),
@@ -1583,7 +1583,7 @@ export class LobbyController {
 
         return h('div#winners.lobby-ranking', [
             h('a.lobby-ranking-top', { attrs: { href: '/tournaments/winners' } }, [
-                h('strong', _('Tournament winners')),
+                h('strong', { attrs: { role: 'heading', 'aria-level': '2' } }, _('Tournament winners')),
                 h('span.more', _('More') + ' »'),
             ]),
             h('div.lobby-ranking-content', [h('table', [h('tbody', rows)])]),
@@ -2059,7 +2059,7 @@ export function lobbyView(model: PyChessModel): VNode[] {
 
         dailyPuzzle = [
             h('span.vstext', [
-                h('span.text', _('Puzzle of the day')),
+                h('span.text', { attrs: { role: 'heading', 'aria-level': '2' } }, _('Puzzle of the day')),
                 h('span.text', _('%1 to play', turnColor === 'white' ? first : second)),
             ]),
             h(
@@ -2210,6 +2210,7 @@ export function lobbyView(model: PyChessModel): VNode[] {
     }
 
     return [
+        srHeading('h1', _('Lobby')),
         /* NAMED, BECAUSE THE LOBBY HAS TWO OF THESE. `<aside>` carries the `complementary` landmark
            implicitly, and an unnamed one is announced as just "complementary" -- so a landmark list
            on this page read "complementary, complementary" and neither could be told from the
@@ -2220,15 +2221,19 @@ export function lobbyView(model: PyChessModel): VNode[] {
            tournament spotlights and the timeline. Naming it for the tournaments would go stale the
            moment a stream is live. */
         h('aside.sidebar-first', { attrs: { 'aria-label': _("What's up") } }, [
+            srHeading('h2', _("What's up")),
             h('div#streams'),
             h('div#spotlights'),
+            srHeading('h3', _('Timeline')),
             timelinePanel(timelineEntries, anonUser),
         ]),
-        h('div.seeks', containers),
+        h('div.seeks', [srHeading('h2', _('Challenges')), ...containers]),
+        srHeading('h2', _('Variants')),
         h('div#variants-catalog'),
         // The buttons that start a game, plus the online counters. "New game" is what the region is
         // FOR; the counters are incidental to it.
         h('aside.sidebar-second', { attrs: { 'aria-label': _('Create a game') } }, [
+            srHeading('h2', _('Create a game')),
             h('div.seekbuttons'),
             h('div.lobby-count', [
                 h('a', { attrs: { href: '/players' } }, [h('counter#u_cnt')]),

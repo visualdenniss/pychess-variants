@@ -176,7 +176,7 @@ export function alternateStartName(variant: Variant, initialFen: string) {
 }
 
 /** A heading for screen readers to jump to, hidden because the page already shows what it names. */
-export function srHeading(level: 'h1' | 'h2', text: string): VNode {
+export function srHeading(level: 'h1' | 'h2' | 'h3', text: string): VNode {
     return h(`${level}.sr-only`, text);
 }
 
