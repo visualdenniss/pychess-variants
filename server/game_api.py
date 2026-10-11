@@ -357,9 +357,9 @@ def _build_user_games_filter_cond(
     selected_variant: str | None,
     level: str | None,
 ) -> dict[str, object] | None:
-    # Tab/scope condition. ``None`` means "all of this user's games" (no tab
-    # restriction); the variant condition below then narrows the full list.
-    tab_cond: dict[str, object] | None = None
+    # The scope owns the user condition. Imported games belong to their
+    # uploader, whose name need not appear in the PGN's player list.
+    tab_cond: dict[str, object] = {"us": profile_id}
 
     if selected_filter == "win":
         tab_cond = {
@@ -415,8 +415,7 @@ def _build_user_games_filter_cond(
                 {"us.1": session_user, "us.0": profile_id},
             ]
         }
-    # "all" and "perf" carry no tab condition -- the variant condition (when
-    # present) narrows the full game list instead.
+    # "all" and "perf" retain the default player scope.
 
     variant_cond: dict[str, object] | None = None
     if selected_variant is not None:
@@ -429,21 +428,9 @@ def _build_user_games_filter_cond(
         v = get_server_variant(uci_variant, variant960)
         z = 1 if variant960 else 0
 
-        variant_cond = {
-            "$or": [
-                {"v": v.code, "z": z, "us.1": profile_id},
-                {"v": v.code, "z": z, "us.0": profile_id},
-            ]
-        }
+        variant_cond = {"v": v.code, "z": z}
 
-    if tab_cond is None and variant_cond is None:
-        # No tab and no variant: every game belonging to the user (excluding
-        # imported games, matching the previous behaviour).
-        return {"us": profile_id}
-
-    conds: list[dict[str, object]] = []
-    if tab_cond is not None:
-        conds.append(tab_cond)
+    conds: list[dict[str, object]] = [tab_cond]
     if variant_cond is not None:
         conds.append(variant_cond)
     # Imported games are only ever returned by the explicit import tab.

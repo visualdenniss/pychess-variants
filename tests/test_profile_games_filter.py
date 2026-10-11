@@ -2,7 +2,10 @@ import json
 import time
 import unittest
 from datetime import UTC, datetime
+from html.parser import HTMLParser
 from types import SimpleNamespace
+from unittest.mock import patch
+from urllib.parse import urlsplit
 
 from aiohttp.test_utils import AioHTTPTestCase
 from const import STARTED
@@ -16,6 +19,35 @@ from user import User
 from variants import get_server_variant
 
 from server import make_app
+
+
+class _SidebarParser(HTMLParser):
+    def __init__(self, html: str):
+        super().__init__()
+        self.links: list[tuple[dict, str]] = []
+        self.in_sidebar = False
+        self.link: dict | None = None
+        self.text = ""
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "ul" and attrs.get("class") == "perfs":
+            self.in_sidebar = True
+        if self.in_sidebar and tag == "a":
+            self.link = attrs
+            self.text = ""
+
+    def handle_data(self, data):
+        if self.link is not None:
+            self.text += data
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.link is not None:
+            self.links.append((self.link, self.text.strip()))
+            self.link = None
+        if tag == "ul":
+            self.in_sidebar = False
 
 
 class _FakeRequest:
@@ -53,12 +85,7 @@ class ProfileGamesFilterCombineTestCase(unittest.TestCase):
     def _variant_clause(self, name: str, is960: bool = False) -> dict:
         code = get_server_variant(name, is960).code
         z = 1 if is960 else 0
-        return {
-            "$or": [
-                {"v": code, "z": z, "us.1": self.PROFILE},
-                {"v": code, "z": z, "us.0": self.PROFILE},
-            ]
-        }
+        return {"v": code, "z": z}
 
     def _rated_clause(self) -> dict:
         return {
@@ -106,7 +133,7 @@ class ProfileGamesFilterCombineTestCase(unittest.TestCase):
         cond = self._build("/@/someuser/perf/chess")
         self.assertEqual(
             cond,
-            {"$and": [self._variant_clause("chess"), {"y": {"$ne": 2}}]},
+            {"$and": [{"us": self.PROFILE}, self._variant_clause("chess"), {"y": {"$ne": 2}}]},
         )
 
     def test_rated_tab_only_excludes_imported_games(self):
@@ -116,9 +143,9 @@ class ProfileGamesFilterCombineTestCase(unittest.TestCase):
             {"$and": [self._rated_clause(), {"y": {"$ne": 2}}]},
         )
 
-    def test_no_filter_returns_all_user_games(self):
+    def test_no_filter_excludes_imported_games(self):
         cond = self._build("/@/someuser")
-        self.assertEqual(cond, {"us": self.PROFILE})
+        self.assertEqual(cond, {"$and": [{"us": self.PROFILE}, {"y": {"$ne": 2}}]})
 
     def test_unknown_variant_on_perf_path_returns_none(self):
         cond = self._build("/@/someuser/perf/notavariant")
@@ -132,7 +159,13 @@ class ProfileGamesFilterCombineTestCase(unittest.TestCase):
         cond = self._build("/@/someuser/perf/chess960")
         self.assertEqual(
             cond,
-            {"$and": [self._variant_clause("chess", is960=True), {"y": {"$ne": 2}}]},
+            {
+                "$and": [
+                    {"us": self.PROFILE},
+                    self._variant_clause("chess", is960=True),
+                    {"y": {"$ne": 2}},
+                ]
+            },
         )
 
     def test_import_tab_does_not_exclude_imported_games(self):
@@ -154,10 +187,6 @@ class ProfileGamesFilterCombineTestCase(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ProfileGamesFilterCombineHttpTestCase(AioHTTPTestCase):
     """End-to-end coverage of #648 through the real app: the profile games API
     ANDs the tab and the variant, and the profile page preserves the active tab
@@ -177,6 +206,7 @@ class ProfileGamesFilterCombineHttpTestCase(AioHTTPTestCase):
         # render no variant links). Seeding PROFILE only in the DB lets
         # get_profile() read the perfs document instead.
         viewer = User(app_state, username=self.VIEWER)
+        viewer.game_category_set = True
         app_state.users[self.VIEWER] = viewer
 
         await app_state.db.user.insert_many(
@@ -216,6 +246,53 @@ class ProfileGamesFilterCombineHttpTestCase(AioHTTPTestCase):
                 {**base, "_id": "casual_chess", "v": chess_code, "y": 0},
                 # rated shogi
                 {**base, "_id": "rated_shogi", "v": shogi_code, "y": 1},
+                # Imported PGN player names are independent of the uploader.
+                {
+                    **base,
+                    "_id": "imported_chess_player",
+                    "v": chess_code,
+                    "y": 2,
+                    "by": self.PROFILE,
+                },
+                {
+                    **base,
+                    "_id": "imported_chess_external",
+                    "v": chess_code,
+                    "y": 2,
+                    "by": self.PROFILE,
+                    "us": ["PGN White", "PGN Black"],
+                },
+                {
+                    **base,
+                    "_id": "imported_shogi_external",
+                    "v": shogi_code,
+                    "y": 2,
+                    "by": self.PROFILE,
+                    "us": ["PGN White", "PGN Black"],
+                },
+                {
+                    **base,
+                    "_id": "imported_chess960_external",
+                    "v": chess_code,
+                    "z": 1,
+                    "y": 2,
+                    "by": self.PROFILE,
+                    "us": ["PGN White", "PGN Black"],
+                },
+                {
+                    **base,
+                    "_id": "other_users_import",
+                    "v": chess_code,
+                    "y": 2,
+                    "by": self.VIEWER,
+                },
+                {
+                    **base,
+                    "_id": "other_users_game",
+                    "v": chess_code,
+                    "y": 1,
+                    "us": [self.OPPONENT, self.VIEWER],
+                },
             ]
         )
 
@@ -263,6 +340,70 @@ class ProfileGamesFilterCombineHttpTestCase(AioHTTPTestCase):
         payload = await self._games("filter=rated&variant=notavariant")
         self.assertEqual([], payload)
 
+    async def test_default_history_excludes_imports_and_other_users_games(self):
+        for query in ("", "filter=all"):
+            with self.subTest(query=query):
+                payload = await self._games(query)
+                self.assertEqual(
+                    {"rated_chess", "casual_chess", "rated_shogi"},
+                    {item["_id"] for item in payload},
+                )
+
+    async def test_import_filter_uses_uploader_instead_of_player_names(self):
+        expected = {
+            None: {
+                "imported_chess_player",
+                "imported_chess_external",
+                "imported_shogi_external",
+                "imported_chess960_external",
+            },
+            "chess": {"imported_chess_player", "imported_chess_external"},
+            "shogi": {"imported_shogi_external"},
+            "chess960": {"imported_chess960_external"},
+        }
+        for variant, game_ids in expected.items():
+            with self.subTest(variant=variant):
+                query = "filter=import" + (f"&variant={variant}" if variant else "")
+                payload = await self._games(query)
+                self.assertEqual(game_ids, {item["_id"] for item in payload})
+
+    async def test_pgn_export_obeys_import_scope_and_variant(self):
+        self.set_session_user(self.PROFILE)
+        expected = {
+            "": {"rated_chess", "casual_chess", "rated_shogi"},
+            "filter=import&variant=chess": {"imported_chess_player", "imported_chess_external"},
+        }
+        for query, game_ids in expected.items():
+            with (
+                self.subTest(query=query),
+                patch("game_api.pgn", side_effect=lambda doc: f"{doc['_id']}\n"),
+            ):
+                response = await self.client.get(f"/api/games/user/{self.PROFILE}/pgn?{query}")
+                self.assertEqual(response.status, 200)
+                self.assertEqual(game_ids, set((await response.text()).splitlines()))
+
+    async def test_all_variants_link_preserves_tab_and_selection(self):
+        self.set_session_user(self.VIEWER)
+        for tab in ("", "/rated", "/playing", "/import", "/me"):
+            for variant in ("", "?variant=chess"):
+                with self.subTest(tab=tab, variant=variant):
+                    response = await self.client.get(f"/@/{self.PROFILE}{tab}{variant}")
+                    self.assertEqual(response.status, 200)
+                    links = _SidebarParser(await response.text()).links
+                    self.assertTrue(links)
+                    first_link, label = links[0]
+                    self.assertEqual(label, "All variants")
+                    url = urlsplit(first_link["href"])
+                    self.assertEqual(url.path, f"/@/{self.PROFILE}{tab}")
+                    self.assertEqual(url.query, "")
+                    self.assertEqual("active" in first_link["class"].split(), not variant)
+                    self.assertEqual(first_link.get("aria-current"), None if variant else "page")
+                    for link, _label in links[1:]:
+                        self.assertIn(
+                            f"{tab}?variant=" if tab else "/perf/",
+                            link["href"],
+                        )
+
     async def test_profile_page_preserves_tab_when_variant_active(self):
         self.set_session_user(self.VIEWER)
         response = await self.client.get(f"/@/{self.PROFILE}/rated?variant=chess")
@@ -275,3 +416,7 @@ class ProfileGamesFilterCombineHttpTestCase(AioHTTPTestCase):
         self.assertIn('data-variant="chess"', body)
         # Variant links on the Rated tab keep the tab in the URL.
         self.assertIn(f"/@/{self.PROFILE}/rated?variant=chess", body)
+
+
+if __name__ == "__main__":
+    unittest.main()
