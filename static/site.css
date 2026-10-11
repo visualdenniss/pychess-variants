@@ -650,6 +650,10 @@ div.guide li {
 div.closed {
   width: 610px;
 }
+div.closed h1 {
+  font-size: 1.17em;
+  padding: 0;
+}
 under-lobby {
   grid-area: blog;
 }

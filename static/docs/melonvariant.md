@@ -1,6 +1,6 @@
 # melonvariant
 
-![stratpos](../static/images/MelonvariantGuide/startpos.webp)
+![Starting position](../static/images/MelonvariantGuide/startpos.webp)
 
 Is a chess variant designed in 2024-2025 by Watermelonely for the Variant Design Contest.
 The idea was to make use of unique short range pieces used in Shatranj and Shogi variants while also allowing powerful pieces to exist without dominating the game, and achieve a game feel rather different to standard Chess without making use of complex pieces and rules.
@@ -80,7 +80,7 @@ Drops promoted as a Chess Bishop + Janggi diagonal Cannon.
 
 ### MACHINE (WD / RpR)
 
-![machine](../static/images/MelonvariantGuide/machine.webp)
+![Machine movement](../static/images/MelonvariantGuide/machine.webp)
 
 Moves and captures like the Captain in Spartan Chess.
 
