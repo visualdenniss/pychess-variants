@@ -169,6 +169,26 @@ div.analysis-settings {
   background: var(--bg-color0);
   border-bottom: 3px solid var(--green-switch);
 }
+.analysis-settings-group {
+    display: flex;
+    flex-direction: column;
+}
+.analysis-settings-group + .analysis-settings-group {
+    margin-top: .5rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--border-color);
+}
+.analysis-settings :is(.serverAnalysis-toggle, .gauge-toggle) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.analysis-settings .arrow-toggle {
+    margin-top: 0;
+}
+.analysis-settings :is(.infiniteAnalysis-toggle, .nnue-file-settings) {
+    margin-bottom: 0;
+}
 
 button#bars {
   display: none;
