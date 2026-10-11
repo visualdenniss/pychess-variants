@@ -240,6 +240,7 @@ export class EngineController {
         this.multipvSetting = new MultiPvSetting(this);
         this.multipv = clampMultiPv(this.multipvSetting.value);
 
+        // TODO: reuse the shared switch component (toggleSwitch in view.ts) instead of this hand-built one.
         this.vinput = h('input#input', { props: { name: 'engine', type: 'checkbox' } });
         this.vscore = h('score#score', '');
         this.vscorePartner = h('score#scorePartner', '');
