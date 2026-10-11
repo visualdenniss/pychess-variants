@@ -1,7 +1,7 @@
 import { h, VNode } from 'snabbdom';
 import * as cg from 'chessgroundx/types';
 
-import { _, N_ } from '@/i18n';
+import { _ } from '@/i18n';
 import { pieceName } from '@/pieceNames';
 import { Variant } from '../../variants';
 
@@ -33,16 +33,16 @@ import { Variant } from '../../variants';
 // cannot occur — but discarding is a decision, not an oversight.
 // The presets that are not about a piece, in the order their buttons appear.
 const TELLS: Readonly<Record<string, string>> = {
-    sit: N_('Sit/stall'),
-    go: N_('Go/hurry'),
-    trade: N_('Trades are good'),
-    notrade: N_("Don't trade"),
-    mate: N_('I have checkmate'),
-    ok: N_('OK'),
-    no: N_('No'),
-    mb: N_('My bad'),
-    nvm: N_('Nevermind'),
-    nice: N_('Nice'),
+    sit: _('Sit/stall'),
+    go: _('Go/hurry'),
+    trade: _('Trades are good'),
+    notrade: _("Don't trade"),
+    mate: _('I have checkmate'),
+    ok: _('OK'),
+    no: _('No'),
+    mb: _('My bad'),
+    nvm: _('Nevermind'),
+    nice: _('Nice'),
 };
 
 /** What a preset says, by the name it is sent as: "Need queen" for `q`, "Don't give knight" for `non`. */

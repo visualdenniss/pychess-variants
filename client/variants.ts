@@ -16,7 +16,7 @@ import {
     TimeControlType,
     uci2LastMove,
 } from './chess';
-import { _, N_, gameCategoryLabel } from './i18n';
+import { _, gameCategoryLabel } from './i18n';
 import type { PieceNameTable } from './pieceNames';
 import { calculateDiff, Equivalence, MaterialDiff } from './material';
 
@@ -663,7 +663,7 @@ interface VariantConfig {
     pieceRow: cg.Letter[] | Record<cg.Color, cg.Letter[]>;
     // Pieces considered king for check marking (default: ['k'])
     kingRoles?: cg.Letter[];
-    // English piece names by letter, each marked with N_(); only those the piece family's names
+    // English piece names by letter, each marked with _(); only those the piece family's names
     // in pieceNames.ts do not already cover
     pieceNames?: PieceNameTable;
     // Only where one side calls a letter something else (orda's khan)
@@ -1116,7 +1116,7 @@ export const VARIANTS: Record<string, Variant> = {
         pieceRow: ['k', 's', 'm', 'n', 'r', 'p', 'm~' as cg.Letter],
         promotion: { type: 'regular', order: ['m'] },
         // The names the bughouse chat presets have always used for makruk's pieces
-        pieceNames: { k: N_('king'), m: N_('queen'), s: N_('bishop'), n: N_('knight'), r: N_('rook'), p: N_('pawn') },
+        pieceNames: { k: _('king'), m: _('queen'), s: _('bishop'), n: _('knight'), r: _('rook'), p: _('pawn') },
         pocket: {
             roles: ['p', 'm', 's', 'n', 'r'],
             captureToHand: true,
@@ -1185,20 +1185,20 @@ export const VARIANTS: Record<string, Variant> = {
         colors: { first: 'Black', second: 'White' },
         pieceRow: ['k', 'g', 'r', 'b', 's', 'n', 'l', 'p'],
         pieceNames: {
-            k: N_('king'),
-            g: N_('gold general'),
-            r: N_('rook'),
-            b: N_('bishop'),
-            s: N_('silver general'),
-            n: N_('knight'),
-            l: N_('lance'),
-            p: N_('pawn'),
-            '+r': N_('dragon king'),
-            '+b': N_('dragon horse'),
-            '+s': N_('promoted silver'),
-            '+n': N_('promoted knight'),
-            '+l': N_('promoted lance'),
-            '+p': N_('tokin'),
+            k: _('king'),
+            g: _('gold general'),
+            r: _('rook'),
+            b: _('bishop'),
+            s: _('silver general'),
+            n: _('knight'),
+            l: _('lance'),
+            p: _('pawn'),
+            '+r': _('dragon king'),
+            '+b': _('dragon horse'),
+            '+s': _('promoted silver'),
+            '+n': _('promoted knight'),
+            '+l': _('promoted lance'),
+            '+p': _('tokin'),
         },
         pocket: { roles: ['p', 'l', 'n', 's', 'g', 'b', 'r'], captureToHand: true },
         promotion: { type: 'shogi', roles: ['p', 'l', 'n', 's', 'r', 'b'] },
@@ -1525,7 +1525,7 @@ export const VARIANTS: Record<string, Variant> = {
         boardFamily: 'standard10x8',
         pieceFamily: 'capa',
         pieceRow: ['k', 'q', 'c', 'a', 'r', 'b', 'n', 'p'],
-        pieceNames: { a: N_('archbishop'), c: N_('chancellor') },
+        pieceNames: { a: _('archbishop'), c: _('chancellor') },
         rules: { enPassant: true },
         alternateStart: {
             '': '',
@@ -1574,7 +1574,7 @@ export const VARIANTS: Record<string, Variant> = {
         boardFamily: 'standard10x8',
         pieceFamily: 'capa',
         pieceRow: ['k', 'q', 'c', 'a', 'r', 'b', 'n', 'p'],
-        pieceNames: { a: N_('archbishop'), c: N_('chancellor') },
+        pieceNames: { a: _('archbishop'), c: _('chancellor') },
         pocket: { roles: ['p', 'n', 'b', 'r', 'a', 'c', 'q'], captureToHand: true },
         rules: { enPassant: true },
         alternateStart: {
@@ -1640,7 +1640,7 @@ export const VARIANTS: Record<string, Variant> = {
         boardFamily: 'standard8x8',
         pieceFamily: 'seirawan',
         pieceRow: ['k', 'q', 'e', 'h', 'r', 'b', 'n', 'p'],
-        pieceNames: { h: N_('hawk'), e: N_('elephant') },
+        pieceNames: { h: _('hawk'), e: _('elephant') },
         pocket: { roles: ['h', 'e'], captureToHand: false },
         rules: { enPassant: true, gate: true },
     }),
@@ -1666,7 +1666,7 @@ export const VARIANTS: Record<string, Variant> = {
         boardFamily: 'grand10x10',
         pieceFamily: 'capa',
         pieceRow: ['k', 'q', 'c', 'a', 'r', 'b', 'n', 'p'],
-        pieceNames: { a: N_('cardinal'), c: N_('marshal') },
+        pieceNames: { a: _('cardinal'), c: _('marshal') },
         rules: { enPassant: true },
     }),
 
@@ -1707,12 +1707,12 @@ export const VARIANTS: Record<string, Variant> = {
         pieceFamily: 'shogun',
         pieceRow: ['k', 'f', 'r', 'b', 'n', 'p'],
         pieceNames: {
-            f: N_('duchess'),
-            '+f': N_('queen'),
-            '+p': N_('captain'),
-            '+r': N_('mortar'),
-            '+b': N_('archbishop'),
-            '+n': N_('general'),
+            f: _('duchess'),
+            '+f': _('queen'),
+            '+p': _('captain'),
+            '+r': _('mortar'),
+            '+b': _('archbishop'),
+            '+n': _('general'),
         },
         pocket: { roles: ['p', 'n', 'b', 'r', 'f'], captureToHand: true },
         promotion: { type: 'shogi', roles: ['p', 'f', 'r', 'b', 'n'] },
@@ -1816,8 +1816,8 @@ export const VARIANTS: Record<string, Variant> = {
         pieceFamily: 'orda',
         colors: { first: 'White', second: 'Gold' },
         pieceRow: { white: ['k', 'q', 'r', 'b', 'n', 'p', 'h'], black: ['k', 'y', 'l', 'a', 'h', 'p', 'q'] },
-        pieceNames: { y: N_('yurt'), h: N_('kheshig'), a: N_('horse archer'), l: N_('lancer') },
-        pieceNamesByColor: { black: { k: N_('khan') } },
+        pieceNames: { y: _('yurt'), h: _('kheshig'), a: _('horse archer'), l: _('lancer') },
+        pieceNamesByColor: { black: { k: _('khan') } },
         promotion: { type: 'regular', order: ['q', 'h'] },
         rules: { enPassant: true },
         ui: { boardMark: 'campmate' },

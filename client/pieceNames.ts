@@ -1,29 +1,30 @@
 import * as cg from 'chessgroundx/types';
 import * as util from 'chessgroundx/util';
 
-import { _, N_ } from './i18n';
+import { _ } from './i18n';
 import type { Variant } from './variants';
 
-// English names keyed by piece letter ('r', '+p'), translated only when shown.
+// Names keyed by piece letter ('r', '+p'); pieceName() translates them when shown,
+// since these tables are built before the translations load.
 export type PieceNameTable = Readonly<Record<string, string>>;
 
 const CHESS: PieceNameTable = {
-    k: N_('king'),
-    q: N_('queen'),
-    r: N_('rook'),
-    b: N_('bishop'),
-    n: N_('knight'),
-    p: N_('pawn'),
+    k: _('king'),
+    q: _('queen'),
+    r: _('rook'),
+    b: _('bishop'),
+    n: _('knight'),
+    p: _('pawn'),
 };
 
 const XIANGQI: PieceNameTable = {
-    k: N_('king'),
-    a: N_('advisor'),
-    b: N_('elephant'),
-    n: N_('horse'),
-    r: N_('chariot'),
-    c: N_('cannon'),
-    p: N_('pawn'),
+    k: _('king'),
+    a: _('advisor'),
+    b: _('elephant'),
+    n: _('horse'),
+    r: _('chariot'),
+    c: _('cannon'),
+    p: _('pawn'),
 };
 
 // Piece families whose k, q, r, b, n, p are the chess pieces (checked against their rules pages).
