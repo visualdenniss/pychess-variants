@@ -3,6 +3,9 @@ const showdown = require('showdown');
 
 const converter = new showdown.Converter();
 converter.setFlavor('github');
+// Render fragments only; avoid the metadata-title XSS path (GHSA-cr32-g25g-vxjj).
+converter.setOption('metadata', false);
+converter.setOption('completeHTMLDocument', false);
 
 const basePath = realpathSync('./');
 console.log('--- md2html.js ---', basePath);

@@ -25,3 +25,15 @@ test('drops iframe embeds with unsafe src', () => {
     const root = renderBlogMarkdown('<iframe src="javascript:alert(1)"></iframe>');
     expect(root.querySelector('iframe')).toBeNull();
 });
+
+test.each([
+    '</title><script>alert(document.cookie)</script>',
+    '</title><img src="/missing-image" onerror="alert(document.cookie)">',
+])('sanitizes malicious frontmatter title: %s', title => {
+    const root = renderBlogMarkdown(`---\ntitle: ${title}\n---\n\n# Hello`);
+
+    expect(root.querySelector('h1')?.textContent).toBe('Hello');
+    // Frontmatter stays in the fragment instead of becoming document metadata.
+    expect(root.textContent).toContain('title:');
+    expect(root.querySelector('html, head, body, title, script, [onerror]')).toBeNull();
+});
