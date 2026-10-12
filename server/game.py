@@ -424,12 +424,14 @@ class Game:
                 if self.bplayer.bot:
                     self.board.janggi_setup("b")
 
-        self.overtime = False
         self.byoyomi = byoyomi_period > 0
+        self.overtime = self.byoyomi and base == 0
         self.byoyomi_period = byoyomi_period
 
-        # Remaining byoyomi periods by players
-        self.byoyomi_periods = [byoyomi_period, byoyomi_period]
+        # Without main time, the first period is already running. The clock
+        # counts unused periods separately from the active countdown.
+        unused_periods = byoyomi_period - 1 if self.overtime else byoyomi_period
+        self.byoyomi_periods = [unused_periods, unused_periods]
 
         # On page refresh we have to add extra byoyomi times gained by current player to report correct clock time
         # We adjust this in "byoyomi" messages in wsr.py

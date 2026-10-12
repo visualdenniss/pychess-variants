@@ -9,11 +9,14 @@ from unittest.mock import patch
 import pytest
 import test_logger
 from const import T_FINISHED
+from game import Game
 from mongomock_motor import AsyncMongoMockClient
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import async_playwright, expect
 from pychess_global_app_state_utils import get_app_state
 from tournament.tournament import SCORE_SHIFT
+from user import User
+from utils import insert_game_to_db
 
 from server import make_app
 
@@ -139,6 +142,67 @@ class TestGUI:
             await page.keyboard.press("Escape")
 
             await browser.close()
+
+    @pytest.mark.parametrize("periods", [1, 3])
+    async def test_zero_main_time_byoyomi_resets_after_moves_and_refresh(
+        self, aiohttp_server, periods
+    ):
+        app = make_app(db_client=AsyncMongoMockClient(tz_aware=True), simple_cookie_storage=True)
+        server = await aiohttp_server(app, host="127.0.0.1")
+        app_state = get_app_state(app)
+        base_url = f"http://{server.host}:{server.port}"
+        players = []
+        for name in ("byoyomi-white", "byoyomi-black"):
+            await app_state.db.user.insert_one({"_id": name, "enabled": True, "ct": "all"})
+            player = User(app_state, username=name)
+            app_state.users[name] = player
+            players.append(player)
+        game = Game(
+            app_state,
+            "ByoTest1",
+            "torishogi",
+            "",
+            *players,
+            base=0,
+            inc=60,
+            byoyomi_period=periods,
+        )
+        app_state.games[game.id] = game
+        await insert_game_to_db(game, app_state)
+
+        async with async_playwright() as playwright:
+            browser = await self._launch_browser(playwright)
+            try:
+                pages = []
+                for player in players:
+                    _, page = await self._playwright_page_for_user(
+                        browser, base_url, player.username
+                    )
+                    await page.goto(f"{base_url}/{game.id}")
+                    await page.wait_for_selector("#mainboard cg-board")
+                    pages.append(page)
+                for ply in range(4):
+                    page = pages[game.board.color]
+                    if ply == 2:
+                        await page.reload()
+                    await page.wait_for_function("() => window.cg?.state.movable.dests?.size > 0")
+                    if ply >= 2:
+                        await asyncio.sleep(0.2)
+                    move = next(
+                        move
+                        for move in game.board.legal_moves()
+                        if len(move) == 4 and "@" not in move
+                    )
+                    await page.evaluate(
+                        "move => { window.cg.selectSquare(move.slice(0, 2)); "
+                        "window.cg.selectSquare(move.slice(2, 4)); }",
+                        move,
+                    )
+                    await self._eventually(lambda expected=ply + 1: game.board.ply == expected)
+                    assert game.clocks == (60000, 60000)
+                assert game.byoyomi_periods == [periods - 1, periods - 1]
+            finally:
+                await browser.close()
 
     async def test_casual_only_variant_disables_rating_controls(self, aiohttp_server):
         username = "casual_only_host"
