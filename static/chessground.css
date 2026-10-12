@@ -436,7 +436,7 @@ piece.fading {
   font-weight: bold;
 }
 /* hide coords */
-@media (max-width: 799px) and (orientation: portrait) {
+@media (max-width: 799px) {
     .cg-wrap coords {
         display: none;
     }
