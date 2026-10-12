@@ -67,7 +67,6 @@ export class RoundControllerBughouse extends TwoBoardController implements ChatC
 
     readonly anon: boolean;
 
-    autoPromote: boolean;
 
     /* RECONNECTION AND RESYNCHRONISATION, WHICH IS ITS OWN SUBJECT AND NOW HAS ITS OWN OWNER.
      *
@@ -153,7 +152,6 @@ export class RoundControllerBughouse extends TwoBoardController implements ChatC
         this.profileid = model['profileid'];
         this.level = model['level'];
 
-        this.autoPromote = localStorage.autoPromote === undefined ? false : localStorage.autoPromote === 'true';
 
         this.seatViews = seatViews;
         this.topColor = { a: this.seats.initialTopColor('a'), b: this.seats.initialTopColor('b') };
@@ -724,6 +722,10 @@ export class RoundControllerBughouse extends TwoBoardController implements ChatC
             this.gameOver();
 
             // clean up gating/promotion widget left over the ground while game ended by time out
+            this.boardA.promotion.dismiss();
+            this.boardB.promotion.dismiss();
+            this.boardA.chessground.cancelPremove();
+            this.boardB.chessground.cancelPremove();
             clearExtensionChoice();
 
             if (this.tv) {
@@ -1439,6 +1441,10 @@ export class RoundControllerBughouse extends TwoBoardController implements ChatC
         // The cursor is already on `ply` — `showPly()` sets it before calling this — so "is the
         // ply being rendered the latest one" and "is the reader following" are the same question.
         if (this.isGameOver() || !this.movelistView.isAtEnd(this)) {
+            board.promotion.dismiss();
+            board.partnerCC.promotion.dismiss();
+            board.chessground.cancelPremove();
+            board.partnerCC.chessground.cancelPremove();
             board.chessground.set({ movable: { color: undefined, dests: undefined } });
             board.partnerCC.chessground.set({ movable: { color: undefined, dests: undefined } });
         } else {

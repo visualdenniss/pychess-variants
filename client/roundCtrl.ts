@@ -201,7 +201,6 @@ export class RoundController extends GameController {
         this.berserked = { wberserk: model['wberserk'] === 'True', bberserk: model['bberserk'] === 'True' };
 
         this.settings = true;
-        this.autoPromote = localStorage.autoPromote === undefined ? false : localStorage.autoPromote === 'true';
         this.autoClaimDraw = localStorage.autoClaimDraw === undefined ? false : localStorage.autoClaimDraw === 'true';
         this.materialDifference =
             localStorage.materialDifference === undefined ? false : localStorage.materialDifference === 'true';
@@ -256,8 +255,8 @@ export class RoundController extends GameController {
                     premoveFunc: premoveForVariant(this.variant.name, this.chess960, this.variant.board.dimensions),
                     predropFunc: predrop(this.variant.name, this.variant.board.dimensions),
                     events: {
-                        set: this.setPremove,
-                        unset: this.unsetPremove,
+                        set: (orig, dest, metadata) => this.setPremove(orig, dest, metadata),
+                        unset: () => this.unsetPremove(),
                     },
                 },
                 events: {
@@ -599,6 +598,7 @@ export class RoundController extends GameController {
         // Any explicit rewind/sync recovery should drop queued client-side move intent.
         this.chessground.cancelPremove();
         this.unsetPremove();
+        this.promotion.dismiss();
         this.clearPendingMoveCache();
     }
 
@@ -1123,6 +1123,8 @@ export class RoundController extends GameController {
         if (msg.status >= 0) {
             this.status = msg.status;
             this.result = msg.result;
+            this.promotion.dismiss();
+            this.chessground.cancelPremove();
             this.syncCevalActiveRoundTracking();
             this.clocks[0].pause(false);
             this.clocks[1].pause(false);
@@ -1462,6 +1464,7 @@ export class RoundController extends GameController {
                 if (this.ffishBoard) {
                     this.ffishBoard.setFen(this.fullfen);
                     this.setDests();
+                    this.promotion.refreshPremove();
                 }
 
                 if (this.clockOn && msg.status < 0) {
@@ -1761,23 +1764,6 @@ export class RoundController extends GameController {
             [this.vmaterial0, this.vmaterial1] = emptyMaterial(this.variant, this.vmaterial0, this.vmaterial1);
         }
     }
-
-    private setPremove = (orig: cg.Orig, dest: cg.Key, metadata?: cg.SetPremoveMetadata) => {
-        this.premove = { orig, dest, metadata };
-        // console.log("setPremove() to:", orig, dest, meta);
-    };
-
-    private unsetPremove = () => {
-        this.premove = undefined;
-        this.preaction = false;
-    };
-
-    private performPremove = () => {
-        // const { orig, dest, meta } = this.premove;
-        // TODO: promotion?
-        // console.log("performPremove()", orig, dest, meta);
-        this.chessground.playPremove();
-    };
 
     private renderExpiration = () => {
         // We return sooner in case the client belongs to a spectator or the

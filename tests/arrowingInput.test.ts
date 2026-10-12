@@ -29,9 +29,11 @@ describe('Walling input', () => {
         } as unknown as GameController;
         const input = new ArrowingInput(ctrl);
 
-        input.start(piece, 'd1', 'a1', {} as cg.MoveMetadata);
+        const meta: cg.MoveMetadata = { premove: true };
+        input.start(piece, 'd1', 'a1', meta);
 
         expect(input.inputState).toBe('move');
+        expect(meta.premove).toBe(false);
         expect(input.arrowDests).toEqual(['b1', 'j:']);
         expect(pieces.get('a0')).toEqual({ role: '_-piece', color: 'white' });
         expect(ctrl.chessground.set).toHaveBeenCalledWith({
@@ -55,7 +57,7 @@ describe('Walling input', () => {
         expect(ctrl.chessground.state.lastMove).toEqual(['d1', 'a1', 'j:']);
         expect(document.getElementById('undo')?.tagName).toBe('DIV');
         expect((document.getElementById('takeback') as HTMLElement).hidden).toBe(false);
-        expect(processInput).toHaveBeenCalledWith(piece, 'd1', 'a1', {}, ',a1j:', 'arrowing');
+        expect(processInput).toHaveBeenCalledWith(piece, 'd1', 'a1', { premove: false }, ',a1j:', 'arrowing');
     });
 
     test('automatically submits a deterministic wall on the vacated square', () => {
