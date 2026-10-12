@@ -26,6 +26,18 @@ test('drops iframe embeds with unsafe src', () => {
     expect(root.querySelector('iframe')).toBeNull();
 });
 
+test('keeps sanitized Markdown formatting, links, and code', () => {
+    const root = renderBlogMarkdown(
+        '**Bold** and ~~gone~~\n[Link](https://example.org)\n\n```ts\nconst x = "<tag>";\n```',
+    );
+    expect(root.querySelector('strong')?.textContent).toBe('Bold');
+    expect(root.querySelector('del')?.textContent).toBe('gone');
+    expect(root.querySelector('br')).not.toBeNull();
+    expect(root.querySelector('a')?.getAttribute('target')).toBe('_blank');
+    expect(root.querySelector('a')?.getAttribute('rel')).toBe('noopener noreferrer nofollow');
+    expect(root.querySelector('pre code')?.textContent).toContain('const x = "<tag>";');
+});
+
 test.each([
     '</title><script>alert(document.cookie)</script>',
     '</title><img src="/missing-image" onerror="alert(document.cookie)">',

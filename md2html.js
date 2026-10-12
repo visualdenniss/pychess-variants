@@ -1,14 +1,7 @@
 const { readdir, readFile, realpathSync, stat, writeFile } = require('fs');
-const showdown = require('showdown');
+const { createMarkdownRenderer } = require('./markdown');
 
-const converter = new showdown.Converter();
-converter.setFlavor('github');
-// Render fragments only; avoid the metadata-title XSS path (GHSA-cr32-g25g-vxjj).
-converter.setOption('metadata', false);
-converter.setOption('completeHTMLDocument', false);
-// Avoid unescaped table-header IDs (GHSA-22g5-r2x5-97cx), including the legacy alias.
-converter.setOption('tablesHeaderId', false);
-converter.setOption('tableHeaderId', false);
+const converter = createMarkdownRenderer({ headingIds: true });
 
 const basePath = realpathSync('./');
 console.log('--- md2html.js ---', basePath);
@@ -18,7 +11,7 @@ function md2Html(inFile, outFile) {
     readFile(inFile, 'utf8', (fsReadError, fileContent) => {
         if (!fsReadError) {
             console.log(inFile);
-            const htmlContent = converter.makeHtml(fileContent);
+            const htmlContent = converter.render(fileContent);
             writeFile(outFile, htmlContent, err => err && console.error(err));
         } else {
             return console.error(inFile, fsReadError);
