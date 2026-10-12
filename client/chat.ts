@@ -82,6 +82,33 @@ export interface ChatViewOptions {
     chatHeader?: boolean;
 }
 
+const chatFocusCleanup = new WeakMap<HTMLInputElement, () => void>();
+
+function bindChatFocus(input: HTMLInputElement): void {
+    // Adapted from lila ui/lib/src/chat/discussion.ts (lichess-org/lila#5323).
+    // Capture runs before Chessground prevents the pointer event's default
+    // behavior, which would otherwise leave chat focused when playing a move.
+    const events = ['touchstart', 'mousedown'] as const;
+    const onOutside = (event: Event) => {
+        const mouse = event as MouseEvent;
+        if (!mouse.shiftKey && mouse.buttons !== 2 && mouse.button !== 2 && event.target !== input) input.blur();
+    };
+    const onFocus = () => {
+        events.forEach(event => document.body.addEventListener(event, onOutside, { passive: true, capture: true }));
+    };
+    const onBlur = () => {
+        events.forEach(event => document.body.removeEventListener(event, onOutside, { capture: true }));
+    };
+    input.addEventListener('focus', onFocus);
+    input.addEventListener('blur', onBlur);
+    chatFocusCleanup.set(input, () => {
+        onBlur();
+        input.removeEventListener('focus', onFocus);
+        input.removeEventListener('blur', onBlur);
+        chatFocusCleanup.delete(input);
+    });
+}
+
 export function chatView(ctrl: ChatController, chatType: string, opts: ChatViewOptions = {}) {
     const spectator = 'spectator' in ctrl && ctrl.spectator;
     const chatHeader = opts.chatHeader ?? true;
@@ -127,8 +154,11 @@ export function chatView(ctrl: ChatController, chatType: string, opts: ChatViewO
             },
             attrs: {
                 maxlength: 140,
-                // autofocus: "true",
                 'aria-label': 'Chat input',
+            },
+            hook: {
+                insert: vnode => bindChatFocus(vnode.elm as HTMLInputElement),
+                destroy: vnode => chatFocusCleanup.get(vnode.elm as HTMLInputElement)?.(),
             },
             on: { keypress: onKeyPress },
         }),
