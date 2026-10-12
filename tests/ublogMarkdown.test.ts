@@ -37,3 +37,15 @@ test.each([
     expect(root.textContent).toContain('title:');
     expect(root.querySelector('html, head, body, title, script, [onerror]')).toBeNull();
 });
+
+test.each(['"><svg/onload=alert(1)>', 'Name"/onmouseover="alert(1)'])(
+    'sanitizes table header injection: %s',
+    header => {
+        const root = renderBlogMarkdown(`| ${header} | Col2 |\n| --- | --- |\n| Safe | Content |`);
+
+        expect(root.querySelectorAll('th')).toHaveLength(2);
+        expect(root.querySelectorAll('th')[1].textContent).toBe('Col2');
+        expect(Array.from(root.querySelectorAll('td'), cell => cell.textContent)).toEqual(['Safe', 'Content']);
+        expect(root.querySelector('svg, script, [id], [onload], [onmouseover]')).toBeNull();
+    },
+);

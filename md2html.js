@@ -6,6 +6,9 @@ converter.setFlavor('github');
 // Render fragments only; avoid the metadata-title XSS path (GHSA-cr32-g25g-vxjj).
 converter.setOption('metadata', false);
 converter.setOption('completeHTMLDocument', false);
+// Avoid unescaped table-header IDs (GHSA-22g5-r2x5-97cx), including the legacy alias.
+converter.setOption('tablesHeaderId', false);
+converter.setOption('tableHeaderId', false);
 
 const basePath = realpathSync('./');
 console.log('--- md2html.js ---', basePath);
