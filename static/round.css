@@ -256,7 +256,8 @@ div.dcontrols .accept {
 
 @media (min-width: 800px) {
     [data-zen="on"] .round-app {
-        grid-template-rows: min-content auto min-content auto 0 auto auto auto 0 auto min-content auto min-content
+        /* Match the desktop grid areas, collapsing only the hidden player rows. */
+        grid-template-rows: min-content auto auto min-content auto 0 auto auto auto 0 auto min-content auto auto min-content auto;
     }
 }
 @media (max-width: 799px) {
