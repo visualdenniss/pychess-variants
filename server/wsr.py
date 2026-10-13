@@ -1294,21 +1294,29 @@ async def handle_is_user_present(
 
 async def handle_moretime(users: Users, user: User, data: MoreTimeRequest, game: game.Game) -> None:
     opp_color = WHITE if user.username == game.bplayer.username else BLACK
-    if (not game.corr) and opp_color == game.stopwatch.color:
-        if TYPE_CHECKING:
-            assert isinstance(game.stopwatch, Clock)
-        opp_time = game.stopwatch.stop()
-        game.stopwatch.restart(opp_time + MORE_TIME)
+    async with game.move_lock:
+        if not game.corr:
+            # Board updates and the next countdown use these saved balances,
+            # including when the opponent is waiting for their turn.
+            opp_clocks = game.clocks_w if opp_color == WHITE else game.clocks_b
+            opp_clocks[-1] += MORE_TIME
+            if game.stopwatch.running and opp_color == game.stopwatch.color:
+                if TYPE_CHECKING:
+                    assert isinstance(game.stopwatch, Clock)
+                opp_time = game.stopwatch.stop()
+                game.stopwatch.restart(opp_time + MORE_TIME)
 
-    opp_name = (
-        game.wplayer.username if user.username == game.bplayer.username else game.bplayer.username
-    )
-    if opp_name in users:
-        opp_player = users[opp_name]
-        if not opp_player.bot:
-            response: MoreTimeMessage = {"type": "moretime", "username": opp_name}
-            await users[opp_name].send_game_message(data["gameId"], response)
-            await round_broadcast(game, response)
+        opp_name = (
+            game.wplayer.username
+            if user.username == game.bplayer.username
+            else game.bplayer.username
+        )
+        if opp_name in users:
+            opp_player = users[opp_name]
+            if not opp_player.bot:
+                response: MoreTimeMessage = {"type": "moretime", "username": opp_name}
+                await users[opp_name].send_game_message(data["gameId"], response)
+                await round_broadcast(game, response)
 
 
 async def handle_bugroundchat(

@@ -375,7 +375,7 @@ export class RoundController extends GameController {
                 )
                     return;
                 const clockIdx = this.flipped() ? 1 : 0;
-                this.clocks[clockIdx].setTime(this.clocks[clockIdx].duration + 15 * 1000);
+                this.clocks[clockIdx].addTime(15 * 1000);
                 this.doSend({ type: 'moretime', gameId: this.gameId });
                 const oppName = this.username === this.wplayer ? this.bplayer : this.wplayer;
                 chatMessage('', oppName + _(' +15 seconds'), 'roundchat');
@@ -1872,15 +1872,8 @@ export class RoundController extends GameController {
 
     private onMsgMoreTime = (msg: MsgMoreTime) => {
         chatMessage('', msg.username + _(' +15 seconds'), 'roundchat');
-        if (this.spectator) {
-            if (msg.username === this.players[0]) {
-                this.clocks[0].setTime(this.clocks[0].duration + 15 * 1000);
-            } else {
-                this.clocks[1].setTime(this.clocks[1].duration + 15 * 1000);
-            }
-        } else {
-            this.clocks[1].setTime(this.clocks[1].duration + 15 * 1000);
-        }
+        const clockIdx = msg.username === this.players[0] ? 0 : 1;
+        this.clocks[this.flipped() ? 1 - clockIdx : clockIdx].addTime(15 * 1000);
     };
 
     private onMsgDrawOffer = (msg: MsgDrawOffer) => {

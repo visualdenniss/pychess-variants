@@ -189,6 +189,12 @@ export class Clock {
         this.renderTime(this.duration);
     }
 
+    addTime(millis: number) {
+        this.duration += millis;
+        const elapsed = this.running ? Date.now() - this.startTime : 0;
+        this.renderTime(Math.max(0, this.duration - elapsed));
+    }
+
     syncByoyomiPeriod(period: number) {
         // Server period counts are authoritative after reconnects and takebacks.
         // Fewer periods than the initial allocation means main time has expired.
