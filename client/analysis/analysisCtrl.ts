@@ -270,6 +270,7 @@ export class AnalysisController extends GameController {
                 select: this.onSelect(),
             },
             drawable: {
+                eraseOnClick: this.analysisContext.mode !== 'study',
                 onChange: shapes => this.analysisExtension?.onShapesChanged?.(shapes),
             },
         });
