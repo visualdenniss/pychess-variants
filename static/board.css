@@ -40,6 +40,10 @@
 .shogi3x4 cg-board {
     background-image: url('images/board/dobutsuboard.svg');
 }
+.shogi3x4 cg-board, .shogi5x6 cg-board {
+    /* Fit every theme, including the rectangular-cell Gorogoro wood image. */
+    background-size: 100% 100%;
+}
 .xiangqi9x10 cg-board {
     background-image: url('images/board/xiangqi.svg');
 }
