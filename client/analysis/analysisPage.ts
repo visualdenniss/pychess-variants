@@ -68,7 +68,7 @@ export function analysisTools(isOngoingGame: boolean = false, afterMoves?: VNode
                   h('div.engine', [
                       h('score#score', ''),
                       h('div.info', [
-                          'Fairy-Stockfish 14+ ',
+                          h('span#analysis-engine-name', 'Fairy-Stockfish 14+ '),
                           h(
                               'span.nnue',
                               { props: { title: _('Multi-threaded WebAssembly (classical evaluation)') } },

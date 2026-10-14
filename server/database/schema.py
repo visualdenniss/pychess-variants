@@ -88,6 +88,7 @@ COLLECTIONS = (
     CollectionSpec("account_reopen_token"),
     CollectionSpec("autopairing"),
     CollectionSpec("bot_token"),
+    CollectionSpec("external_engine"),
     CollectionSpec("catalogued_variant"),
     CollectionSpec("catalogued_variant_name"),
     CollectionSpec("cheat_report"),
@@ -365,6 +366,8 @@ INDEXES = (
     _index("seek", ("user", 1)),
     _index("seek", ("rrArrangementId", 1), sparse=True),
     _index("bot_token", ("user", 1)),
+    _index("external_engine", ("user", 1)),
+    _index("external_engine", ("expiresAt", 1), expire_after_seconds=0),
     _index("account_reopen_token", ("username", 1)),
     _index("security_ban_signal", ("expireAt", 1), expire_after_seconds=0),
     # User-generated blogs and account lookup.

@@ -178,6 +178,52 @@ div.analysis-settings {
     padding-top: .5rem;
     border-top: 1px solid var(--border-color);
 }
+.external-engine-settings {
+    gap: .4rem;
+    min-width: 0;
+}
+.external-engine-field {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    min-width: 0;
+}
+.external-engine-field select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+}
+.external-engine-choice {
+    display: flex;
+    gap: .4rem;
+    min-width: 0;
+}
+#external-engine-forget {
+    flex: 0 0 auto;
+    align-self: stretch;
+    color: var(--bad);
+    padding: 0 .8em;
+    font-size: 1.1em;
+}
+#external-engine-forget:hover,
+#external-engine-forget:focus-visible {
+    background: var(--bad);
+    color: white;
+}
+.external-engine-settings [hidden] {
+    display: none;
+}
+.external-engine-settings p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.analysis-settings[data-engine-source="external"] .browser-engine-settings {
+    display: none;
+}
+#analysis-engine-name {
+    overflow-wrap: anywhere;
+}
 .analysis-settings :is(.serverAnalysis-toggle, .gauge-toggle) {
     display: flex;
     align-items: center;

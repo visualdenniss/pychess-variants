@@ -12,6 +12,9 @@ from account_api import (
     account_close_post,
     account_delete,
     account_delete_post,
+    account_engine_token_create,
+    account_engine_token_revoke,
+    account_engines,
     account_home,
     account_personal_data,
     account_personal_data_export,
@@ -57,6 +60,13 @@ from catalogued_variants import (
     upload_catalogued_variant,
 )
 from client_reset import client_reset, client_reset_page
+from external_engine_api import (
+    delete_engine,
+    heartbeat_engine,
+    list_engines,
+    register_engine,
+    stop_engine,
+)
 from fishnet import (
     fishnet_abort,
     fishnet_acquire,
@@ -251,6 +261,8 @@ RouteDef: TypeAlias = tuple[str, Handler]
 
 
 get_routes: tuple[RouteDef, ...] = (
+    ("/account/engines", account_engines),
+    ("/api/external-engine", list_engines),
     ("/login", login_choice),
     ("/login/{provider}", login),
     ("/oauth/{provider}", oauth),
@@ -484,6 +496,12 @@ get_routes: tuple[RouteDef, ...] = (
 )
 
 post_routes: tuple[RouteDef, ...] = (
+    ("/account/engines/token/create", account_engine_token_create),
+    (r"/account/engines/token/{tokenId:\w{8}}/revoke", account_engine_token_revoke),
+    ("/api/external-engine", register_engine),
+    (r"/api/external-engine/{engineId:\w{8}}/heartbeat", heartbeat_engine),
+    (r"/api/external-engine/{engineId:\w{8}}/stop", stop_engine),
+    (r"/api/external-engine/{engineId:\w{8}}/delete", delete_engine),
     ("/logout", logout),
     ("/notified", notified),
     (r"/tournament/{tournamentId:\w{8}}/pause", tournament.tournament),
