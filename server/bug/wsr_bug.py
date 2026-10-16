@@ -139,6 +139,9 @@ async def handle_reject_rematch_bughouse(game: GameBug, user: User) -> None:
 
 
 async def handle_resign_bughouse(data: AbortResignMessage, game: GameBug, user: User) -> None:
+    if not game.is_player(user):
+        return
+
     # Keep prior behavior tied to board A ply, but avoid calling GameBug.board
     # (a compatibility shim that logs when accidentally used).
     if data["type"] == "abort" and (game is not None) and game.boards["a"].ply > 2:

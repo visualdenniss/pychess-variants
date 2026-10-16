@@ -1077,6 +1077,9 @@ async def handle_abort_resign_abandon_flag(
     data: AbortResignMessage,
     game: game.Game,
 ) -> None:
+    if not game.is_player(user):
+        return
+
     if data["type"] == "abort" and (game is not None) and game.board.ply > 2:
         return
 
