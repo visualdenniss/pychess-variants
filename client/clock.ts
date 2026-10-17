@@ -14,8 +14,6 @@ export type Millis = number;
 
 const HURRY = 10000;
 
-// Read as "05", ":", "23" with no owner; the board summary says the time in words instead.
-
 const prefixInteger = (num: number, length: number): string => (num / Math.pow(10, length)).toFixed(length).substr(2);
 
 function formatClockTime(time: Millis) {
@@ -50,7 +48,7 @@ export class Clock {
     timeout: ReturnType<typeof setTimeout> | null;
     startTime: number;
     tickCallbacks: ((diff: number) => void)[];
-    renderCallbacks: ((time: Millis) => void)[];
+    renderCallback: ((time: Millis) => void) | null;
     flagCallback: (() => void) | null;
     byoyomiCallback: (() => void) | null;
     el: HTMLElement | VNode;
@@ -80,7 +78,7 @@ export class Clock {
         this.timeout = null;
         this.startTime = 0;
         this.tickCallbacks = [];
-        this.renderCallbacks = [];
+        this.renderCallback = null;
         this.flagCallback = null;
         this.byoyomiCallback = null;
         this.el = el;
@@ -154,8 +152,7 @@ export class Clock {
 
     // Every repaint, ticking or not (pause, resync, flip), with the time shown.
     onRender(callback: (time: Millis) => void) {
-        this.renderCallbacks.push(callback);
-        return this;
+        this.renderCallback = callback;
     }
 
     onFlag(callback: () => void) {
@@ -277,7 +274,7 @@ export class Clock {
         if (!isNaN(time)) {
             if (this.granularity > 100 && time < HURRY) this.granularity = 100;
             this.el = patch(this.el, this.view(time));
-            this.renderCallbacks.forEach(callback => callback(time));
+            this.renderCallback?.(time);
         }
     }
 }
