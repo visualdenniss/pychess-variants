@@ -5,10 +5,9 @@ import * as util from 'chessgroundx/util';
 import { _, ngettext } from '@/i18n';
 import { patch } from '@/document';
 import { ranksUCI } from '@/chess';
-import { Variant } from '@/variants';
+import { pieceName, Variant } from '@/variants';
 import { BoardName } from '@/types';
 import { Clock } from '@/clock';
-import { pieceName } from '@/pieceNames';
 
 /** A clock reading in words, at the precision the clock shows: "29 minutes 36 seconds". */
 export function spokenTime(millis: number): string {

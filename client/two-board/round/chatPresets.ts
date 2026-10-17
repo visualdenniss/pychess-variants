@@ -2,8 +2,7 @@ import { h, VNode } from 'snabbdom';
 import * as cg from 'chessgroundx/types';
 
 import { _ } from '@/i18n';
-import { pieceName } from '@/pieceNames';
-import { Variant } from '../../variants';
+import { pieceName, Variant } from '../../variants';
 
 // The bughouse chat presets: the grid of "need a knight", "don't trade", "my bad"
 // buttons a player uses to tell their partner something without typing it.
