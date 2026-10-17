@@ -7,6 +7,7 @@ import { patch } from '@/document';
 import { ranksUCI } from '@/chess';
 import { Variant } from '@/variants';
 import { BoardName } from '@/types';
+import { Clock } from '@/clock';
 import { pieceName } from '@/pieceNames';
 
 /** A clock reading in words, at the precision the clock shows: "29 minutes 36 seconds". */
@@ -79,11 +80,17 @@ export class BoardSummaryView {
     }
 
     // Called on every clock repaint, so it redraws only when the spoken time changes.
-    setClock(color: cg.Color, millis: number): void {
+    private setClock(color: cg.Color, millis: number): void {
         const text = spokenTime(millis);
         if (this.clocks[color] === text) return;
         this.clocks[color] = text;
         this.redraw();
+    }
+
+    // color() is asked on every repaint, so a board flip is followed.
+    followClock(clock: Clock, color: () => cg.Color): void {
+        clock.onRender(time => this.setClock(color(), time));
+        this.setClock(color(), clock.duration);
     }
 
     setStatus(status: string): void {

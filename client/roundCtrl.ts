@@ -758,10 +758,7 @@ export class RoundController extends GameController {
             const bottom = this.chessground.state.orientation;
             return i === 1 ? bottom : util.opposite(bottom);
         };
-        this.clocks.forEach((clock, i) => {
-            clock.onRender(time => this.boardSummary.setClock(colorOf(i), time));
-            this.boardSummary.setClock(colorOf(i), clock.duration);
-        });
+        this.clocks.forEach((clock, i) => this.boardSummary.followClock(clock, () => colorOf(i)));
     }
 
     // A live region from page load on, so an arriving offer is read out without being looked for.

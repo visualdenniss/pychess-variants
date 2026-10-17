@@ -349,8 +349,7 @@ export class RoundControllerBughouse extends TwoBoardController implements ChatC
             const clock = view.createClock(this.base, this.inc);
             seat.clock = clock;
             const summary = (seat.boardName === 'a' ? this.boardA : this.boardB).boardSummary;
-            clock.onRender(time => summary.setClock(seat.color, time));
-            summary.setClock(seat.color, clock.duration);
+            summary.followClock(clock, () => seat.color);
             view.renderPlayerBar(seat.player, this.level);
         });
     }
