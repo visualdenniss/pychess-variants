@@ -51,7 +51,6 @@ function gameView(games: Games, game: Game) {
                 'with-pockets': !!variant.pocket,
                 'smaller-text': game.bTitle == 'BOT',
             },
-            // A keyboard link; not an <a>, which would break games.css's `minigame > div`.
             attrs: {
                 role: 'link',
                 tabindex: '0',
