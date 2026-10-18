@@ -10,6 +10,8 @@ import aiohttp_session
 import msgspec
 from aiohttp import web
 from bot_accounts import (
+    BOT_TOKEN_SCOPE,
+    ENGINE_TOKEN_SCOPES,
     create_bot_token,
     list_bot_tokens,
     revoke_bot_token,
@@ -294,6 +296,7 @@ async def _scrub_delete_owned_data(app_state: Any, user: Any, now: datetime) -> 
     await _erase_forum_posts_by_user(app_state, user.username, now)
     await db.ublog_post.delete_many({"author": user.username})
     await db.bot_token.delete_many({"user": user.username})
+    await db.external_engine.delete_many({"user": user.username})
     await db.push_subscription.delete_many({"user": user.username})
     await db.practice.delete_one({"_id": user.username})
     await db.account_reopen_token.delete_many({"username": user.username})
@@ -354,7 +357,11 @@ async def account_bot(request: web.Request) -> ViewContext:
         user.enable_bot_account()
 
     context["view_css"] = "faq.css"
-    context["bot_tokens"] = await list_bot_tokens(app_state, user.username)
+    context["bot_tokens"] = [
+        token
+        for token in await list_bot_tokens(app_state, user.username)
+        if BOT_TOKEN_SCOPE in token.get("scopes", [BOT_TOKEN_SCOPE])
+    ]
     context["bot_account_title"] = user.title
     context["bot_game_count"] = game_count
     context["bot_upgrade_eligible"] = (not user.bot) and game_count == 0
@@ -367,6 +374,49 @@ async def account_bot(request: web.Request) -> ViewContext:
     context["bot_error"] = str(session.pop(BOT_ERROR_SESSION_KEY, "") or "")
     context["new_bot_token"] = str(session.pop(BOT_NEW_TOKEN_SESSION_KEY, "") or "")
     return context
+
+
+@aiohttp_jinja2.template("account_engines.html")
+async def account_engines(request: web.Request) -> ViewContext:
+    user, context = await get_user_context(request)
+    if user.anon:
+        raise web.HTTPFound("/login")
+    app_state = get_app_state(request.app)
+    session = await aiohttp_session.get_session(request)
+    context["view_css"] = "faq.css"
+    context["engine_tokens"] = [
+        token
+        for token in await list_bot_tokens(app_state, user.username)
+        if "engine:write" in token.get("scopes", [])
+    ]
+    context["new_engine_token"] = str(session.pop("new_engine_token", "") or "")
+    return context
+
+
+async def account_engine_token_create(request: web.Request) -> web.StreamResponse:
+    app_state, user, _ = await _require_logged_in_user(request)
+    data = await read_post_data(request)
+    if data is None:
+        return web.Response(status=204)
+    description = str(data.get("description", "")).strip()[:120] or "External engine"
+    _, token = await create_bot_token(
+        app_state, user.username, description, scopes=ENGINE_TOKEN_SCOPES
+    )
+    session = await aiohttp_session.get_session(request)
+    session["new_engine_token"] = token
+    return web.HTTPFound("/account/engines")
+
+
+async def account_engine_token_revoke(request: web.Request) -> web.StreamResponse:
+    app_state, user, _ = await _require_logged_in_user(request)
+    token_id = request.match_info["tokenId"]
+    doc = await app_state.db.bot_token.find_one(
+        {"_id": token_id, "user": user.username, "scopes": "engine:write"}
+    )
+    if doc is None:
+        raise web.HTTPNotFound()
+    await revoke_bot_token(app_state, user.username, token_id)
+    return web.HTTPFound("/account/engines")
 
 
 async def account_personal_data_export(request: web.Request) -> web.StreamResponse:

@@ -35,6 +35,8 @@ import { calendarView } from './calendar';
 import { pasteView, recordImportFfishError } from './paste';
 import { myVariantsView } from './myVariants';
 import { initAnalysisEngine } from './fairyStockfish';
+import { buildStudyEngineRules } from './study/variantRules';
+import { activateStudyEngineRules } from './variants';
 import { statsView } from './stats';
 import { volumeSettings, soundThemeSettings } from './sound';
 import { notifyChessgroundResize, patch } from './document';
@@ -126,9 +128,7 @@ function initModel(el: HTMLElement) {
         botChallengeStatus: el.getAttribute('data-bot-challenge-status') ?? '',
         botChallengeDeclineReason: el.getAttribute('data-bot-challenge-decline-reason') ?? '',
         botChallengeOpponent: el.getAttribute('data-bot-challenge-opponent') ?? '',
-        botSupportedVariants: JSON.parse(el.getAttribute('data-bot-supported-variants') || 'null') as
-            | string[]
-            | null,
+        botSupportedVariants: JSON.parse(el.getAttribute('data-bot-supported-variants') || 'null') as string[] | null,
         challengeId: el.getAttribute('data-challengeid') ?? '',
         ply: parseInt('' + el.getAttribute('data-ply')),
         initialFen: el.getAttribute('data-initialfen') ?? '',
@@ -191,8 +191,7 @@ function initModel(el: HTMLElement) {
             : null,
         pushVapidKey: el.getAttribute('data-vapid') ?? '',
         pushEnabled:
-            el.getAttribute('data-corr-push-enabled') !== 'False' ||
-            el.getAttribute('data-rr-push-enabled') === 'True',
+            el.getAttribute('data-corr-push-enabled') !== 'False' || el.getAttribute('data-rr-push-enabled') === 'True',
     };
 }
 
@@ -300,31 +299,38 @@ function start() {
 
         if (['round', 'analysis', 'study', 'puzzle', 'editor', 'tv', 'embed', 'paste'].includes(dataView)) {
             console.time('load ffish');
-            const variantIni =
-                dataView === 'paste'
-                    ? allVariantsIni(variantsIni)
-                    : variantConfigIni(variantsIni, model.variant);
-            if (model['variant'] === 'alice') {
-                const loadModule = ffishAliceModule(
-                    dataView === 'paste' ? ffishModuleOptions(recordImportFfishError) : ffishModuleOptions(),
-                );
-                loadModule.then((loadedModule: any) => {
-                    console.timeEnd('load ffish_alice');
-                    loadedModule.loadVariantConfig(variantIni);
-                    model.ffish = loadedModule;
-                    renderView();
-                });
-            } else {
-                const loadModule = ffishModule(
-                    dataView === 'paste' ? ffishModuleOptions(recordImportFfishError) : ffishModuleOptions(),
-                );
-                loadModule.then((loadedModule: any) => {
-                    console.timeEnd('load ffish');
-                    loadedModule.loadVariantConfig(variantIni);
-                    model.ffish = loadedModule;
-                    renderView();
-                });
-            }
+            const loadRulesBoard = async () => {
+                if (model.study) {
+                    const rules = model.study.chapter.variantIni
+                        ? await buildStudyEngineRules(model.variant, variantsIni)
+                        : undefined;
+                    activateStudyEngineRules(rules);
+                }
+                const variantIni =
+                    dataView === 'paste' ? allVariantsIni(variantsIni) : variantConfigIni(variantsIni, model.variant);
+                if (model['variant'] === 'alice') {
+                    const loadModule = ffishAliceModule(
+                        dataView === 'paste' ? ffishModuleOptions(recordImportFfishError) : ffishModuleOptions(),
+                    );
+                    loadModule.then((loadedModule: any) => {
+                        console.timeEnd('load ffish_alice');
+                        loadedModule.loadVariantConfig(variantIni);
+                        model.ffish = loadedModule;
+                        renderView();
+                    });
+                } else {
+                    const loadModule = ffishModule(
+                        dataView === 'paste' ? ffishModuleOptions(recordImportFfishError) : ffishModuleOptions(),
+                    );
+                    loadModule.then((loadedModule: any) => {
+                        console.timeEnd('load ffish');
+                        loadedModule.loadVariantConfig(variantIni);
+                        model.ffish = loadedModule;
+                        renderView();
+                    });
+                }
+            };
+            void loadRulesBoard().catch(error => console.warn(error));
         } else {
             renderView();
             if (dataView === 'profile' || dataView === 'level8win') initProfileActionOverflow();

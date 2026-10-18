@@ -203,6 +203,7 @@ export abstract class GameController extends ChessgroundController implements Ch
 
         this.turnColor = parts[1] === 'w' ? 'white' : 'black';
         this.suffix = '';
+        this.autoPromote = localStorage.autoPromote === 'true';
 
         this.chessground.set({
             animation: {
@@ -357,6 +358,7 @@ export abstract class GameController extends ChessgroundController implements Ch
     }
 
     override destroy(): void {
+        this.promotion.dismiss();
         this.closeKeyboardHelp();
         document.removeEventListener('keydown', this.onGameKeyboardHelpKeyDown, true);
         Mousetrap.unbind(['left', 'right', 'up', 'down', 'enter', 'f', '?', 's']);
@@ -486,13 +488,44 @@ export abstract class GameController extends ChessgroundController implements Ch
                 break;
             case 'arrowing':
                 this.suffix += lastSuffix;
-                this.sendMove(orig, dest, this.suffix);
+                this.sendMove(orig, dest, this.suffix, meta);
                 break;
         }
     }
 
-    sendMove(orig: cg.Orig, dest: cg.Key, promo: string) {
-        this.doSendMove(cg2uci(orig + dest + promo));
+    sendMove(orig: cg.Orig, dest: cg.Key, promo: string, meta?: cg.MoveMetadata) {
+        const preaction = this.preaction;
+        if (meta) this.preaction = meta.premove;
+        try {
+            this.doSendMove(cg2uci(orig + dest + promo));
+        } finally {
+            this.preaction = preaction;
+        }
+    }
+
+    protected setPremove(orig: cg.Orig, dest: cg.Key, metadata?: cg.SetPremoveMetadata): void {
+        this.premove = { orig, dest, metadata };
+        this.promotion.preparePremove(orig, dest, metadata);
+        // Chessground defers this callback. The opponent's board message can
+        // arrive before it, after the message handler already looked for a premove.
+        const color = this.chessground.state.movable.color;
+        if (this.turnColor === color && this.chessground.state.turnColor === color) {
+            this.performPremove();
+        }
+    }
+
+    protected unsetPremove(): void {
+        this.premove = undefined;
+        this.promotion.dismissPremove();
+        this.preaction = false;
+    }
+
+    performPremove(): void {
+        if (!this.chessground.playPremove()) this.unsetPremove();
+    }
+
+    cancelPromotionInput(): void {
+        this.goPly(this.ply);
     }
 
     getAliceFen(fen: string): string {
@@ -532,6 +565,9 @@ export abstract class GameController extends ChessgroundController implements Ch
         // console.log("gameCtrl.goPly()");
         const step = this.steps[ply];
         if (step === undefined) return;
+        this.chessground.cancelPremove();
+        this.unsetPremove();
+        this.promotion.dismiss();
 
         const lastMove = uci2LastMove(step.move);
         let capture = false;

@@ -10,6 +10,7 @@ from aiohttp import web
 from bot_accounts import (
     BOT_TOKEN_SCOPE,
     BOT_TOKEN_TEST_EXPIRES_MS,
+    bot_token_hash,
     get_db_token_owner,
     upgrade_user_to_bot_account,
 )
@@ -215,13 +216,16 @@ async def bot_token_test(request: web.Request) -> web.StreamResponse:
             }
             continue
 
-        user_doc = await get_db_token_owner(app_state, token, mark_used=False)
+        user_doc = await get_db_token_owner(app_state, token, mark_used=False, required_scope=None)
         if user_doc is None:
             response[token] = None
             continue
 
+        token_doc = await app_state.db.bot_token.find_one({"tokenHash": bot_token_hash(token)})
         response[token] = {
-            "scopes": BOT_TOKEN_SCOPE,
+            "scopes": ",".join(token_doc.get("scopes", [BOT_TOKEN_SCOPE]))
+            if token_doc
+            else BOT_TOKEN_SCOPE,
             "userId": user_doc["_id"],
             "expires": BOT_TOKEN_TEST_EXPIRES_MS,
         }

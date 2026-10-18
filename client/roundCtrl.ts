@@ -202,7 +202,6 @@ export class RoundController extends GameController {
         this.berserked = { wberserk: model['wberserk'] === 'True', bberserk: model['bberserk'] === 'True' };
 
         this.settings = true;
-        this.autoPromote = localStorage.autoPromote === undefined ? false : localStorage.autoPromote === 'true';
         this.autoClaimDraw = localStorage.autoClaimDraw === undefined ? false : localStorage.autoClaimDraw === 'true';
         this.materialDifference =
             localStorage.materialDifference === undefined ? false : localStorage.materialDifference === 'true';
@@ -257,8 +256,8 @@ export class RoundController extends GameController {
                     premoveFunc: premoveForVariant(this.variant.name, this.chess960, this.variant.board.dimensions),
                     predropFunc: predrop(this.variant.name, this.variant.board.dimensions),
                     events: {
-                        set: this.setPremove,
-                        unset: this.unsetPremove,
+                        set: (orig, dest, metadata) => this.setPremove(orig, dest, metadata),
+                        unset: () => this.unsetPremove(),
                     },
                 },
                 events: {
@@ -379,7 +378,7 @@ export class RoundController extends GameController {
                 )
                     return;
                 const clockIdx = this.flipped() ? 1 : 0;
-                this.clocks[clockIdx].setTime(this.clocks[clockIdx].duration + 15 * 1000);
+                this.clocks[clockIdx].addTime(15 * 1000);
                 this.doSend({ type: 'moretime', gameId: this.gameId });
                 const oppName = this.username === this.wplayer ? this.bplayer : this.wplayer;
                 chatMessage('', oppName + _(' +15 seconds'), 'roundchat');
@@ -605,6 +604,7 @@ export class RoundController extends GameController {
         // Any explicit rewind/sync recovery should drop queued client-side move intent.
         this.chessground.cancelPremove();
         this.unsetPremove();
+        this.promotion.dismiss();
         this.clearPendingMoveCache();
     }
 
@@ -1126,6 +1126,8 @@ export class RoundController extends GameController {
         if (msg.status >= 0) {
             this.status = msg.status;
             this.result = msg.result;
+            this.promotion.dismiss();
+            this.chessground.cancelPremove();
             this.syncCevalActiveRoundTracking();
             this.clocks[0].pause(false);
             this.clocks[1].pause(false);
@@ -1466,6 +1468,7 @@ export class RoundController extends GameController {
                 if (this.ffishBoard) {
                     this.ffishBoard.setFen(this.fullfen);
                     this.setDests();
+                    this.promotion.refreshPremove();
                 }
 
                 if (this.clockOn && msg.status < 0) {
@@ -1767,23 +1770,6 @@ export class RoundController extends GameController {
         }
     }
 
-    private setPremove = (orig: cg.Orig, dest: cg.Key, metadata?: cg.SetPremoveMetadata) => {
-        this.premove = { orig, dest, metadata };
-        // console.log("setPremove() to:", orig, dest, meta);
-    };
-
-    private unsetPremove = () => {
-        this.premove = undefined;
-        this.preaction = false;
-    };
-
-    private performPremove = () => {
-        // const { orig, dest, meta } = this.premove;
-        // TODO: promotion?
-        // console.log("performPremove()", orig, dest, meta);
-        this.chessground.playPremove();
-    };
-
     private renderExpiration = () => {
         // We return sooner in case the client belongs to a spectator or the
         // game is non tournament game.
@@ -1891,15 +1877,8 @@ export class RoundController extends GameController {
 
     private onMsgMoreTime = (msg: MsgMoreTime) => {
         chatMessage('', msg.username + _(' +15 seconds'), 'roundchat');
-        if (this.spectator) {
-            if (msg.username === this.players[0]) {
-                this.clocks[0].setTime(this.clocks[0].duration + 15 * 1000);
-            } else {
-                this.clocks[1].setTime(this.clocks[1].duration + 15 * 1000);
-            }
-        } else {
-            this.clocks[1].setTime(this.clocks[1].duration + 15 * 1000);
-        }
+        const clockIdx = msg.username === this.players[0] ? 0 : 1;
+        this.clocks[this.flipped() ? 1 - clockIdx : clockIdx].addTime(15 * 1000);
     };
 
     private onMsgDrawOffer = (msg: MsgDrawOffer) => {

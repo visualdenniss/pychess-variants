@@ -1,15 +1,7 @@
 import DOMPurify from 'dompurify';
-import showdown from 'showdown';
+import { createMarkdownRenderer } from '../markdown';
 
-const converter = new showdown.Converter({
-    ghCompatibleHeaderId: true,
-    simpleLineBreaks: false,
-    strikethrough: true,
-    tables: true,
-    tasklists: true,
-    openLinksInNewWindow: true,
-});
-converter.setFlavor('github');
+const converter = createMarkdownRenderer();
 
 const ALLOWED_TAGS = new Set([
     'a',
@@ -227,7 +219,7 @@ function sanitizeRenderedFragment(html: string): DocumentFragment {
 }
 
 function renderMarkdown(text: string): DocumentFragment {
-    return sanitizeRenderedFragment(converter.makeHtml(text || ''));
+    return sanitizeRenderedFragment(converter.render(text || ''));
 }
 
 export function initUblogMarkdown(): void {

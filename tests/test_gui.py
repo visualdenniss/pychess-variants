@@ -9,11 +9,14 @@ from unittest.mock import patch
 import pytest
 import test_logger
 from const import T_FINISHED
+from game import Game
 from mongomock_motor import AsyncMongoMockClient
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import async_playwright, expect
 from pychess_global_app_state_utils import get_app_state
 from tournament.tournament import SCORE_SHIFT
+from user import User
+from utils import insert_game_to_db
 
 from server import make_app
 
@@ -139,6 +142,138 @@ class TestGUI:
             await page.keyboard.press("Escape")
 
             await browser.close()
+
+    @pytest.mark.parametrize("periods", [1, 3])
+    async def test_zero_main_time_byoyomi_resets_after_moves_and_refresh(
+        self, aiohttp_server, periods
+    ):
+        app = make_app(db_client=AsyncMongoMockClient(tz_aware=True), simple_cookie_storage=True)
+        server = await aiohttp_server(app, host="127.0.0.1")
+        app_state = get_app_state(app)
+        base_url = f"http://{server.host}:{server.port}"
+        players = []
+        for name in ("byoyomi-white", "byoyomi-black"):
+            await app_state.db.user.insert_one({"_id": name, "enabled": True, "ct": "all"})
+            player = User(app_state, username=name)
+            app_state.users[name] = player
+            players.append(player)
+        game = Game(
+            app_state,
+            "ByoTest1",
+            "torishogi",
+            "",
+            *players,
+            base=0,
+            inc=60,
+            byoyomi_period=periods,
+        )
+        app_state.games[game.id] = game
+        await insert_game_to_db(game, app_state)
+
+        async with async_playwright() as playwright:
+            browser = await self._launch_browser(playwright)
+            try:
+                pages = []
+                for player in players:
+                    _, page = await self._playwright_page_for_user(
+                        browser, base_url, player.username
+                    )
+                    await page.goto(f"{base_url}/{game.id}")
+                    await page.wait_for_selector("#mainboard cg-board")
+                    pages.append(page)
+                for ply in range(4):
+                    page = pages[game.board.color]
+                    if ply == 2:
+                        await page.reload()
+                    await page.wait_for_function("() => window.cg?.state.movable.dests?.size > 0")
+                    if ply >= 2:
+                        await asyncio.sleep(0.2)
+                    move = next(
+                        move
+                        for move in game.board.legal_moves()
+                        if len(move) == 4 and "@" not in move
+                    )
+                    await page.evaluate(
+                        "move => { window.cg.selectSquare(move.slice(0, 2)); "
+                        "window.cg.selectSquare(move.slice(2, 4)); }",
+                        move,
+                    )
+                    await self._eventually(lambda expected=ply + 1: game.board.ply == expected)
+                    assert game.clocks == (60000, 60000)
+                assert game.byoyomi_periods == [periods - 1, periods - 1]
+            finally:
+                await browser.close()
+
+    @pytest.mark.parametrize("giver_color", [0, 1])
+    async def test_moretime_survives_next_move_and_refresh(self, aiohttp_server, giver_color):
+        app = make_app(db_client=AsyncMongoMockClient(tz_aware=True), simple_cookie_storage=True)
+        server = await aiohttp_server(app, host="127.0.0.1")
+        app_state = get_app_state(app)
+        base_url = f"http://{server.host}:{server.port}"
+        players = []
+        for name in ("moretime-white", "moretime-black"):
+            await app_state.db.user.insert_one({"_id": name, "enabled": True, "ct": "all"})
+            player = User(app_state, username=name)
+            player.game_category_set = True
+            app_state.users[name] = player
+            players.append(player)
+        game = Game(app_state, "MoreTime", "chess", "", *players, base=5, inc=0)
+        app_state.games[game.id] = game
+        await insert_game_to_db(game, app_state)
+        await game.play_move("e2e4")
+        await game.play_move("e7e5")
+        if giver_color == 1:
+            await game.play_move("g1f3")
+        recipient_color = 1 - giver_color
+
+        async with async_playwright() as playwright:
+            browser = await self._launch_browser(playwright)
+            try:
+                pages = []
+                for player in players:
+                    _, page = await self._playwright_page_for_user(
+                        browser, base_url, player.username
+                    )
+                    await page.goto(f"{base_url}/{game.id}")
+                    await page.wait_for_selector("#mainboard cg-board")
+                    pages.append(page)
+                giver = pages[giver_color]
+                recipient = pages[recipient_color]
+                await giver.wait_for_function("() => window.cg?.state.movable.dests?.size > 0")
+                await giver.get_by_title("Give 15 seconds", exact=True).click()
+                await expect(giver.locator("#clock0 .sec")).to_have_text("15")
+                await expect(recipient.locator("#clock1 .sec")).to_have_text("15")
+
+                ply = game.board.ply
+                move = "g1f3" if giver_color == 0 else "g8f6"
+                await giver.evaluate(
+                    "move => { window.cg.selectSquare(move.slice(0, 2)); "
+                    "window.cg.selectSquare(move.slice(2, 4)); }",
+                    move,
+                )
+                await self._eventually(lambda: game.board.ply == ply + 1)
+                await expect(recipient.locator("#clock1 .clock.running")).to_be_visible()
+                assert game.clocks[recipient_color] == 315000
+                await expect(recipient.locator("#clock1 .min")).to_have_text("05")
+                await expect(recipient.locator("#clock1 .sec")).to_have_text(re.compile(r"1[0-5]"))
+
+                await recipient.reload()
+                await expect(recipient.locator("#clock1 .sec")).to_have_text(re.compile(r"1[0-5]"))
+                # Give time again while the opponent's clock is running.
+                # The recipient can flip the board without changing who gets the gift.
+                await recipient.keyboard.press("f")
+                await expect(recipient.locator("#clock0 .clock.running")).to_be_visible()
+                await giver.get_by_title("Give 15 seconds", exact=True).click()
+                await self._eventually(lambda: game.clocks[recipient_color] == 330000)
+                await expect(recipient.locator("#clock0 .sec")).to_have_text(
+                    re.compile(r"[23][0-9]")
+                )
+                await recipient.reload()
+                await expect(recipient.locator("#clock1 .sec")).to_have_text(
+                    re.compile(r"[23][0-9]")
+                )
+            finally:
+                await browser.close()
 
     async def test_casual_only_variant_disables_rating_controls(self, aiohttp_server):
         username = "casual_only_host"

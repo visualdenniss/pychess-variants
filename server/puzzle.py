@@ -291,6 +291,8 @@ async def next_puzzle(
                 "p": doc.get("p", 0),
                 "lm": doc.get("lm", ""),
             }
+            if "perf" in doc:
+                puzzle["perf"] = doc["perf"]
             break
 
     if puzzle is None:

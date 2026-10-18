@@ -81,6 +81,7 @@ export class ArrowingInput extends ExtraInput {
         const pieces = this.ctrl.chessground.state.boardState.pieces;
         const firstArrow = ![...pieces.values()].some(boardPiece => boardPiece.role === '_-piece');
         pieces.set(ARROW_KEY, { role: '_-piece', color: piece.color });
+        if (meta.premove) meta.premove = false;
         this.setPlacementActive(true);
         this.ctrl.chessground.set({
             turnColor: piece.color,

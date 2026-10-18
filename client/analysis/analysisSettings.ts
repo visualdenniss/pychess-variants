@@ -23,11 +23,13 @@ import {
 import { AnalysisController } from './analysisCtrl';
 import { patch } from '../document';
 import { updateMovelist } from '../movelist';
+import { ExternalEngineSettings } from './externalEngineSettings';
 
 class AnalysisSettings {
     ctrl: AnalysisController;
     settings: { [key: string]: Settings<number | boolean | string> };
     assetURL: string;
+    readonly externalEngine = new ExternalEngineSettings(() => this.ctrl);
 
     constructor() {
         this.settings = {};
@@ -63,6 +65,7 @@ class AnalysisSettings {
         nnueFileSettings.setLookupContext(nnueLookupContextForVariant(variant));
 
         return h('div.analysis-settings', [
+            this.externalEngine.view(),
             h('div.analysis-settings-group', [
                 this.settings['multipv'].view(),
                 this.settings['threads'].view(),
@@ -76,8 +79,11 @@ class AnalysisSettings {
                 this.settings['disclosureMode'].view(),
                 this.settings['infiniteAnalysis'].view(),
             ]),
-            h('div.analysis-settings-group', [this.settings['nnue'].view(), nnueFileSettings.view()]),
-            h('div.analysis-settings-group', [this.settings['fsfDebug'].view()]),
+            h('div.analysis-settings-group.browser-engine-settings', [
+                this.settings['nnue'].view(),
+                nnueFileSettings.view(),
+            ]),
+            h('div.analysis-settings-group.browser-engine-settings', [this.settings['fsfDebug'].view()]),
         ]);
     }
 }
@@ -267,10 +273,8 @@ const isIPad = (): boolean => navigator?.maxTouchPoints > 2 && /iPad|Macintosh/.
 // steer the high performance crowd towards external engine as it gets better
 const maxHashMB = (): number => {
     let maxHash = 512; // allocating 1024 often fails and offers little benefit over 512, or 16 for that matter
-    if (isAndroid())
-        maxHash = 64; // budget androids are easy to crash @ 128
-    else if (isIPad())
-        maxHash = 64; // iPadOS safari pretends to be desktop but acts more like iphone
+    if (isAndroid()) maxHash = 64; // budget androids are easy to crash @ 128
+    else if (isIPad()) maxHash = 64; // iPadOS safari pretends to be desktop but acts more like iphone
     else if (isIOS()) maxHash = 32;
     return maxHash;
 };
@@ -706,9 +710,7 @@ export class EngineSettings extends BooleanSettings {
                 !this.ctrl.analysisContext.capabilities.localAnalysisAllowed ||
                     this.ctrl.isLocalAnalysisBlockedByAntiCheat() ||
                     !this.ctrl.isLocalAnalysisAllowedByExtension() ||
-                    !this.ctrl.localEngine ||
-                    !this.ctrl.isEngineReady ||
-                    !this.ctrl.variantSupportedByFSF,
+                    !this.ctrl.isSelectedEngineReady(),
             ),
         );
     }

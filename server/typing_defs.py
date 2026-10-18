@@ -655,6 +655,8 @@ class ViewContext(TypedDict, total=False):
     bot_notice: str
     bot_error: str
     new_bot_token: str
+    engine_tokens: list[Mapping[str, object]]
+    new_engine_token: str
     online_users: Sequence[User]
     profile: str | None
     profile_teams: Sequence[Mapping[str, object]]
