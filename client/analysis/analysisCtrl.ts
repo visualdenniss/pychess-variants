@@ -329,6 +329,10 @@ export class AnalysisController extends GameController {
         }
         document.addEventListener('keydown', this.onKeyboardHelpShortcutKeyDown, true);
 
+        const eraseOnMovablePieceClick = this.analysisContext.mode !== 'study';
+        // Support released 10.7.5 and the upstream-compatible option during the upgrade.
+        // Remove the legacy key once the minimum ChessgroundX version supports the new name.
+        const clickEraseOptions = { eraseOnMovablePieceClick, eraseOnClick: eraseOnMovablePieceClick };
         this.chessground.set({
             orientation: this.variant.name === 'racingkings' ? 'white' : this.mycolor,
             turnColor: this.turnColor,
@@ -346,7 +350,7 @@ export class AnalysisController extends GameController {
                 select: this.onSelect(),
             },
             drawable: {
-                eraseOnClick: this.analysisContext.mode !== 'study',
+                ...clickEraseOptions,
                 onChange: shapes => this.analysisExtension?.onShapesChanged?.(shapes),
             },
         });
