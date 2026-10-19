@@ -63,7 +63,8 @@ PyChess-specific adaptations:
 This port does not change MultiPV arrow colors/widths, add numbered arrows,
 add maneuver arrows, create an opening explorer, or replace PV hover mini-boards.
 Ordinary analysis has keyboard fork selection but no Study-style fork footer;
-no new footer is introduced. NAGs and endgame badges remain separate follow-ups.
+no new footer is introduced. P1 left NAGs and endgame badges to separate follow-ups;
+the P2 follow-up is recorded below. Endgame badges remain deferred.
 
 An important limit: the inspected Fairy-Stockfish `src/types.h` LARGEBOARDS build
 supports up to 12 files × 10 ranks. The 16×16 checks establish drawing/coordinate
@@ -131,3 +132,80 @@ The initial sandboxed Node run could not spawn the child processes used by two
 Markdown tests; the unrestricted final run above passes all tests. The normal
 in-app browser connection was unavailable, so Chromium acceptance used the
 repository's existing Playwright launcher with system Chromium.
+
+## P2 follow-up: Show move annotations
+
+Starting from merged P1 (`54e883cb8f9fad3a8219d2747e6166f80d0f95ea`), rechecked
+Lila at the same source revision before implementing this separate change.
+
+| Concern | Verified upstream | PyChess delta and decision |
+| --- | --- | --- |
+| Preference | `ui/analyse/src/settingsCtrl.ts`, `view/settingsView.ts` and `ctrl.ts::showMoveAnnotations`: default-on `showMoveAnnotationsOnBoard`, labelled **Show move annotations** | Add the same browser preference to `client/analysis/analysisSettings.ts`; refresh shapes immediately. |
+| Rendering | `ui/lib/src/game/glyphs.ts::annotationShapes`: shared `glyphToSvg(4)`, reversed stacking, purple label fallback | Adapt in `client/analysis/glyphs.ts`, reusing ChessgroundX's SVGs. Numeric unknown NAGs retain their existing `$n` text; no new NAG schema. |
+| Visibility | `ctrl.ts::showMoveGlyphs`, `visibleGlyphs`; `autoShape.ts::compute` returns early for computer Practice | Follow existing Study annotation visibility and server-advice filtering. Keep authored Study glyphs when server analysis is hidden; standalone board glyphs follow server-analysis visibility, including during local search. Training/preview never exposes authored badges. |
+| Placement | Upstream castling uses c/g1/8; other moves use their destination | Reuse bounded FSF coordinates through 16×16. Resolve castling from saved before/after positions and configured royal roles, including stationary Chess960 kings. Ambiguous castling gets no badge. |
+| Native counters | No equivalent on-board counter in Lila | Keep ChessgroundX untouched. On a royal sharing a native counter, reserve its existing slot and limit NAGs to three, avoiding the shared four-slot SVG registry wrapping onto the counter. |
+
+`analysisCtrl.ts::setAutoShapes` composes current-move badges with existing PVs
+and fork drawings. Study annotation edits, remote updates, concealment changes,
+and incoming server advice refresh the composition. `visibleNags` extracts the
+move list's existing advice filter for both consumers. A saved NAG without advice
+provenance retains its existing semantics; this change does not infer its origin.
+
+The upstream outer custom-SVG layer allows overflow. Chromium confirmed PyChess's
+`static/chessground.css` clipped top-rank badges, so `static/analysis.css` now allows
+that overflow within analysis/Study. Piece clipping for Duck's holding square is
+unchanged. Served stylesheet chains and computed overflow, z-index and pointer
+behavior were inspected in desktop dark and mobile light layouts.
+
+There are no PGN, comment, synchronization-payload, ChessgroundX, check-counter,
+endgame or PNG compositor changes. Manual drawings remain separate. Root NAGs
+remain stored/exported, without a board badge. Four known glyphs use the upstream
+stack; unknown symbols use its label fallback, including its existing shared-corner
+placement when combined with other badges.
+
+### P2 verification
+
+All required frontend commands passed:
+
+```text
+yarn lint
+yarn typecheck
+yarn dev
+yarn md
+yarn test --runInBand     # 115 suites, 983 tests
+```
+
+Focused coverage in `boardGlyphs.test.ts`, `analysisBoard.test.ts` and
+`studySync.test.ts` checks shared SVG output, stacking, label fallback, visibility
+toggles during local analysis, remote edits, training suppression, and immutable
+NAGs. Five castling fixtures use real ffish WASM, including Black, stationary
+Chess960 and Capablanca; a synthetic fixture checks a nonstandard royal role.
+Existing PGN/import/synchronization and PNG tests pass in the full frontend run.
+Python/server gates were skipped because no server source changed.
+
+Local mock-database Chromium acceptance used:
+
+```bash
+env UV_CACHE_DIR=/tmp/uv-cache PYTHONPATH=server:tests uv run python -m pytest -q \
+  /tmp/test_glyph_browser.py /tmp/test_glyph16_browser.py tests/test_study_gui.py \
+  -p aiohttp.pytest_plugin \
+  -k 'board_glyphs or glyph_16x16 or drawings_survive or practice_browser_acceptance or conceal_multiclient'
+```
+
+Result: **12 passed, 3 deselected** (mongomock deprecation warnings only).
+The temporary harness covers eight Study cases: chess, unknown-NAG fallback,
+Xiangqi, Crazyhouse drop, promotion on the top rank, stationary Chess960 castling,
+Capablanca castling and three-check counters. Each checks both orientations and
+the preference off/on with manual arrows retained. A two-tab check verifies live
+NAG updates. A separate 16×16 harness checks synthetic drawing geometry and label
+fallback; it makes no claim of engine support for that board size. The three
+existing Study GUI checks cover drawing persistence, Practice/return-to-analysis
+and concealed multi-client behavior. Only local servers were used.
+
+Screenshots and the glyph-containing PNG Blob were inspected. As in P1, the Snap
+Chromium download path is inaccessible to the driver; this verifies PNG generation
+and composition, without claiming filesystem saving through that driver. Temporary
+scripts/evidence are in `/tmp/test_glyph_browser.py`, `/tmp/test_glyph16_browser.py`,
+`/tmp/glyph16-harness.ts`, `/tmp/glyph-browser-all.log`, `/tmp/glyph-*.png` and
+`/tmp/glyph-*-styles.json`.

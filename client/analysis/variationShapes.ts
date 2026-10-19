@@ -14,8 +14,11 @@ const normalMove = new RegExp(
 );
 
 // FSF uses decimal ranks; ChessgroundX uses single-character ranks through 16.
-// Keep this local to fork drawings: the saved engine move remains untouched.
-function moveSquares(move: string, dimensions: BoardDimensions): { orig?: Key; dest: Key; wall?: Key } | undefined {
+// Used only for drawings: the saved engine move remains untouched.
+export function moveSquares(
+    move: string,
+    dimensions: BoardDimensions,
+): { orig?: Key; dest: Key; wall?: Key } | undefined {
     const key = (file: string, rank: string): Key | undefined => {
         const x = file.charCodeAt(0) - 97;
         const y = /^\d+$/.test(rank) ? Number(rank) - 1 : rank.charCodeAt(0) - 49;

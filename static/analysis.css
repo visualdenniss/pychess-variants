@@ -14,6 +14,11 @@
     --gauge-gap: 4px;
 }
 
+/* Match upstream Chessground: move glyphs may extend past an edge square. */
+.analysis-app .cg-custom-svgs {
+    overflow: visible;
+}
+
 /* DuckInput uses a0 as a temporary off-board holding square before
    the first duck placement. Clip the analysis board so that fake
    source square stays hidden while its legal destination dots remain visible. */
