@@ -37,6 +37,7 @@ class AnalysisSettings {
         this.settings['showGauge'] = new GaugeSettings();
         this.settings['arrow'] = new ArrowSettings(this);
         this.settings['variationArrows'] = new VariationArrowSettings(this);
+        this.settings['showMoveAnnotationsOnBoard'] = new MoveAnnotationsSettings(this);
         this.settings['inlineNotation'] = new InlineNotationSettings(this);
         this.settings['disclosureMode'] = new DisclosureModeSettings(this);
         this.settings['infiniteAnalysis'] = new InfiniteAnalysisSettings(this);
@@ -77,6 +78,7 @@ class AnalysisSettings {
                 this.settings['showGauge'].view(),
                 this.settings['arrow'].view(),
                 this.settings['variationArrows'].view(),
+                this.settings['showMoveAnnotationsOnBoard'].view(),
                 this.settings['inlineNotation'].view(),
                 this.settings['disclosureMode'].view(),
                 this.settings['infiniteAnalysis'].view(),
@@ -199,6 +201,25 @@ class VariationArrowSettings extends BooleanSettings {
         return h(
             'div.variation-arrows-toggle',
             toggleSwitch(this, 'variation-arrows-enabled', _('Show variation arrows'), false),
+        );
+    }
+}
+
+class MoveAnnotationsSettings extends BooleanSettings {
+    constructor(private readonly analysisSettings: AnalysisSettings) {
+        super('showMoveAnnotationsOnBoard', true);
+    }
+
+    update(): void {
+        const ctrl = this.analysisSettings.ctrl;
+        ctrl.showMoveAnnotationsOnBoard = this.value;
+        ctrl.setAutoShapes();
+    }
+
+    view(): VNode {
+        return h(
+            'div.move-annotations-toggle',
+            toggleSwitch(this, 'move-annotations-enabled', _('Show move annotations'), false),
         );
     }
 }

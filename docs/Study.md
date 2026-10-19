@@ -40,6 +40,10 @@ one validated import and opens the final imported chapter.
   autosaving comment editors and comments displayed in the move tree.
 - Root and move arrows/circles and NAGs, including a picker for the 24 named lichess
   glyphs. Comments, glyphs, PGN tags, descriptions, and sharing have dedicated tools.
+- Lichess-style move glyphs on the board, controlled by the default-on **Show move
+  annotations** analysis setting. They follow visible move annotations; Practice,
+  lesson playback and unrevealed annotations remain hidden. Numeric PGN NAGs are
+  preserved when the display setting is off.
 - Chapter-wide Clear annotations and Clear variations actions.
 - Local engine analysis, subject to the viewer's computer-analysis permission and
   support from the browser engine loaded for that variant.

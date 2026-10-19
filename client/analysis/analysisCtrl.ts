@@ -41,7 +41,8 @@ import { PvHoverPreview } from './pvHoverPreview';
 import { alertDialog } from '../alertDialog';
 import { confirmDialog } from '../confirmDialog';
 import { animatePassMove } from '../passMove';
-import { mergeServerAdvice, renderFullTreePgnMoveText, renderNodeAnnotations } from './analysisTree';
+import { mergeServerAdvice, parentPath, renderFullTreePgnMoveText, renderNodeAnnotations } from './analysisTree';
+import { annotationShapes, visibleNags } from './glyphs';
 import { AnalysisTreeController } from './analysisTreeCtrl';
 import { hiliteVariations, shapesFromVariation } from './variationShapes';
 import { analysisContext, type AnalysisContext } from './analysisContext';
@@ -113,6 +114,7 @@ export class AnalysisController extends GameController {
     isEngineReady: boolean;
     arrow: boolean;
     variationArrows: boolean;
+    showMoveAnnotationsOnBoard: boolean;
     private variationHover?: string;
     showServerAnalysis: boolean;
     multipv: number;
@@ -231,6 +233,7 @@ export class AnalysisController extends GameController {
 
         this.arrow = localStorage.arrow === undefined ? true : localStorage.arrow === 'true';
         this.variationArrows = localStorage.variationArrows !== 'false';
+        this.showMoveAnnotationsOnBoard = localStorage.showMoveAnnotationsOnBoard !== 'false';
         const infiniteAnalysis =
             localStorage.infiniteAnalysis === undefined ? false : localStorage.infiniteAnalysis === 'true';
         this.maxDepth = infiniteAnalysis ? 99 : maxDepth;
@@ -755,7 +758,7 @@ export class AnalysisController extends GameController {
             fen: this.fullfen,
             node: this.analysisTree ? this.getTreeNodeAtPath(path) : undefined,
         });
-        if (this.analysisExtension?.allowVariationArrows?.() !== false) this.setAutoShapes();
+        this.setAutoShapes();
     }
 
     shouldDisplayAnalysisEvaluation(evaluation: AnalysisEvaluationDelivery): boolean {
@@ -1579,28 +1582,47 @@ export class AnalysisController extends GameController {
 
     setAutoShapes(): void {
         const engineShapes = this.autoShapes?.flat() ?? [];
-        if (this.embed || this.fog || this.puzzle || this.analysisExtension?.allowVariationArrows?.() === false) {
+        if (this.embed || this.fog || this.puzzle) {
             this.chessground.setAutoShapes(engineShapes);
             return;
         }
-        const children =
-            this.getTreeNodeAtPath(this.analysisPath ?? '')?.children.filter(
-                child =>
-                    !(this.showServerAnalysis === false && child.serverAnalysis) &&
-                    this.analysisExtension?.isTreeNodeVisible?.(child) !== false,
-            ) ?? [];
+        const node = this.getTreeNodeAtPath(this.analysisPath ?? '');
+        const allowVariations = this.analysisExtension?.allowVariationArrows?.() !== false;
+        const children = allowVariations
+            ? (node?.children.filter(
+                  child =>
+                      !(this.showServerAnalysis === false && child.serverAnalysis) &&
+                      this.analysisExtension?.isTreeNodeVisible?.(child) !== false,
+              ) ?? [])
+            : [];
         const hovering = children.find(child => child.step.move === this.variationHover);
         const shapes = hovering ? shapesFromVariation(hovering, this.chessground.state, 'paleBlue') : engineShapes;
+        const showAnnotations =
+            this.showMoveAnnotationsOnBoard &&
+            (this.analysisContext?.mode === 'study' || this.showServerAnalysis !== false) &&
+            node &&
+            this.analysisExtension?.isTreeNodeVisible?.(node) !== false &&
+            this.analysisExtension?.areTreeNodeAnnotationsVisible?.(node) !== false;
+        const annotations = showAnnotations
+            ? annotationShapes(
+                  node,
+                  this.getTreeNodeAtPath(parentPath(node.path)),
+                  this.chessground.state,
+                  visibleNags(node, this.showServerAnalysis),
+                  shapes,
+              )
+            : [];
+        const allShapes = shapes.concat(annotations);
         this.chessground.setAutoShapes(
-            this.variationArrows
+            this.variationArrows && allowVariations
                 ? hiliteVariations(
                       children,
                       this.getTreeMainChildPath(),
-                      shapes,
+                      allShapes,
                       this.chessground.state,
                       this.analysisExtension?.isGamebookEditor?.(),
                   )
-                : shapes,
+                : allShapes,
         );
     }
 
@@ -2402,6 +2424,7 @@ export class AnalysisController extends GameController {
             }
             if (this.analysisTree && mergeServerAdvice(this.analysisTree, Number(msg.ply), msg.ceval)) {
                 updateMovelist(this, true, false);
+                this.setAutoShapes();
             }
             if (msg.pgn !== undefined) {
                 this.pgn = msg.pgn;

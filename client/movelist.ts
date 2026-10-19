@@ -7,7 +7,7 @@ import { patch } from './document';
 import { AnalysisTreeNode } from './analysis/analysisTree';
 import type { AnalysisContext } from './analysis/analysisContext';
 import type { AnalysisExtension } from './analysis/analysisExtension';
-import { GLYPHS } from './analysis/glyphs';
+import { GLYPHS, visibleNags } from './analysis/glyphs';
 import { renderLinkifiedText } from './richTextEnhance';
 import { ariaHiddenAttr } from './accessibility/aria';
 
@@ -147,10 +147,8 @@ function renderTreeMoveText(move: string | undefined, nags: number[] = []): VNod
 }
 
 function treeMoveText(ctrl: TreeCtrl, node: AnalysisTreeNode, move: string | undefined): VNode[] {
-    let nags = treeNodeAnnotationsVisible(ctrl, node) ? node.annotations?.nags : undefined;
+    const nags = treeNodeAnnotationsVisible(ctrl, node) ? visibleNags(node, ctrl.showServerAnalysis) : undefined;
     if (ctrl.showServerAnalysis === false) {
-        const advice = node.step.analysis?.advice;
-        if (advice) nags = nags?.filter(nag => nag !== advice.nag);
         if (node.step.analysis) move = parseTreeMove(move).san;
     }
     return renderTreeMoveText(move, nags);
