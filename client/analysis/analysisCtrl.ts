@@ -775,7 +775,6 @@ export class AnalysisController extends GameController {
         if (!this.localAnalysis && this.analysisContext.capabilities.positionEvaluation) {
             this.clearPvlines();
             this.autoShapes = Array.from({ length: this.multipv }, () => []);
-            this.setAutoShapes();
             const step = this.getTreeNodeAtPath(this.analysisPath ?? '')?.step ?? this.steps[this.ply];
             const allowed =
                 visible &&
@@ -789,6 +788,7 @@ export class AnalysisController extends GameController {
                 });
             this.drawEval(allowed ? step.ceval : undefined, allowed ? step.scoreStr : undefined, this.turnColor);
         }
+        this.setAutoShapes();
     }
 
     toggleSettings() {
