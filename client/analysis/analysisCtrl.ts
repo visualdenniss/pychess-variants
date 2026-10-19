@@ -43,6 +43,7 @@ import { confirmDialog } from '../confirmDialog';
 import { animatePassMove } from '../passMove';
 import { mergeServerAdvice, renderFullTreePgnMoveText, renderNodeAnnotations } from './analysisTree';
 import { AnalysisTreeController } from './analysisTreeCtrl';
+import { hiliteVariations, shapesFromVariation } from './variationShapes';
 import { analysisContext, type AnalysisContext } from './analysisContext';
 import { BrowserSearchBackend } from './browserSearchBackend';
 import type { AnalysisSearchBackend, AnalysisSearch } from './searchBackend';
@@ -111,6 +112,8 @@ export class AnalysisController extends GameController {
     isAnalysisBoard: boolean;
     isEngineReady: boolean;
     arrow: boolean;
+    variationArrows: boolean;
+    private variationHover?: string;
     showServerAnalysis: boolean;
     multipv: number;
     threads: number;
@@ -227,6 +230,7 @@ export class AnalysisController extends GameController {
         this.dblClickPass = true;
 
         this.arrow = localStorage.arrow === undefined ? true : localStorage.arrow === 'true';
+        this.variationArrows = localStorage.variationArrows !== 'false';
         const infiniteAnalysis =
             localStorage.infiniteAnalysis === undefined ? false : localStorage.infiniteAnalysis === 'true';
         this.maxDepth = infiniteAnalysis ? 99 : maxDepth;
@@ -352,6 +356,7 @@ export class AnalysisController extends GameController {
             drawable: {
                 ...clickEraseOptions,
                 onChange: shapes => this.analysisExtension?.onShapesChanged?.(shapes),
+                brushes: { variation: { key: 'variation', color: 'white', opacity: 0.5, lineWidth: 12 } },
             },
         });
 
@@ -733,6 +738,7 @@ export class AnalysisController extends GameController {
         previousPath: string,
         path = this.analysisPath ?? '',
     ): void {
+        this.variationHover = undefined;
         const boardInput = this.analysisExtension?.boardInput?.({
             path,
             ply: this.ply,
@@ -749,6 +755,7 @@ export class AnalysisController extends GameController {
             fen: this.fullfen,
             node: this.analysisTree ? this.getTreeNodeAtPath(path) : undefined,
         });
+        if (this.analysisExtension?.allowVariationArrows?.() !== false) this.setAutoShapes();
     }
 
     shouldDisplayAnalysisEvaluation(evaluation: AnalysisEvaluationDelivery): boolean {
@@ -768,7 +775,6 @@ export class AnalysisController extends GameController {
         if (!this.localAnalysis && this.analysisContext.capabilities.positionEvaluation) {
             this.clearPvlines();
             this.autoShapes = Array.from({ length: this.multipv }, () => []);
-            this.chessground.setAutoShapes([]);
             const step = this.getTreeNodeAtPath(this.analysisPath ?? '')?.step ?? this.steps[this.ply];
             const allowed =
                 visible &&
@@ -782,6 +788,7 @@ export class AnalysisController extends GameController {
                 });
             this.drawEval(allowed ? step.ceval : undefined, allowed ? step.scoreStr : undefined, this.turnColor);
         }
+        this.setAutoShapes();
     }
 
     toggleSettings() {
@@ -1565,6 +1572,38 @@ export class AnalysisController extends GameController {
         this.doSendMove(move);
     }
 
+    setVariationHover(move?: string): void {
+        this.variationHover = move;
+        this.setAutoShapes();
+    }
+
+    setAutoShapes(): void {
+        const engineShapes = this.autoShapes?.flat() ?? [];
+        if (this.embed || this.fog || this.puzzle || this.analysisExtension?.allowVariationArrows?.() === false) {
+            this.chessground.setAutoShapes(engineShapes);
+            return;
+        }
+        const children =
+            this.getTreeNodeAtPath(this.analysisPath ?? '')?.children.filter(
+                child =>
+                    !(this.showServerAnalysis === false && child.serverAnalysis) &&
+                    this.analysisExtension?.isTreeNodeVisible?.(child) !== false,
+            ) ?? [];
+        const hovering = children.find(child => child.step.move === this.variationHover);
+        const shapes = hovering ? shapesFromVariation(hovering, this.chessground.state, 'paleBlue') : engineShapes;
+        this.chessground.setAutoShapes(
+            this.variationArrows
+                ? hiliteVariations(
+                      children,
+                      this.getTreeMainChildPath(),
+                      shapes,
+                      this.chessground.state,
+                      this.analysisExtension?.isGamebookEditor?.(),
+                  )
+                : shapes,
+        );
+    }
+
     shapeFromMove(pv_idx: number, pv_move: string, turnColor: cg.Color) {
         const atPos = pv_move.indexOf('@');
         // drop
@@ -1605,8 +1644,7 @@ export class AnalysisController extends GameController {
 
             // TODO: gating, promotion
         }
-        const shapes = this.autoShapes.flat();
-        this.chessground.setAutoShapes(shapes);
+        this.setAutoShapes();
     }
 
     private drawEvalScoreAndGauge = (ceval: Ceval | undefined, scoreStr: string | undefined, turnColor: cg.Color) => {
@@ -2016,7 +2054,7 @@ export class AnalysisController extends GameController {
 
             if (this.analysisContext.capabilities.positionEvaluation) {
                 this.autoShapes = Array.from({ length: this.multipv }, () => []);
-                this.chessground.setAutoShapes([]);
+                this.setAutoShapes();
                 const displayEvaluation =
                     (step.ceval === undefined && step.scoreStr === undefined) ||
                     this.shouldDisplayAnalysisEvaluation({
@@ -2082,7 +2120,7 @@ export class AnalysisController extends GameController {
 
         if (this.analysisContext.capabilities.positionEvaluation) {
             this.autoShapes = Array.from({ length: this.multipv }, () => []);
-            this.chessground.setAutoShapes([]);
+            this.setAutoShapes();
             const displayEvaluation =
                 (step.ceval === undefined && step.scoreStr === undefined) ||
                 this.shouldDisplayAnalysisEvaluation({

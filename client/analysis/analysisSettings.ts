@@ -36,6 +36,7 @@ class AnalysisSettings {
         this.settings['showServerAnalysis'] = new ServerAnalysisSettings(this);
         this.settings['showGauge'] = new GaugeSettings();
         this.settings['arrow'] = new ArrowSettings(this);
+        this.settings['variationArrows'] = new VariationArrowSettings(this);
         this.settings['inlineNotation'] = new InlineNotationSettings(this);
         this.settings['disclosureMode'] = new DisclosureModeSettings(this);
         this.settings['infiniteAnalysis'] = new InfiniteAnalysisSettings(this);
@@ -75,6 +76,7 @@ class AnalysisSettings {
                 this.settings['showServerAnalysis'].view(),
                 this.settings['showGauge'].view(),
                 this.settings['arrow'].view(),
+                this.settings['variationArrows'].view(),
                 this.settings['inlineNotation'].view(),
                 this.settings['disclosureMode'].view(),
                 this.settings['infiniteAnalysis'].view(),
@@ -179,6 +181,25 @@ class ArrowSettings extends BooleanSettings {
 
     view(): VNode {
         return h('div.arrow-toggle', toggleSwitch(this, 'arrow-enabled', _('Best move arrow'), false));
+    }
+}
+
+class VariationArrowSettings extends BooleanSettings {
+    constructor(private readonly analysisSettings: AnalysisSettings) {
+        super('variationArrows', true);
+    }
+
+    update(): void {
+        const ctrl = this.analysisSettings.ctrl;
+        ctrl.variationArrows = this.value;
+        ctrl.setAutoShapes();
+    }
+
+    view(): VNode {
+        return h(
+            'div.variation-arrows-toggle',
+            toggleSwitch(this, 'variation-arrows-enabled', _('Show variation arrows'), false),
+        );
     }
 }
 

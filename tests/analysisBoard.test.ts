@@ -90,3 +90,47 @@ test('compact finished history loads once and survives the repeated socket snaps
     expect(ctrl.initAnalysisTreeAtPly).toHaveBeenCalledTimes(1);
     expect(deleteBoard).toHaveBeenCalledTimes(1);
 });
+
+test('server-analysis visibility refreshes variation arrows once per toggle during local analysis', () => {
+    const ctrl = controller();
+    const children = ['e2e4', 'd2d4'].map((move, index) => ({
+        path: move,
+        serverAnalysis: index === 1,
+        children: [],
+        step: { move, fen: '8/8/8/8/8/8/8/8', turnColor: 'black', check: false },
+    }));
+    const engineArrow = { orig: 'g1', dest: 'f3', brush: 'paleGreen' };
+    const setAutoShapes = jest.fn();
+    Object.assign(ctrl, {
+        localAnalysis: true,
+        showServerAnalysis: true,
+        variationArrows: true,
+        analysisContext: { capabilities: { positionEvaluation: true } },
+        autoShapes: [[engineArrow]],
+        tree: {
+            analysisPath: '',
+            getTreeNodeAtPath: () => ({ children }),
+            getTreeMainChildPath: () => 'e2e4',
+        },
+        chessground: {
+            state: { dimensions: { width: 8, height: 8 }, boardState: { pieces: new Map() }, turnColor: 'white' },
+            setAutoShapes,
+        },
+    });
+    ctrl.setAutoShapes();
+    expect(setAutoShapes.mock.lastCall?.[0]).toHaveLength(3);
+
+    setAutoShapes.mockClear();
+    ctrl.setServerAnalysisVisibility(false);
+    expect(setAutoShapes).toHaveBeenCalledTimes(1);
+    expect(setAutoShapes.mock.lastCall?.[0]).toEqual([engineArrow]);
+
+    setAutoShapes.mockClear();
+    ctrl.setServerAnalysisVisibility(true);
+    expect(setAutoShapes).toHaveBeenCalledTimes(1);
+    expect(setAutoShapes.mock.lastCall?.[0]).toContainEqual(
+        expect.objectContaining({ orig: 'd2', dest: 'd4', below: true }),
+    );
+    expect(ctrl.autoShapes).toEqual([[engineArrow]]);
+    expect(ctrl.localAnalysis).toBe(true);
+});

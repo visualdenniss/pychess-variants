@@ -75,6 +75,9 @@ export interface AnalysisExtension {
     /** Re-check extension-owned engine work after permission/readiness changes. */
     onComputerSearchAvailabilityChanged?(): void;
     allowComputerSearch?(): boolean;
+    /** Match Lichess allowLines(): training and concealed chapters hide forks. */
+    allowVariationArrows?(): boolean;
+    isGamebookEditor?(): boolean;
     isTreeNodeVisible?(node: AnalysisTreeNode): boolean;
     isTreeNodeConcealed?(node: AnalysisTreeNode): boolean;
     areTreeNodeAnnotationsVisible?(node: AnalysisTreeNode): boolean;

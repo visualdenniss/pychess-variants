@@ -52,6 +52,7 @@ function stubCtrl(steps: Step[], gameId = 'abcd1234') {
         recordedMainlinePly: undefined as number | undefined,
         goPly: jest.fn(),
         completeAnalysisPositionChange: jest.fn(),
+        setAutoShapes: jest.fn(),
         ffishBoard: {
             setFen: jest.fn(),
             sanMove: jest.fn((move: string) => move),
@@ -226,6 +227,7 @@ test('keyboard fork selection and right navigation use the extracted tree state'
 
     keyBindings.get('up')?.(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
     expect(tree.treeForkIndex).toBe(1);
+    expect(ctrl.setAutoShapes).toHaveBeenCalledTimes(1);
 
     keyBindings.get('right')?.();
     expect(tree.getTreeCurrentNode()?.step.san).toBe('c5');
@@ -317,4 +319,25 @@ test('extension can suppress the analysis tree context menu', () => {
 
     expect(extension.allowTreeContextMenu).toHaveBeenCalled();
     expect(tree.getTreeContextMenu()).toBeUndefined();
+});
+
+test('fork selection and right navigation skip hidden server and lesson continuations', () => {
+    const ctrl = {
+        ...stubCtrl(steps4()),
+        showServerAnalysis: false,
+        analysisExtension: { isTreeNodeVisible: (node: any) => node.step.move !== 'd7d5' },
+    };
+    const tree = new AnalysisTreeController(ctrl as any);
+    tree.initAnalysisTreeAtPly(1);
+    const parent = tree.getTreeActivePath();
+    const original = tree.getTreeCurrentNode()!.children[0];
+    original.serverAnalysis = true;
+    tree.recordMove(makeStep('v1 w - - 0 1', 'c7c5', 'white', 'c5'));
+    tree.recordMove(makeStep('v2 w - - 0 1', 'd7d5', 'white', 'd5'));
+    tree.recordMove(makeStep('v3 w - - 0 1', 'g8f6', 'white', 'Nf6'));
+    tree.activateTreePath(parent);
+    expect(tree.getTreeMainChildPath()).toBe(tree.getTreeCurrentNode()!.children[1].path);
+    tree.selectTreeFork('next');
+    keyBindings.get('right')?.();
+    expect(tree.getTreeCurrentNode()?.step.move).toBe('g8f6');
 });
