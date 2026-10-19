@@ -241,4 +241,34 @@ describe('board PNG export', () => {
         expect(image?.getAttribute('opacity')).toBe('0.75');
         expect(image?.style.filter).toBe('brightness(0.8)');
     });
+
+    test('exports lower SVG planes before pieces and retains upper drawing order', async () => {
+        document.body.innerHTML = `
+            <div class="cg-wrap">
+                <cg-board><piece></piece></cg-board>
+                <svg class="cg-shapes-below" viewBox="-4 -4 8 8"><g data-plane="lower-shapes"><line x1="0" x2="1" /></g></svg>
+                <svg class="cg-custom-below" viewBox="-3.5 -3.5 8 8"><g data-plane="lower-custom"><rect width="1" height="1" /></g></svg>
+                <svg class="cg-shapes"><g data-plane="upper-shapes" /></svg>
+                <cg-auto-pieces></cg-auto-pieces>
+                <svg class="cg-custom-svgs"><g data-plane="upper-custom" /></svg>
+            </div>`;
+        const board = document.querySelector<HTMLElement>('cg-board')!;
+        const piece = board.querySelector('piece')!;
+        setRect(board, 0, 0, 400, 400);
+        setRect(piece, 0, 0, 50, 50);
+        jest.spyOn(window, 'getComputedStyle').mockImplementation(element => {
+            if (element === board) return cssStyle({ backgroundColor: 'rgb(10, 20, 30)' });
+            if (element === piece) return cssStyle({ backgroundImage: 'url("data:image/svg+xml;base64,PHN2Zy8+")' });
+            if (element.classList.contains('cg-shapes-below')) return cssStyle({ opacity: '0.6' });
+            return cssStyle();
+        });
+        await copyBoardToPNG('8/8/8/8/8/8/8/R7 w - - 0 1');
+        const rendered = serializeSpy.mock.calls[0][0] as SVGSVGElement;
+        const order = [...rendered.children].map(
+            child => child.querySelector('[data-plane]')?.getAttribute('data-plane') ?? child.tagName.toLowerCase(),
+        );
+        expect(order).toEqual(['rect', 'lower-shapes', 'lower-custom', 'image', 'upper-shapes', 'upper-custom']);
+        expect(rendered.querySelector('svg[viewBox="-4 -4 8 8"]')?.getAttribute('opacity')).toBe('0.6');
+        expect(rendered.querySelector('svg[viewBox="-3.5 -3.5 8 8"]')).not.toBeNull();
+    });
 });

@@ -311,9 +311,11 @@ async function buildBoardSvg(board: HTMLElement): Promise<{ svg: SVGSVGElement; 
 
     await appendBoardBackground(svg, board, width, height);
     appendSquareOverlays(svg, board, boardRect);
-    await appendPieces(svg, board, boardRect);
 
     const wrap = board.closest('.cg-wrap') as HTMLElement | null;
+    await appendChessgroundSvgLayer(svg, wrap, 'svg.cg-shapes-below', width, height);
+    await appendChessgroundSvgLayer(svg, wrap, 'svg.cg-custom-below', width, height);
+    await appendPieces(svg, board, boardRect);
     await appendChessgroundSvgLayer(svg, wrap, 'svg.cg-shapes', width, height);
     await appendAutoPieces(svg, wrap, boardRect);
     await appendChessgroundSvgLayer(svg, wrap, 'svg.cg-custom-svgs', width, height);
