@@ -2111,3 +2111,38 @@ test('conceal reader clears persisted evaluations from hidden sidelines and neve
     extension.onNodeAdded('', attempted);
     expect(ctrl.doSend).not.toHaveBeenCalled();
 });
+
+test.each([
+    ['normal', true, undefined, true, false],
+    ['gamebook', true, undefined, true, true],
+    ['gamebook', true, 'analysis', true, true],
+    ['gamebook', true, 'preview', false, false],
+    ['gamebook', false, undefined, false, false],
+    ['practice', true, undefined, false, false],
+    ['practice', true, 'analysis', false, false],
+    ['conceal', true, undefined, false, false],
+    ['conceal', false, undefined, false, false],
+] as const)(
+    'fork drawing policy for %s writer=%s override=%s follows Lichess allowLines',
+    (mode, canWrite, override, allowed, gamebook) => {
+        const policy = studySessionPolicy({
+            mode,
+            canWrite,
+            override,
+            computerAllowed: true,
+            savedRecording: true,
+            savedSynchronization: true,
+            activeGame: false,
+        });
+        const extension = new StudyAnalysisExtension(makeCtrl(), {
+            studyId: 'study001',
+            chapterId: 'chapter1',
+            revision: 0,
+            writable: canWrite,
+            policy,
+            onReloadRequired: jest.fn(),
+        });
+        expect(extension.allowVariationArrows()).toBe(allowed);
+        expect(extension.isGamebookEditor()).toBe(gamebook);
+    },
+);

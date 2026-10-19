@@ -993,7 +993,14 @@ export function renderStudyMoveListFooter(study: StudyPageModel, ctrl: AnalysisC
                     {
                         class: { selected: child.path === selectedPath },
                         attrs: { type: 'button', 'data-path': child.path },
-                        on: { click: () => ctrl.activateTreePath(child.path) },
+                        on: {
+                            click: () => ctrl.activateTreePath(child.path),
+                            mouseenter: () => {
+                                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches)
+                                    ctrl.setVariationHover(child.step.move);
+                            },
+                            mouseleave: () => ctrl.setVariationHover(),
+                        },
                     },
                     [
                         h('span.study-move-fork__index', studyMoveIndex(child.ply)),

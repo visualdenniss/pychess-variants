@@ -43,6 +43,10 @@ one validated import and opens the final imported chapter.
 - Chapter-wide Clear annotations and Clear variations actions.
 - Local engine analysis, subject to the viewer's computer-analysis permission and
   support from the browser engine loaded for that variant.
+- Lichess-style fork arrows below pieces in normal analysis and lesson authoring,
+  following keyboard selection and fork-button hover. The **Show variation arrows**
+  setting controls them; Practice, concealed chapters and lesson playback hide them.
+  See [the drawing parity audit](Lichess-drawing-parity.md) for source references.
 - Contributor requests for Fishnet analysis of a chapter's preferred mainline, with
   at least five moves, a five-minute repeat guard, one pending Study analysis per
   account, and rolling per-account analysis budgets.
