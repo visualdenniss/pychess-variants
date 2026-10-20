@@ -56,6 +56,7 @@ class AnalysisSettings {
         this.settings['showGauge'] = new GaugeSettings();
         this.settings['arrow'] = new ArrowSettings(this);
         this.settings['variationArrows'] = new VariationArrowSettings(this);
+        this.settings['maneuverArrows'] = new ManeuverArrowSettings(this);
         this.settings['showMoveAnnotationsOnBoard'] = new MoveAnnotationsSettings(this);
         this.settings['inlineNotation'] = new InlineNotationSettings(this);
         this.settings['disclosureMode'] = new DisclosureModeSettings(this);
@@ -121,6 +122,7 @@ class AnalysisSettings {
                 h('legend', _('Board')),
                 this.settings['arrow'].view(),
                 this.settings['variationArrows'].view(),
+                this.settings['maneuverArrows'].view(),
                 this.settings['showMoveAnnotationsOnBoard'].view(),
             ]),
             h('fieldset.analysis-general-settings-group', [
@@ -241,6 +243,25 @@ class VariationArrowSettings extends BooleanSettings {
         return h(
             'div.variation-arrows-toggle',
             toggleSwitch(this, 'variation-arrows-enabled', _('Show variation arrows'), false),
+        );
+    }
+}
+
+class ManeuverArrowSettings extends BooleanSettings {
+    constructor(private readonly analysisSettings: AnalysisSettings) {
+        super('maneuverArrows', true);
+    }
+
+    update(): void {
+        const ctrl = this.analysisSettings.ctrl;
+        ctrl.maneuverArrowsEnabled = this.value;
+        ctrl.setAutoShapes();
+    }
+
+    view(): VNode {
+        return h(
+            'div.maneuver-arrows-toggle',
+            toggleSwitch(this, 'maneuver-arrows-enabled', _('Show maneuver arrows'), false),
         );
     }
 }

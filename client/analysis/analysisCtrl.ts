@@ -45,6 +45,7 @@ import { mergeServerAdvice, parentPath, renderFullTreePgnMoveText, renderNodeAnn
 import { annotationShapes, visibleNags } from './glyphs';
 import { AnalysisTreeController } from './analysisTreeCtrl';
 import { hiliteVariations, shapesFromVariation } from './variationShapes';
+import { maneuverArrows } from './maneuverArrows';
 import { analysisContext, type AnalysisContext } from './analysisContext';
 import { BrowserSearchBackend } from './browserSearchBackend';
 import type { AnalysisSearchBackend, AnalysisSearch } from './searchBackend';
@@ -114,6 +115,8 @@ export class AnalysisController extends GameController {
     isEngineReady: boolean;
     arrow: boolean;
     variationArrows: boolean;
+    maneuverArrowsEnabled: boolean;
+    private pvManeuverArrows: DrawShape[] = [];
     showMoveAnnotationsOnBoard: boolean;
     private variationHover?: string;
     showServerAnalysis: boolean;
@@ -233,6 +236,7 @@ export class AnalysisController extends GameController {
 
         this.arrow = localStorage.arrow === undefined ? true : localStorage.arrow === 'true';
         this.variationArrows = localStorage.variationArrows !== 'false';
+        this.maneuverArrowsEnabled = localStorage.maneuverArrows !== 'false';
         this.showMoveAnnotationsOnBoard = localStorage.showMoveAnnotationsOnBoard !== 'false';
         const infiniteAnalysis =
             localStorage.infiniteAnalysis === undefined ? false : localStorage.infiniteAnalysis === 'true';
@@ -778,6 +782,7 @@ export class AnalysisController extends GameController {
         if (!this.localAnalysis && this.analysisContext.capabilities.positionEvaluation) {
             this.clearPvlines();
             this.autoShapes = Array.from({ length: this.multipv }, () => []);
+            this.pvManeuverArrows = [];
             const step = this.getTreeNodeAtPath(this.analysisPath ?? '')?.step ?? this.steps[this.ply];
             const allowed =
                 visible &&
@@ -1581,7 +1586,9 @@ export class AnalysisController extends GameController {
     }
 
     setAutoShapes(): void {
-        const engineShapes = this.autoShapes?.flat() ?? [];
+        const engineShapes = (this.autoShapes?.flat() ?? []).concat(
+            this.maneuverArrowsEnabled ? this.pvManeuverArrows : [],
+        );
         if (this.embed || this.fog || this.puzzle) {
             this.chessground.setAutoShapes(engineShapes);
             return;
@@ -1780,6 +1787,10 @@ export class AnalysisController extends GameController {
 
         if (ceval?.p !== undefined) {
             // console.log("ARROW", this.arrow);
+            if (pvlineIdx === 0) {
+                this.pvManeuverArrows = maneuverArrows(ceval.p);
+                if (!this.arrow) this.setAutoShapes();
+            }
             if (this.arrow) {
                 const pv_move = uci2cg(ceval.p.split(' ')[0]);
                 this.shapeFromMove(pvlineIdx, pv_move, turnColor);
@@ -2076,6 +2087,7 @@ export class AnalysisController extends GameController {
 
             if (this.analysisContext.capabilities.positionEvaluation) {
                 this.autoShapes = Array.from({ length: this.multipv }, () => []);
+            this.pvManeuverArrows = [];
                 this.setAutoShapes();
                 const displayEvaluation =
                     (step.ceval === undefined && step.scoreStr === undefined) ||
@@ -2142,6 +2154,7 @@ export class AnalysisController extends GameController {
 
         if (this.analysisContext.capabilities.positionEvaluation) {
             this.autoShapes = Array.from({ length: this.multipv }, () => []);
+            this.pvManeuverArrows = [];
             this.setAutoShapes();
             const displayEvaluation =
                 (step.ceval === undefined && step.scoreStr === undefined) ||

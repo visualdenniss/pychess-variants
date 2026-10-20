@@ -249,7 +249,7 @@ div.analysis-settings {
 #analysis-engine-name {
     overflow-wrap: anywhere;
 }
-.analysis-settings :is(.serverAnalysis-toggle, .gauge-toggle, .variation-arrows-toggle, .move-annotations-toggle) {
+.analysis-settings :is(.serverAnalysis-toggle, .gauge-toggle, .variation-arrows-toggle, .maneuver-arrows-toggle, .move-annotations-toggle) {
     display: flex;
     align-items: center;
     justify-content: space-between;
