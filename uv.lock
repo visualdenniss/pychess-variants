@@ -769,11 +769,11 @@ wheels = [
 
 [[package]]
 name = "objgraph"
-version = "3.6.2"
+version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ba/74/60dfb345ca493d69551dd1ba599ceb6fe325527fedabe4217d6e030449e2/objgraph-3.6.2.tar.gz", hash = "sha256:00b9f2f40f7422e3c7f45a61c4dafdaf81f03ff0649d6eaec866f01030e51ad8", size = 759524, upload-time = "2024-10-10T12:00:45.207Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/c6/6124b3f4f4251651e9d3a253c5a67b1c88fe83e9e8da186aa27a470fb100/objgraph-3.7.0.tar.gz", hash = "sha256:b6ef4b244217410509b257970413b01a979d54df48d2d4055b6941e8679ddbbb", size = 759826, upload-time = "2026-10-16T15:41:22.88Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/67/7bffbb861cb8a0a62b7df50738d35812bf40dc8bcc1559c04bdf593f1164/objgraph-3.6.2-py3-none-any.whl", hash = "sha256:8114c97712291c3ba30d882406a384d0a7651b307ea9a06e0d83836ccde85e15", size = 17667, upload-time = "2024-10-10T12:00:41.581Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/5a/dbc1526e7010618727c4835c3d36b77a4fd874b3db9d7e28192c0c805401/objgraph-3.7.0-py3-none-any.whl", hash = "sha256:1f0e1d80a0c8e81862b8400cda6ace1357fc04e9d0f380e820e78cd92f0ac34d", size = 17951, upload-time = "2026-10-16T15:41:18.894Z" },
 ]
 
 [[package]]
@@ -940,7 +940,7 @@ requires-dist = [
     { name = "mongomock-motor", marker = "extra == 'dev'", specifier = "==0.0.36" },
     { name = "motor", marker = "extra == 'dev'", specifier = "==3.7.1" },
     { name = "msgspec", specifier = "==0.22.0" },
-    { name = "objgraph", marker = "extra == 'dev'", specifier = "==3.6.2" },
+    { name = "objgraph", marker = "extra == 'dev'", specifier = "==3.7.0" },
     { name = "playwright", marker = "extra == 'dev'", specifier = "==1.63.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.6.2" },
     { name = "py4swiss", specifier = "==0.3.1" },
