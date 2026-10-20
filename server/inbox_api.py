@@ -309,19 +309,33 @@ async def inbox_thread(request: web.Request) -> web.Response:
 
     me = await app_state.users.get(username)
     profile = await app_state.public_users.get_profile(contact)
-    if profile is None or not profile.enabled or profile.username.startswith("Anon-"):
+    if contact.startswith("Anon-"):
         return json_response({"type": "error", "message": "User not found"}, status=404)
+
+    tid = _thread_id(username, contact)
+    # Closed/deleted contacts must not prevent the recipient from reading their
+    # existing messages and clearing unread notifications. Do not expose a
+    # conversation with an unavailable user unless it already belongs to me.
+    if profile is None or not profile.enabled:
+        existing = await app_state.db.inbox_thread.find_one(
+            {"_id": tid, "users": username, "deletedBy": {"$ne": username}},
+            projection={"_id": 1},
+        )
+        if existing is None:
+            return json_response({"type": "error", "message": "User not found"}, status=404)
+
     system_contact = contact == SYSTEM_USER
     blocked_by_me = False if system_contact else contact in me.blocked
-    blocked_by_them = False if system_contact else username in profile.blocked
+    blocked_by_them = False if system_contact or profile is None else username in profile.blocked
     can_message = (
-        (not system_contact)
+        profile is not None
+        and profile.enabled
+        and (not system_contact)
         and (not blocked_by_me)
         and (not blocked_by_them)
         and await _can_send_to_contact(app_state, me, contact, profile)
     )
 
-    tid = _thread_id(username, contact)
     before = request.rel_url.query.get("before")
     query: dict[str, object] = {"tid": tid, "deletedBy": {"$ne": username}}
     if before is not None:
@@ -354,12 +368,14 @@ async def inbox_thread(request: web.Request) -> web.Response:
     return json_response(
         {
             "contact": {
-                "name": profile.username,
-                "title": "" if system_contact else profile.title,
+                "name": profile.username if profile is not None else contact,
+                "title": "" if system_contact or profile is None else profile.title,
                 "system": system_contact,
-                "patron": profile.patron,
+                "patron": profile.patron if profile is not None else False,
                 "online": bool(
-                    app_state.users.data.get(profile.username)
+                    profile is not None
+                    and profile.enabled
+                    and app_state.users.data.get(profile.username)
                     and app_state.users.data[profile.username].online
                 ),
                 "canMessage": can_message,
