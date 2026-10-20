@@ -109,7 +109,9 @@ class InboxApiTestCase(AioHTTPTestCase):
         marked = await self.client.post("/api/inbox/thread/alice/read")
         self.assertEqual(200, marked.status)
         self.assertEqual(0, (await (await self.client.get("/api/inbox/unread")).json())["unread"])
-        self.assertFalse((await (await self.client.get("/api/inbox/threads")).json())["threads"][0]["unread"])
+        self.assertFalse(
+            (await (await self.client.get("/api/inbox/threads")).json())["threads"][0]["unread"]
+        )
         forbidden = await self.client.post("/api/inbox/thread/alice", data={"text": "reply"})
         self.assertEqual(404, forbidden.status)
 
