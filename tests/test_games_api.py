@@ -1228,7 +1228,8 @@ class SSESubscribeErrorFallbackTestCase(unittest.IsolatedAsyncioTestCase):
                 return True
 
             async def send(self, _payload):
-                await asyncio.Event().wait()
+                async with asyncio.timeout(0.01):
+                    await asyncio.Event().wait()
 
         slow_response = SlowResponse()
 
@@ -1240,7 +1241,6 @@ class SSESubscribeErrorFallbackTestCase(unittest.IsolatedAsyncioTestCase):
         with (
             patch("game_api.get_app_state", return_value=app_state),
             patch("game_api.sse_response", slow_sse_response),
-            patch("sse_utils.SSE_SEND_TIMEOUT", 0.01),
         ):
             response = await game_api.subscribe_games(request)
 

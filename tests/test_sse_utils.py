@@ -4,7 +4,12 @@ import unittest
 from unittest.mock import patch, sentinel
 
 from header_challenges import _consume_header_channels
-from sse_utils import consume_sse_queue, enqueue_sse_payload, log_sse_failure, sse_response
+from sse_utils import (
+    consume_sse_queue,
+    enqueue_sse_payload,
+    log_sse_failure,
+    sse_response,
+)
 
 
 class SlowResponse:
@@ -12,7 +17,8 @@ class SlowResponse:
         return True
 
     async def send(self, _payload: str) -> None:
-        await asyncio.Event().wait()
+        async with asyncio.timeout(0.01):
+            await asyncio.Event().wait()
 
 
 class SSEUtilsTestCase(unittest.IsolatedAsyncioTestCase):
@@ -21,7 +27,7 @@ class SSEUtilsTestCase(unittest.IsolatedAsyncioTestCase):
             response = sse_response(sentinel.request)
 
         self.assertIs(response, sentinel.context)
-        factory.assert_called_once_with(sentinel.request, send_timeout=30, ping_interval=15)
+        factory.assert_called_once_with(sentinel.request, send_timeout=10, ping_interval=15)
 
     def test_expected_disconnect_is_not_logged(self) -> None:
         with patch("sse_utils.logging.getLogger") as get_logger:
@@ -64,12 +70,32 @@ class SSEUtilsTestCase(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.QueueShutDown):
             queue.get_nowait()
 
+    async def test_consumer_does_not_add_an_outer_send_timeout(self) -> None:
+        queue = asyncio.Queue[str](maxsize=1)
+        queue.put_nowait("event")
+        messages: list[str] = []
+
+        class DelayedResponse:
+            def is_connected(self) -> bool:
+                return True
+
+            async def send(self, payload: str) -> None:
+                await asyncio.sleep(0.03)
+                messages.append(payload)
+                queue.shutdown()
+
+        # The library, not an outer wait_for, owns the transport timeout.
+        with patch("sse_utils.SSE_SEND_TIMEOUT", 0.001):
+            await asyncio.wait_for(consume_sse_queue(DelayedResponse(), queue), 0.2)
+
+        self.assertEqual(messages, ["event"])
+        await asyncio.wait_for(queue.join(), timeout=0.1)
+
     async def test_consumer_times_out_blocked_send_and_balances_queue(self) -> None:
         queue = asyncio.Queue[str](maxsize=1)
         queue.put_nowait("payload")
 
-        with patch("sse_utils.SSE_SEND_TIMEOUT", 0.01):
-            await consume_sse_queue(SlowResponse(), queue)
+        await consume_sse_queue(SlowResponse(), queue)
 
         self.assertEqual(queue.qsize(), 0)
         await asyncio.wait_for(queue.join(), timeout=0.1)

@@ -11,7 +11,6 @@ from const import (
     SSE_GET_TIMEOUT,
     SSE_PING_INTERVAL,
     SSE_SEND_TIMEOUT,
-    SSE_TRANSPORT_TIMEOUT,
 )
 
 
@@ -25,7 +24,7 @@ def sse_response(request: web.Request):
     """Configure keepalives and Linux TCP dead-peer detection consistently."""
     return aiohttp_sse_response(
         request,
-        send_timeout=SSE_TRANSPORT_TIMEOUT,
+        send_timeout=SSE_SEND_TIMEOUT,
         ping_interval=SSE_PING_INTERVAL,
     )
 
@@ -69,10 +68,6 @@ def enqueue_sse_payload(
         return False
 
 
-async def send_sse_payload(response: SSEResponse, payload: str) -> None:
-    await asyncio.wait_for(response.send(payload), timeout=SSE_SEND_TIMEOUT)
-
-
 async def consume_sse_queue(
     response: SSEResponse,
     queue: asyncio.Queue[str],
@@ -88,7 +83,7 @@ async def consume_sse_queue(
             break
 
         try:
-            await send_sse_payload(response, payload)
+            await response.send(payload)
         except TimeoutError:
             break
         finally:
