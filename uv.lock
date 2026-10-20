@@ -150,14 +150,14 @@ wheels = [
 
 [[package]]
 name = "aiohttp-sse"
-version = "2.2.0"
+version = "3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/df/4ddb30e689695fd91cf41c072e154061120ed166e8baf6c9a0020f27dffc/aiohttp-sse-2.2.0.tar.gz", hash = "sha256:a48dd5774031d3f41a29e159ebdbb93e89c8f37c1e9e83e196296be51885a5c2", size = 9432, upload-time = "2024-02-29T18:43:48.118Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/6d/01d7f71e38ac91a912dd8c4ed1a1481316dc83cb6c42043bbfa1b647c0e4/aiohttp_sse-3.0.tar.gz", hash = "sha256:4c2158dc7221fbcad225699c2b7c368c15ae45ef195447ddd0ba3dea5af24c70", size = 16196, upload-time = "2026-10-11T23:16:14.404Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/b8/bf448b1d2dbe6cf16c3be0b92230a8f032f2f0ed159a2299284c709819c8/aiohttp_sse-2.2.0-py3-none-any.whl", hash = "sha256:339f9803bcf4682a2060e75548760d86abe4424a0d92ba66ff4985de3bd743dc", size = 6740, upload-time = "2024-02-29T18:43:46.423Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/3f/06f9f0a6c587d0a1106ea408b308ce09f2935d7365d1bada80c54b4bcc9c/aiohttp_sse-3.0-py3-none-any.whl", hash = "sha256:0bd3bdb35a4beebe25a35e8240242636d45e952c80376166f7bc062511e299e5", size = 10527, upload-time = "2026-10-11T23:16:13.537Z" },
 ]
 
 [[package]]
@@ -928,7 +928,7 @@ requires-dist = [
     { name = "aiohttp-cors", specifier = "==0.8.1" },
     { name = "aiohttp-jinja2", specifier = "==1.6" },
     { name = "aiohttp-session", specifier = "==2.12.1" },
-    { name = "aiohttp-sse", specifier = "==2.2.0" },
+    { name = "aiohttp-sse", specifier = "==3.0" },
     { name = "aiohttp-swagger3", specifier = "==0.10.0" },
     { name = "betza-visualizer", specifier = "==0.1.1" },
     { name = "brotli", specifier = "==1.2.0" },
