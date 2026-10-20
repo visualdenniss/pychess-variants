@@ -8,7 +8,6 @@ from sse_utils import (
     consume_sse_queue,
     enqueue_sse_payload,
     log_sse_failure,
-    send_sse_payload,
     sse_response,
 )
 
@@ -71,14 +70,26 @@ class SSEUtilsTestCase(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.QueueShutDown):
             queue.get_nowait()
 
-    async def test_send_is_not_cancelled_by_an_outer_timeout(self) -> None:
+    async def test_consumer_does_not_add_an_outer_send_timeout(self) -> None:
+        queue = asyncio.Queue[str](maxsize=1)
+        queue.put_nowait("event")
+        messages: list[str] = []
+
         class DelayedResponse:
-            async def send(self, _payload: str) -> None:
+            def is_connected(self) -> bool:
+                return True
+
+            async def send(self, payload: str) -> None:
                 await asyncio.sleep(0.03)
+                messages.append(payload)
+                queue.shutdown()
 
         # The library, not an outer wait_for, owns the transport timeout.
         with patch("sse_utils.SSE_SEND_TIMEOUT", 0.001):
-            await asyncio.wait_for(send_sse_payload(DelayedResponse(), "event"), 0.2)
+            await asyncio.wait_for(consume_sse_queue(DelayedResponse(), queue), 0.2)
+
+        self.assertEqual(messages, ["event"])
+        await asyncio.wait_for(queue.join(), timeout=0.1)
 
     async def test_consumer_times_out_blocked_send_and_balances_queue(self) -> None:
         queue = asyncio.Queue[str](maxsize=1)

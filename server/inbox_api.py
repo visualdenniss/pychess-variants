@@ -18,7 +18,6 @@ from sse_utils import (
     consume_sse_queue,
     enqueue_sse_payload,
     log_sse_failure,
-    send_sse_payload,
     sse_response,
 )
 from utils import notification_items_for_user
@@ -508,8 +507,7 @@ async def subscribe_inbox(request: web.Request) -> web.StreamResponse:
 
     try:
         async with session_expiry_timeout(session, user), sse_response(request) as response:
-            await send_sse_payload(
-                response,
+            await response.send(
                 json_dumps({"unread": await _unread_count(app_state, username)}),
             )
             await consume_sse_queue(response, queue)

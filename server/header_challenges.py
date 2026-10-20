@@ -24,7 +24,6 @@ from sse_utils import (
     consume_sse_queue,
     enqueue_sse_payload,
     log_sse_failure,
-    send_sse_payload,
     sse_response,
 )
 from utils import join_seek, remove_seek
@@ -308,8 +307,7 @@ async def subscribe_header(request: web.Request) -> web.StreamResponse:
     response: web.StreamResponse = web.Response(status=200)
     try:
         async with session_expiry_timeout(session, user), sse_response(request) as response:
-            await send_sse_payload(
-                response,
+            await response.send(
                 json_dumps(
                     {
                         "channel": "challenges",
@@ -354,8 +352,7 @@ async def subscribe_challenges(request: web.Request) -> web.StreamResponse:
     response: web.StreamResponse = web.Response(status=200)
     try:
         async with session_expiry_timeout(session, user), sse_response(request) as response:
-            await send_sse_payload(
-                response,
+            await response.send(
                 json_dumps(challenge_envelope(app_state, session_user)),
             )
             await consume_sse_queue(response, queue)

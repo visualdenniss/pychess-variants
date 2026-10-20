@@ -68,11 +68,6 @@ def enqueue_sse_payload(
         return False
 
 
-async def send_sse_payload(response: SSEResponse, payload: str) -> None:
-    # aiohttp-sse handles timeouts and aborts stalled transports.
-    await response.send(payload)
-
-
 async def consume_sse_queue(
     response: SSEResponse,
     queue: asyncio.Queue[str],
@@ -88,7 +83,7 @@ async def consume_sse_queue(
             break
 
         try:
-            await send_sse_payload(response, payload)
+            await response.send(payload)
         except TimeoutError:
             break
         finally:
