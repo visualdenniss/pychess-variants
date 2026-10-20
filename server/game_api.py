@@ -9,7 +9,6 @@ import aiohttp_session
 import pymongo
 from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionResetError
-from aiohttp_sse import sse_response
 from aiohttp_swagger3 import swagger_doc
 from catalogued_variants import (
     CATALOGUED_VARIANT_COLLECTION,
@@ -36,7 +35,7 @@ from pychess_global_app_state_utils import get_app_state
 from pymongo.errors import BulkWriteError, ExecutionTimeout
 from seek import BOT_CHALLENGE_DECLINED
 from settings import ADMINS
-from sse_utils import consume_sse_queue, enqueue_sse_payload
+from sse_utils import consume_sse_queue, enqueue_sse_payload, log_sse_failure, sse_response
 from tournament.tournaments import get_tournament_name, load_tournament
 from utils import pgn
 from variants import C2V, GRANDS, VARIANTS, get_server_variant, is_catalogued_variant
@@ -658,7 +657,7 @@ async def subscribe_invites(request: web.Request) -> web.StreamResponse:
         async with sse_response(request) as response:
             await consume_sse_queue(response, queue)
     except Exception:
-        pass
+        log_sse_failure("game_api")
     finally:
         channels = app_state.invite_channels.get(gameId)
         if channels is not None:
@@ -678,7 +677,7 @@ async def subscribe_games(request: web.Request) -> web.StreamResponse:
         async with sse_response(request) as response:
             await consume_sse_queue(response, queue)
     except Exception:
-        pass
+        log_sse_failure("game_api")
     finally:
         app_state.game_channels.discard(queue)
         queue.shutdown(immediate=True)

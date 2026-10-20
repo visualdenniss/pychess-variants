@@ -1,10 +1,10 @@
 import asyncio
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, sentinel
 
 from header_challenges import _consume_header_channels
-from sse_utils import consume_sse_queue, enqueue_sse_payload
+from sse_utils import consume_sse_queue, enqueue_sse_payload, log_sse_failure, sse_response
 
 
 class SlowResponse:
@@ -16,6 +16,31 @@ class SlowResponse:
 
 
 class SSEUtilsTestCase(unittest.IsolatedAsyncioTestCase):
+    def test_sse_response_configures_transport_and_ping(self) -> None:
+        with patch("sse_utils.aiohttp_sse_response", return_value=sentinel.context) as factory:
+            response = sse_response(sentinel.request)
+
+        self.assertIs(response, sentinel.context)
+        factory.assert_called_once_with(sentinel.request, send_timeout=30, ping_interval=15)
+
+    def test_expected_disconnect_is_not_logged(self) -> None:
+        with patch("sse_utils.logging.getLogger") as get_logger:
+            try:
+                raise ConnectionResetError("browser disconnected")
+            except ConnectionResetError:
+                log_sse_failure("test")
+        get_logger.assert_not_called()
+
+    def test_unexpected_error_is_logged_with_traceback(self) -> None:
+        with patch("sse_utils.logging.getLogger") as get_logger:
+            try:
+                raise RuntimeError("broken subscription")
+            except RuntimeError:
+                log_sse_failure("test")
+        get_logger.return_value.exception.assert_called_once_with(
+            "Unexpected SSE failure in %s", "test"
+        )
+
     async def test_snapshot_enqueue_replaces_pending_payload(self) -> None:
         queue = asyncio.Queue[str](maxsize=1)
         queue.put_nowait("old")

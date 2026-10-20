@@ -1,15 +1,41 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import sys
 from typing import Protocol
 
-from const import SSE_GET_TIMEOUT, SSE_SEND_TIMEOUT
+from aiohttp import web
+from aiohttp_sse import sse_response as aiohttp_sse_response
+from const import (
+    SSE_GET_TIMEOUT,
+    SSE_PING_INTERVAL,
+    SSE_SEND_TIMEOUT,
+    SSE_TRANSPORT_TIMEOUT,
+)
 
 
 class SSEResponse(Protocol):
     def is_connected(self) -> bool: ...
 
     async def send(self, data: str) -> None: ...
+
+
+def sse_response(request: web.Request):
+    """Configure keepalives and Linux TCP dead-peer detection consistently."""
+    return aiohttp_sse_response(
+        request,
+        send_timeout=SSE_TRANSPORT_TIMEOUT,
+        ping_interval=SSE_PING_INTERVAL,
+    )
+
+
+def log_sse_failure(endpoint: str) -> None:
+    """Ignore expected disconnects but retain tracebacks for unexpected faults."""
+    exc = sys.exception()
+    if isinstance(exc, OSError):
+        return
+    logging.getLogger("sse").exception("Unexpected SSE failure in %s", endpoint)
 
 
 def enqueue_sse_payload(

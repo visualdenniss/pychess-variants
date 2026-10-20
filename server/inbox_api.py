@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 
 import aiohttp_session
 from aiohttp import web
-from aiohttp_sse import sse_response
 from const import SSE_EVENT_QUEUE_MAXSIZE, SYSTEM_USER
 from json_utils import json_dumps
 from json_utils import json_response as raw_json_response
@@ -15,7 +14,13 @@ from newid import id8, new_id
 from pychess_global_app_state_utils import get_app_state
 from request_utils import read_post_data
 from session_security import session_expiry_timeout
-from sse_utils import consume_sse_queue, enqueue_sse_payload, send_sse_payload
+from sse_utils import (
+    consume_sse_queue,
+    enqueue_sse_payload,
+    log_sse_failure,
+    send_sse_payload,
+    sse_response,
+)
 from utils import notification_items_for_user
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
@@ -509,7 +514,7 @@ async def subscribe_inbox(request: web.Request) -> web.StreamResponse:
             )
             await consume_sse_queue(response, queue)
     except Exception:
-        pass
+        log_sse_failure("inbox_api")
     finally:
         user.inbox_channels.discard(queue)
         queue.shutdown(immediate=True)
