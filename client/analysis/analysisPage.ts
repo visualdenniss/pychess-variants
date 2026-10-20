@@ -58,7 +58,7 @@ export function renderAnalysisPage(model: PyChessModel, parts: AnalysisPageParts
                     h('div.cg-wrap.pocket', [h('div#pocket0.pocketrow')]),
                 ]),
             ]),
-            analysisTools(isOngoingGame, parts.toolsAfterMoves),
+            analysisTools(isOngoingGame, parts.toolsAfterMoves, variant),
             analysisSettings.view(variant),
             h('div#move-controls'),
             h('div.pocket-bot', [
@@ -73,7 +73,11 @@ export function renderAnalysisPage(model: PyChessModel, parts: AnalysisPageParts
     ];
 }
 
-export function analysisTools(isOngoingGame: boolean = false, afterMoves?: VNode | VNode[]) {
+export function analysisTools(
+    isOngoingGame: boolean = false,
+    afterMoves?: VNode | VNode[],
+    variant?: Parameters<typeof analysisSettings.engineView>[0],
+) {
     const afterMovesNodes = afterMoves ? (Array.isArray(afterMoves) ? afterMoves : [afterMoves]) : [];
     return h('div.analysis-tools', [
         isOngoingGame
@@ -92,7 +96,20 @@ export function analysisTools(isOngoingGame: boolean = false, afterMoves?: VNode
                           h('info#info', _('in local browser')),
                       ]),
                       h('div.engine-toggle'),
+                      h('button#analysis-engine-gear', {
+                          attrs: { type: 'button', title: _('Engine settings'), 'aria-label': _('Engine settings'),
+                              'aria-controls': 'analysis-engine-preferences', 'aria-expanded': 'false' },
+                          on: { click: event => {
+                              const button = event.currentTarget as HTMLButtonElement;
+                              const panel = document.getElementById('analysis-engine-preferences');
+                              if (!panel) return;
+                              const opening = panel.hidden;
+                              panel.hidden = !opening;
+                              button.setAttribute('aria-expanded', String(opening));
+                          } },
+                      }, [h('i.icon.icon-cog', { attrs: { 'aria-hidden': 'true' } })]),
                   ]),
+                  variant ? analysisSettings.engineView(variant) : '',
               ]),
         isOngoingGame ? '' : h('div.pvbox', [h('div#pv1'), h('div#pv2'), h('div#pv3'), h('div#pv4'), h('div#pv5')]),
         srHeading('h2', _('Moves')),

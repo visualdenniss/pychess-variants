@@ -25,6 +25,25 @@ import { patch } from '../document';
 import { updateMovelist } from '../movelist';
 import { ExternalEngineSettings } from './externalEngineSettings';
 
+function installEnginePreferencesDismissal(vnode: VNode): void {
+    const panel = vnode.elm as HTMLElement;
+    const gear = document.getElementById('analysis-engine-gear');
+    const close = () => { panel.hidden = true; gear?.setAttribute('aria-expanded', 'false'); };
+    const onPointerDown = (event: PointerEvent) => {
+        if (!panel.contains(event.target as Node) && !gear?.contains(event.target as Node)) close();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && !panel.hidden) { close(); (gear as HTMLElement | null)?.focus(); }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    (panel as HTMLElement & { removeEngineDismissal?: () => void }).removeEngineDismissal = () => {
+        document.removeEventListener('pointerdown', onPointerDown);
+        document.removeEventListener('keydown', onKeyDown);
+    };
+}
+
+
 class AnalysisSettings {
     ctrl: AnalysisController;
     settings: { [key: string]: Settings<number | boolean | string> };
@@ -56,31 +75,25 @@ class AnalysisSettings {
         return this.settings[fullName] as NnueFileSettings;
     }
 
-    view(variant: {
+    engineView(variant: {
         readonly name: string;
         readonly cataloguedSource?: 'user' | 'fairy-stockfish-builtin';
         readonly nnueFingerprint?: string;
-    }) {
-        if (!variant.name) return h('div.analysis-settings');
-
+    }): VNode {
         const nnueFileSettings = this.getSettings(variant.name);
         nnueFileSettings.setLookupContext(nnueLookupContextForVariant(variant));
-
-        return h('div.analysis-settings', [
+        return h('div.analysis-engine-preferences', {
+            attrs: { hidden: true, id: 'analysis-engine-preferences' },
+            hook: {
+                insert: installEnginePreferencesDismissal,
+                destroy: vnode => (vnode.elm as HTMLElement & { removeEngineDismissal?: () => void }).removeEngineDismissal?.(),
+            },
+        }, [
             this.externalEngine.view(),
             h('div.analysis-settings-group', [
                 this.settings['multipv'].view(),
                 this.settings['threads'].view(),
                 this.settings['hash'].view(),
-            ]),
-            h('div.analysis-settings-group', [
-                this.settings['showServerAnalysis'].view(),
-                this.settings['showGauge'].view(),
-                this.settings['arrow'].view(),
-                this.settings['variationArrows'].view(),
-                this.settings['showMoveAnnotationsOnBoard'].view(),
-                this.settings['inlineNotation'].view(),
-                this.settings['disclosureMode'].view(),
                 this.settings['infiniteAnalysis'].view(),
             ]),
             h('div.analysis-settings-group.browser-engine-settings', [
@@ -88,6 +101,33 @@ class AnalysisSettings {
                 nnueFileSettings.view(),
             ]),
             h('div.analysis-settings-group.browser-engine-settings', [this.settings['fsfDebug'].view()]),
+        ]);
+    }
+
+    view(variant: {
+        readonly name: string;
+        readonly cataloguedSource?: 'user' | 'fairy-stockfish-builtin';
+        readonly nnueFingerprint?: string;
+    }) {
+        if (!variant.name) return h('div.analysis-settings');
+
+        return h('div.analysis-settings', [
+            h('fieldset.analysis-general-settings-group', [
+                h('legend', _('Move list')),
+                this.settings['inlineNotation'].view(),
+                this.settings['disclosureMode'].view(),
+            ]),
+            h('fieldset.analysis-general-settings-group', [
+                h('legend', _('Board')),
+                this.settings['arrow'].view(),
+                this.settings['variationArrows'].view(),
+                this.settings['showMoveAnnotationsOnBoard'].view(),
+            ]),
+            h('fieldset.analysis-general-settings-group', [
+                h('legend', _('General')),
+                this.settings['showServerAnalysis'].view(),
+                this.settings['showGauge'].view(),
+            ]),
         ]);
     }
 }
@@ -748,11 +788,12 @@ export class EngineSettings extends BooleanSettings {
             toggleSwitch(
                 this,
                 'engine-enabled',
-                '',
+                _('Local engine'),
                 !this.ctrl.analysisContext.capabilities.localAnalysisAllowed ||
                     this.ctrl.isLocalAnalysisBlockedByAntiCheat() ||
                     !this.ctrl.isLocalAnalysisAllowedByExtension() ||
                     !this.ctrl.isSelectedEngineReady(),
+                true,
             ),
         );
     }

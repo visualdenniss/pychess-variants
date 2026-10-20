@@ -127,6 +127,6 @@ export class ExternalEngineSettings {
                 (ctrl.externalEngineStatus !== 'loading' && !error && ctrl.isSelectedEngineReady());
         }
         if (retry) retry.hidden = !allowed || !error || !ctrl.externalEngineId;
-        root.closest<HTMLElement>('.analysis-settings')?.setAttribute('data-engine-source', ctrl.engineSource);
+        root.closest<HTMLElement>('.analysis-engine-preferences')?.setAttribute('data-engine-source', ctrl.engineSource);
     }
 }

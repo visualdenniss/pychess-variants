@@ -53,7 +53,7 @@ export function puzzleView(model: PyChessModel): VNode[] {
             h('div.pocket-top', [
                 h('div.' + variant.pieceFamily + '.' + model['variant'], [h('div.cg-wrap.pocket', [h('div#pocket0')])]),
             ]),
-            analysisTools(),
+            analysisTools(false, undefined, variant),
             analysisSettings.view(variant),
             h('div#move-controls'),
             h('div.pocket-bot', [
