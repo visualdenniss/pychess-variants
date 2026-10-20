@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, ClassVar
 
 import aiohttp_session
 from aiohttp import web
-from aiohttp_sse import sse_response
 from broadcast import round_broadcast
 from clock import Clock, CorrClock, first_move_timeout_reason
 from compress import C2R, R2C
@@ -82,7 +81,7 @@ from pychess_global_app_state_utils import get_app_state
 from request_utils import read_post_data
 from session_security import session_expiry_timeout
 from settings import URI
-from sse_utils import consume_sse_queue
+from sse_utils import consume_sse_queue, log_sse_failure, sse_response
 from variants import (
     C2V,
     GRANDS,
@@ -1955,7 +1954,7 @@ async def subscribe_notify(request):
         async with session_expiry_timeout(session, user), sse_response(request) as response:
             await consume_sse_queue(response, queue)
     except Exception:
-        pass
+        log_sse_failure("utils")
     finally:
         user.notify_channels.discard(queue)
         queue.shutdown(immediate=True)
