@@ -35,7 +35,7 @@
     "highcharts": "^13.1.1",
     "howler": "^2.2.3",
     "idb-keyval": "^6.3.0",
-    "markdown-it": "^15.0.2",
+    "markdown-it": "^15.0.3",
     "markdown-it-emoji": "^3.1.0",
     "markdown-it-task-lists": "^2.1.1",
     "mousetrap": "^1.6.5",
