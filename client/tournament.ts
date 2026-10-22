@@ -14,6 +14,7 @@ import { getLastMoveFen, VARIANTS, Variant, variantKey } from './variants';
 import { timeControlStr } from './view';
 import { initializeClock, localeOptions, syncTournamentStartAlerts } from './tournamentClock';
 import { tournamentLifecycleView } from './tournamentLifecycle';
+import { isParticipantStatus } from './tournamentUserStatus';
 import { gameType } from './result';
 import { boardSettings } from './boardSettings';
 import { MsgBoard, MsgChat, MsgFullChat, MsgSpectators, MsgGameEnd, MsgNewGame } from './messages';
@@ -242,6 +243,10 @@ export class TournamentController implements ChatController {
         this.lifecycleActions = patch(this.lifecycleActions, this.renderLifecycleActions());
     }
 
+    updateButtons() {
+        this.buttons = patch(this.buttons, this.renderButtons());
+    }
+
     renderButtons() {
         return h('div#page-controls.btn-controls', [
             h('div.pager', [
@@ -262,9 +267,13 @@ export class TournamentController implements ChatController {
                 h('button', { on: { click: () => this.goToPage(10000) }, props: { title: _('Last') } }, [
                     h('i.icon.icon-fast-forward', ariaHiddenAttr()),
                 ]),
-                h('button', { on: { click: () => this.goToMyPage() }, props: { title: _('Scroll to your player') } }, [
-                    h('i.icon.icon-target', ariaHiddenAttr()),
-                ]),
+                isParticipantStatus(this.userStatus)
+                    ? h(
+                          'button',
+                          { on: { click: () => this.goToMyPage() }, props: { title: _('Scroll to your player') } },
+                          [h('i.icon.icon-target', ariaHiddenAttr())],
+                      )
+                    : h('!'),
             ]),
             h('div#action'),
         ]);
@@ -946,6 +955,7 @@ export class TournamentController implements ChatController {
 
         this.updateActionButton();
         this.updateLifecycleActions();
+        this.updateButtons();
 
         if (!this.completed()) {
             initializeClock(this);
@@ -985,6 +995,7 @@ export class TournamentController implements ChatController {
         this.userStatus = msg.ustatus;
         syncTournamentStartAlerts(this);
         this.updateActionButton();
+        this.updateButtons();
     }
 
     private onMsgTournamentStatus(msg: MsgTournamentStatus) {
