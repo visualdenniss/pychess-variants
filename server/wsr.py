@@ -25,7 +25,9 @@ from cheat_report import (
     CEVAL_REPORT_ACTION_AUTO_FORFEIT,
     CEVAL_REPORT_ACTION_REPORTED_ONLY,
     append_ceval_cheat_report,
+    append_overlay_cheat_report,
     ceval_auto_lose_enabled,
+    overlay_reporting_enabled,
 )
 from const import ANALYSIS, ANON_PREFIX, CASUAL, IMPORTED, STARTED
 from draw import draw, reject_draw
@@ -68,6 +70,7 @@ if TYPE_CHECKING:
         MoreTimeMessage,
         MoreTimeRequest,
         MoveMessage,
+        OverlayDetectedMessage,
         ReadyMessage,
         RematchMessage,
         RematchOfferMessage,
@@ -312,6 +315,8 @@ async def process_message(
         await handle_updateTV(app_state, ws, data)
     elif data["type"] == "ceval_detected":
         await handle_ceval_detected(ws, app_state.users, user, data, game)
+    elif data["type"] == "overlay_detected":
+        await handle_overlay_detected(user, data, game)
     elif data["type"] == "count":
         await handle_count(ws, user, data, game)
     elif data["type"] == "delete":
@@ -1114,6 +1119,23 @@ async def handle_abort_resign_abandon_flag(
             await opp_player.send_game_message(data["gameId"], response)
 
     await round_broadcast(game, response)
+
+
+async def handle_overlay_detected(
+    user: User,
+    data: OverlayDetectedMessage,
+    game: game.Game,
+) -> None:
+    # Untrusted client observation. No automatic sanctions or game state changes.
+    if data.get("gameId") != game.id or not game.is_player(user):
+        return
+
+    async with game.move_lock:
+        if not game.ceval_detection_allowed():
+            return
+        if not await overlay_reporting_enabled(game.app_state.db):
+            return
+        await append_overlay_cheat_report(game.app_state.db, game=game, user=user)
 
 
 async def handle_ceval_detected(

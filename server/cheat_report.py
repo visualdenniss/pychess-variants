@@ -70,3 +70,47 @@ async def append_ceval_cheat_report(
         await db[CHEAT_REPORT_COLLECTION].insert_one(report)
     except Exception:
         log.exception("Failed to store ceval cheat report for game %s", game.id)
+
+
+OVERLAY_REPORTING_CONFIG_NAME = "overlay.report_enabled"
+
+
+async def overlay_reporting_enabled(db: AsyncDatabase | None) -> bool:
+    """Require explicit operator opt-in for experimental overlay reports."""
+    if db is None:
+        return False
+    doc = await db.config.find_one({"name": OVERLAY_REPORTING_CONFIG_NAME}, projection={"value": 1})
+    return doc is not None and doc.get("value") is True
+
+
+async def append_overlay_cheat_report(db: AsyncDatabase | None, *, game: Game, user: User) -> None:
+    """Store unverified evidence once per player/game, never impose sanctions."""
+    if db is None:
+        return
+    report_key = {
+        "kind": "external_overlay",
+        "gameId": game.id,
+        "suspect": user.username,
+    }
+    opponent = (
+        game.bplayer.username if user.username == game.wplayer.username else game.wplayer.username
+    )
+    try:
+        await db[CHEAT_REPORT_COLLECTION].update_one(
+            report_key,
+            {
+                "$setOnInsert": {
+                    **report_key,
+                    "createdAt": datetime.now(UTC),
+                    "action": "reported_only",
+                    "source": "unverified_client_dom",
+                    "opponent": opponent,
+                    "variant": game.variant,
+                    "rated": bool(game.rated),
+                    "ply": game.board.ply,
+                }
+            },
+            upsert=True,
+        )
+    except Exception:
+        log.exception("Failed to store overlay report for game %s", game.id)

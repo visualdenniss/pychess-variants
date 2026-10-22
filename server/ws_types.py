@@ -374,6 +374,11 @@ class CevalDetectedMessage(TypedDict):
     fen: str
 
 
+class OverlayDetectedMessage(TypedDict):
+    type: Literal["overlay_detected"]
+    gameId: str
+
+
 RoundInboundMessage: TypeAlias = (
     MoveMessage
     | BughouseMoveMessage
@@ -402,6 +407,7 @@ RoundInboundMessage: TypeAlias = (
     | CountMessage
     | DeleteMessage
     | CevalDetectedMessage
+    | OverlayDetectedMessage
 )
 
 

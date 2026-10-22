@@ -1,4 +1,5 @@
 import { h, VNode } from 'snabbdom';
+import { startOverlayObservation } from './overlayDetection';
 
 import { predrop } from 'chessgroundx/predrop';
 import * as cg from 'chessgroundx/types';
@@ -104,6 +105,7 @@ export class RoundController extends GameController {
     finishedGame: boolean;
     positionId?: string;
     cevalReported: boolean;
+    stopOverlayObservation?: () => void;
     cevalActiveRoundHeartbeat?: number;
     // Last move that may have left the client but is not yet confirmed by server board state.
     //
@@ -280,6 +282,19 @@ export class RoundController extends GameController {
         }
         window.addEventListener('beforeunload', this.stopCevalActiveRoundTracking);
         this.syncCevalActiveRoundTracking();
+        // Passive client signal only: the server keeps reporting disabled by default.
+        if (this.isCevalDetectionEligible()) {
+            const board = document.querySelector('cg-board');
+            if (board) {
+                this.stopOverlayObservation = startOverlayObservation(board, () => {
+                    if (this.isCevalDetectionEligible()) {
+                        this.doSend({ type: 'overlay_detected', gameId: this.gameId });
+                    }
+                });
+            }
+        }
+        window.addEventListener('beforeunload', () => this.stopOverlayObservation?.());
+
 
         // initialize users
         const player0 = document.getElementById('rplayer0') as HTMLElement;
@@ -2022,6 +2037,8 @@ export class RoundController extends GameController {
 
     private syncCevalActiveRoundTracking = () => {
         if (!this.isCevalDetectionEligible()) {
+            this.stopOverlayObservation?.();
+            this.stopOverlayObservation = undefined;
             this.stopCevalActiveRoundTracking();
             return;
         }

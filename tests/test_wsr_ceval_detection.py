@@ -8,6 +8,7 @@ from cheat_report import (
     CEVAL_REPORT_ACTION_AUTO_FORFEIT,
     CEVAL_REPORT_ACTION_REPORTED_ONLY,
     CHEAT_REPORT_COLLECTION,
+    OVERLAY_REPORTING_CONFIG_NAME,
 )
 from const import CHEAT, STARTED
 from game import Game
@@ -17,7 +18,7 @@ from newid import id8
 from pychess_global_app_state_utils import get_app_state
 from user import User
 from variants import VARIANTS
-from wsr import handle_ceval_detected
+from wsr import handle_ceval_detected, handle_overlay_detected
 
 from server import make_app
 
@@ -85,6 +86,48 @@ class CevalDetectionTestCase(AioHTTPTestCase):
             {"gameId": game.id},
             sort=[("createdAt", -1)],
         )
+
+    async def test_overlay_reporting_is_off_by_default_and_never_forfeits(self):
+        game = self.new_game()
+        payload = {"type": "overlay_detected", "gameId": game.id}
+        await handle_overlay_detected(self.wplayer, payload, game)
+        self.assertIsNone(await self.latest_report(game))
+
+        app_state = get_app_state(self.app)
+        await app_state.db.config.update_one(
+            {"name": OVERLAY_REPORTING_CONFIG_NAME},
+            {"$set": {"value": True}},
+            upsert=True,
+        )
+        await handle_overlay_detected(self.wplayer, payload, game)
+        await handle_overlay_detected(self.wplayer, payload, game)
+
+        reports = await app_state.db[CHEAT_REPORT_COLLECTION].count_documents(
+            {"kind": "external_overlay", "gameId": game.id}
+        )
+        self.assertEqual(reports, 1)
+        report = await self.latest_report(game)
+        self.assertEqual(report["action"], "reported_only")
+        self.assertEqual(report["source"], "unverified_client_dom")
+        self.assertFalse(game.status >= STARTED)
+        self.assertEqual(game.result, "*")
+
+    async def test_overlay_report_ignores_spectator_and_wrong_game(self):
+        game = self.new_game()
+        app_state = get_app_state(self.app)
+        await app_state.db.config.update_one(
+            {"name": OVERLAY_REPORTING_CONFIG_NAME},
+            {"$set": {"value": True}},
+            upsert=True,
+        )
+        spectator = User(app_state, username="spectator-overlay", perfs=PERFS)
+        await handle_overlay_detected(
+            spectator, {"type": "overlay_detected", "gameId": game.id}, game
+        )
+        await handle_overlay_detected(
+            self.wplayer, {"type": "overlay_detected", "gameId": "wrong-id"}, game
+        )
+        self.assertIsNone(await self.latest_report(game))
 
     async def test_ceval_detection_reports_matching_live_game_without_forfeit_by_default(self):
         game = self.new_game()
