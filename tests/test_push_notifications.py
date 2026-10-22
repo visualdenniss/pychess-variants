@@ -220,6 +220,25 @@ class PushSubscribeTestCase(AioHTTPTestCase):
         )
         self.assertEqual(app_state.push_notifier.queue.qsize(), 0)
 
+    async def test_queued_corr_push_respects_later_opt_out(self):
+        app_state = get_app_state(self.app)
+        notifier = app_state.push_notifier
+        notifier.enabled = True
+        username = "corr_opt_out_after_enqueue"
+        user = User(app_state, username=username)
+        app_state.users[username] = user
+        await app_state.db.user.insert_one({"_id": username, "cps": True})
+        notifier.enqueue_corr_move(user, game_id="abcd1234", opponent="opp", san="e4")
+        job = notifier.queue.get_nowait()
+        notifier.queue.task_done()
+        await app_state.db.user.update_one({"_id": username}, {"$set": {"cps": False}})
+
+        from unittest.mock import AsyncMock
+
+        notifier._deliver_payload = AsyncMock()
+        await notifier._deliver_corr_move(job)
+        notifier._deliver_payload.assert_not_awaited()
+
     async def test_rr_push_queues_for_offline_opted_in_user_without_materializing(self):
         app_state = get_app_state(self.app)
         app_state.push_notifier.enabled = True
