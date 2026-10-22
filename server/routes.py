@@ -369,6 +369,7 @@ get_routes: tuple[RouteDef, ...] = (
     ("/admin/teams", admin_view.admin_teams),
     ("/admin/system-messages", admin_system_messages_view.admin_system_messages),
     ("/admin/operations", admin_view.admin_operations),
+    ("/admin/fair-play", admin_view.admin_fair_play),
     ("/reports", reports_view.reports),
     ("/mod/public-chat", mod_public_chat_view.mod_public_chat),
     ("/challenges", get_header_challenges),

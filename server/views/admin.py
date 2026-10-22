@@ -195,6 +195,52 @@ async def _user_status(app_state: Any, user_doc: UserDocument) -> dict[str, obje
     }
 
 
+FAIR_PLAY_KINDS = ("external_overlay", "ceval_cross_tab")
+FAIR_PLAY_PAGE_SIZE = 30
+
+
+@aiohttp_jinja2.template("admin_fair_play.html")
+async def admin_fair_play(request: web.Request) -> ViewContext:
+    context = await _admin_context(request, "fair-play", "Fair Play Signals")
+    app_state = get_app_state(request.app)
+    kind = request.query.get("kind", "all")
+    if kind not in (*FAIR_PLAY_KINDS, "all"):
+        kind = "all"
+    username = request.query.get("username", "").strip().lstrip("@")
+    if username and not USERNAME_RE.fullmatch(username):
+        username = ""
+    game_id = request.query.get("game", "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9]{8}", game_id):
+        game_id = ""
+    try:
+        page = min(1000, max(1, int(request.query.get("page", "1"))))
+    except ValueError:
+        page = 1
+
+    query: dict[str, Any] = {"kind": {"$in": list(FAIR_PLAY_KINDS)}}
+    if kind != "all":
+        query["kind"] = kind
+    if username:
+        query["suspect"] = {"$regex": f"^{re.escape(username)}$", "$options": "i"}
+    if game_id:
+        query["gameId"] = game_id
+
+    cursor = (
+        app_state.db.cheat_report.find(query)
+        .sort([("createdAt", -1), ("_id", -1)])
+        .skip((page - 1) * FAIR_PLAY_PAGE_SIZE)
+        .limit(FAIR_PLAY_PAGE_SIZE + 1)
+    )
+    records = await cursor.to_list(length=FAIR_PLAY_PAGE_SIZE + 1)
+    context["admin_fair_play_reports"] = records[:FAIR_PLAY_PAGE_SIZE]
+    context["admin_fair_play_has_next"] = len(records) > FAIR_PLAY_PAGE_SIZE
+    context["admin_fair_play_page"] = page
+    context["admin_fair_play_kind"] = kind
+    context["admin_fair_play_username"] = username
+    context["admin_fair_play_game"] = game_id
+    return context
+
+
 @aiohttp_jinja2.template("admin.html")
 async def admin(request: web.Request) -> ViewContext:
     return await _admin_context(request, "overview", "Administration")

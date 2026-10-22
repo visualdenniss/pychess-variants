@@ -30,9 +30,11 @@ class AdminViewTestCase(AioHTTPTestCase):
         with patch("views.admin.ADMINS", ["mod"]):
             overview = await self.client.get("/admin")
             users = await self.client.get("/admin/users")
+            fair_play = await self.client.get("/admin/fair-play")
 
         self.assertEqual(overview.status, 403)
         self.assertEqual(users.status, 403)
+        self.assertEqual(fair_play.status, 403)
 
     async def test_admin_overview_renders_shared_navigation(self):
         app_state = get_app_state(self.app)
@@ -49,6 +51,49 @@ class AdminViewTestCase(AioHTTPTestCase):
         self.assertIn('href="/mod/public-chat"', body)
         self.assertIn('href="/admin/users"', body)
         self.assertIn("admin.css", body)
+
+    async def test_fair_play_requires_admin_and_filters_reports(self):
+        app_state = get_app_state(self.app)
+        app_state.users["mod"] = User(app_state, username="mod")
+        await app_state.db.cheat_report.insert_many(
+            [
+                {
+                    "kind": "external_overlay",
+                    "gameId": "abcdefgh",
+                    "suspect": "Alice",
+                    "opponent": "Bob",
+                    "variant": "chess",
+                    "ply": 12,
+                    "createdAt": datetime(2026, 10, 22, tzinfo=UTC),
+                },
+                {
+                    "kind": "ceval_cross_tab",
+                    "gameId": "ijklmnop",
+                    "suspect": "Carol",
+                    "opponent": "Dave",
+                    "variant": "alice",
+                    "ply": 16,
+                    "createdAt": datetime(2026, 10, 21, tzinfo=UTC),
+                },
+                {
+                    "kind": "other",
+                    "gameId": "qrstuvwx",
+                    "suspect": "Alice",
+                    "createdAt": datetime(2026, 10, 20, tzinfo=UTC),
+                },
+            ]
+        )
+        self.set_session_user("mod")
+        with patch("views.admin.ADMINS", ["mod"]):
+            response = await self.client.get(
+                "/admin/fair-play?kind=external_overlay&username=alice"
+            )
+        self.assertEqual(response.status, 200)
+        body = await response.text()
+        self.assertIn('href="/abcdefgh"', body)
+        self.assertIn('href="/@/Alice"', body)
+        self.assertNotIn('href="/ijklmnop"', body)
+        self.assertNotIn('href="/qrstuvwx"', body)
 
     async def test_user_search_is_case_insensitive_and_renders_status(self):
         app_state = get_app_state(self.app)
