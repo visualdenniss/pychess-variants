@@ -27,7 +27,6 @@ from cheat_report import (
     append_ceval_cheat_report,
     append_overlay_cheat_report,
     ceval_auto_lose_enabled,
-    overlay_reporting_enabled,
 )
 from const import ANALYSIS, ANON_PREFIX, CASUAL, IMPORTED, STARTED
 from draw import draw, reject_draw
@@ -1132,8 +1131,6 @@ async def handle_overlay_detected(
 
     async with game.move_lock:
         if not game.ceval_detection_allowed():
-            return
-        if not await overlay_reporting_enabled(game.app_state.db):
             return
         await append_overlay_cheat_report(game.app_state.db, game=game, user=user)
 

@@ -8,7 +8,6 @@ from cheat_report import (
     CEVAL_REPORT_ACTION_AUTO_FORFEIT,
     CEVAL_REPORT_ACTION_REPORTED_ONLY,
     CHEAT_REPORT_COLLECTION,
-    OVERLAY_REPORTING_CONFIG_NAME,
 )
 from const import CHEAT, STARTED
 from game import Game
@@ -87,18 +86,11 @@ class CevalDetectionTestCase(AioHTTPTestCase):
             sort=[("createdAt", -1)],
         )
 
-    async def test_overlay_reporting_is_off_by_default_and_never_forfeits(self):
+    async def test_overlay_reporting_is_on_by_default_and_never_forfeits(self):
         game = self.new_game()
         payload = {"type": "overlay_detected", "gameId": game.id}
         await handle_overlay_detected(self.wplayer, payload, game)
-        self.assertIsNone(await self.latest_report(game))
-
         app_state = get_app_state(self.app)
-        await app_state.db.config.update_one(
-            {"name": OVERLAY_REPORTING_CONFIG_NAME},
-            {"$set": {"value": True}},
-            upsert=True,
-        )
         await handle_overlay_detected(self.wplayer, payload, game)
         await handle_overlay_detected(self.wplayer, payload, game)
 
@@ -115,11 +107,6 @@ class CevalDetectionTestCase(AioHTTPTestCase):
     async def test_overlay_report_ignores_spectator_and_wrong_game(self):
         game = self.new_game()
         app_state = get_app_state(self.app)
-        await app_state.db.config.update_one(
-            {"name": OVERLAY_REPORTING_CONFIG_NAME},
-            {"$set": {"value": True}},
-            upsert=True,
-        )
         spectator = User(app_state, username="spectator-overlay", perfs=PERFS)
         await handle_overlay_detected(
             spectator, {"type": "overlay_detected", "gameId": game.id}, game
