@@ -77,12 +77,27 @@ export function renderStrictBlogMarkdown(source: string): DocumentFragment {
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del',
             'table', 'thead', 'tbody', 'tr', 'th', 'td', 'img', 'input', 'span',
         ],
-        ALLOWED_ATTR: ['href', 'title', 'src', 'alt', 'class', 'type', 'checked', 'disabled'],
+        ALLOWED_ATTR: ['href', 'title', 'src', 'alt', 'class', 'type', 'checked', 'disabled', 'width', 'height'],
         FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'svg'],
         RETURN_DOM_FRAGMENT: true,
     }) as DocumentFragment;
 
     fragment.querySelectorAll<HTMLImageElement>('img').forEach(img => {
+        // Trusted, numeric Markdown dimension extension: ![alt](url){width=336 height=336}.
+        // Apply only to image-adjacent text. Never turn user content into HTML.
+        const suffix = img.nextSibling;
+        if (suffix?.nodeType === Node.TEXT_NODE) {
+            const raw = suffix.textContent || '';
+            const match = /^\{((?:width|height)=\d+(?:\s+(?:width|height)=\d+)?)\}/.exec(raw);
+            if (match) {
+                const values = new Map(match[1].split(/\s+/).map(pair => pair.split('=') as [string, string]));
+                const valid = [...values.values()].every(value => Number(value) > 0 && Number(value) <= 2048);
+                if (valid && values.size === match[1].split(/\s+/).length) {
+                    values.forEach((value, key) => img.setAttribute(key, value));
+                    suffix.textContent = raw.slice(match[0].length);
+                }
+            }
+        }
         const original = img.getAttribute('src') || '';
         const approved = approvedBlogImage(original, window.location.origin);
         if (!approved) {

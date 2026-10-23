@@ -38,3 +38,17 @@ test('does not render executable HTML or data URLs', () => {
     const root = render('<img src=x onerror="alert(1)">\n\n![image](data:image/svg+xml;base64,WA==)');
     expect(root.querySelector('img, script, svg, iframe, [onerror]')).toBeNull();
 });
+
+test('supports bounded numeric dimensions without author HTML', () => {
+    const root = render('![diagram](/static/images/diagram.png){width=336 height=200}');
+    const img = root.querySelector('img');
+    expect(img?.getAttribute('width')).toBe('336');
+    expect(img?.getAttribute('height')).toBe('200');
+    expect(root.textContent).not.toContain('{width=');
+});
+
+test('rejects invalid dimensions and leaves markup as text', () => {
+    const root = render('![diagram](/static/images/diagram.png){width=999999}');
+    expect(root.querySelector('img')?.hasAttribute('width')).toBe(false);
+    expect(root.textContent).toContain('{width=999999}');
+});
