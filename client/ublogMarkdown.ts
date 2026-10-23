@@ -82,7 +82,15 @@ function toProxiedImageUrl(url: string): string {
         const parsed = new URL(url, window.location.origin);
         if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
             if (parsed.origin === window.location.origin) return parsed.pathname + parsed.search + parsed.hash;
-            // External inline images are served through our backend to avoid ORB/CORS breakage.
+            // Versioned assets from our repository CDN must retain direct SVG image support.
+            if (
+                parsed.protocol === 'https:' &&
+                parsed.hostname === 'cdn.jsdelivr.net' &&
+                /^\/gh\/pychess\/pychess-variants@[^/]+\/static\/(?:images|docs|icons)\//.test(parsed.pathname)
+            ) {
+                return parsed.href;
+            }
+            // Other external inline images are served through our backend.
             return `/blogs/image?url=${encodeURIComponent(parsed.href)}`;
         }
         return url;
@@ -105,14 +113,13 @@ function safeIframe(url: string): SafeIframe | null {
 
         const host = parsed.hostname.toLowerCase();
         const path = parsed.pathname;
-        const isLocal = parsed.origin === window.location.origin;
         const isLichessStudyEmbed =
             (host === 'lichess.org' || host === 'www.lichess.org') && path.startsWith('/study/embed/');
         const isYouTubeEmbed =
             (host === 'www.youtube.com' || host === 'youtube.com' || host === 'www.youtube-nocookie.com') &&
             path.startsWith('/embed/');
 
-        if (isLocal || isLichessStudyEmbed || isYouTubeEmbed) {
+        if (isLichessStudyEmbed || isYouTubeEmbed) {
             return { href: parsed.href, isYouTubeEmbed };
         }
         return null;
@@ -209,6 +216,7 @@ function sanitizeRenderedFragment(html: string): DocumentFragment {
         sanitizePositiveIntAttr(el, 'width');
         sanitizePositiveIntAttr(el, 'height');
         el.setAttribute('loading', 'lazy');
+        el.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
         el.setAttribute('referrerpolicy', safe.isYouTubeEmbed ? 'strict-origin-when-cross-origin' : 'no-referrer');
         if (!el.hasAttribute('allowfullscreen')) {
             el.setAttribute('allowfullscreen', '');

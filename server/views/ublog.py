@@ -225,7 +225,6 @@ def _is_safe_image_content_type(content_type: str | None) -> bool:
         "image/gif",
         "image/webp",
         "image/avif",
-        "image/svg+xml",
     }
 
 
@@ -467,7 +466,7 @@ async def _proxy_image_from_url(image: str) -> web.Response:
                 timeout=timeout,
                 headers={
                     "User-Agent": UBLOG_IMAGE_PROXY_UA,
-                    "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
                 },
             ) as session,
             session.get(image, allow_redirects=False) as resp,
@@ -483,7 +482,11 @@ async def _proxy_image_from_url(image: str) -> web.Response:
             return web.Response(
                 body=body,
                 content_type=content_type.split(";", 1)[0].strip(),
-                headers={"Cache-Control": "public, max-age=3600"},
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "X-Content-Type-Options": "nosniff",
+                    "Content-Security-Policy": "default-src 'none'; sandbox",
+                },
             )
     except Exception:
         return web.Response(status=404)

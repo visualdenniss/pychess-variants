@@ -61,3 +61,25 @@ test.each(['"><svg/onload=alert(1)>', 'Name"/onmouseover="alert(1)'])(
         expect(root.querySelector('svg, script, [id], [onload], [onmouseover]')).toBeNull();
     },
 );
+
+test('blocks same-origin iframe injection through the SVG image proxy', () => {
+    const root = renderBlogMarkdown('<iframe src="/blogs/image?url=https://evil.example/payload.svg"></iframe>');
+    expect(root.querySelector('iframe')).toBeNull();
+});
+
+test('retains only approved external embeds with sandbox', () => {
+    const root = renderBlogMarkdown('<iframe src="https://lichess.org/study/embed/abc123"></iframe>');
+    expect(root.querySelector('iframe')?.getAttribute('sandbox')).toContain('allow-scripts');
+    expect(root.querySelector('iframe')?.getAttribute('src')).toBe('https://lichess.org/study/embed/abc123');
+});
+
+test('loads our versioned jsDelivr static SVG directly rather than through the proxy', () => {
+    const src = 'https://cdn.jsdelivr.net/gh/pychess/pychess-variants@1.11.78/static/images/diagram.svg';
+    const root = renderBlogMarkdown(`![diagram](${src})`);
+    expect(root.querySelector('img')?.getAttribute('src')).toBe(src);
+});
+
+test('does not exempt third-party jsDelivr repositories from the proxy', () => {
+    const root = renderBlogMarkdown('![diagram](https://cdn.jsdelivr.net/gh/attacker/repo@main/static/images/x.svg)');
+    expect(root.querySelector('img')?.getAttribute('src')).toMatch(/^\/blogs\/image\?url=/);
+});
