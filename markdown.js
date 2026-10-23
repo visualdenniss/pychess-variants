@@ -2,10 +2,10 @@ const MarkdownIt = require('markdown-it');
 const { full: emoji } = require('markdown-it-emoji');
 const taskLists = require('markdown-it-task-lists');
 
-function createMarkdownRenderer({ headingIds = false } = {}) {
+function createMarkdownRenderer({ headingIds = false, html = true } = {}) {
     // Raw HTML supports existing embeds and documentation diagrams. Sanitize
     // untrusted output before inserting it into the DOM (see ublogMarkdown.ts).
-    const md = new MarkdownIt({ html: true, breaks: true, linkify: true }).use(emoji, { shortcuts: {} }).use(taskLists);
+    const md = new MarkdownIt({ html, breaks: true, linkify: true }).use(emoji, { shortcuts: {} }).use(taskLists);
     md.linkify.set({ fuzzyLink: true, fuzzyEmail: true });
     md.renderer.rules.s_open = () => '<del>';
     md.renderer.rules.s_close = () => '</del>';
