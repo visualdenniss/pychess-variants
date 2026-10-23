@@ -9,9 +9,9 @@ from __future__ import annotations
 import html
 import re
 from html.parser import HTMLParser
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
-_TAG = re.compile(r"<\s*/?\s*(?:img|iframe|p|div|br|a|b|strong|em|i|h[1-6])\b[^>]*>", re.I | re.S)
+_TAG = re.compile(r"<\s*/?\s*(?:img|iframe|p|div|br|a|b|strong|em|i|h[1-6])\b[^>]*>", re.IGNORECASE | re.DOTALL)
 _DIMENSION_MAX = 2048
 
 
@@ -107,7 +107,7 @@ def convert_legacy_blog_markdown(source: str) -> str:
         label = html.unescape(body).replace("[", "\\[").replace("]", "\\]")
         return f"[{label}]({href.replace(' ', '%20').replace('(', '%28').replace(')', '%29')})"
 
-    source = re.sub(r'(<a\b[^>]*>)(.*?)</a\s*>', replace_link, source, flags=re.I | re.S)
+    source = re.sub(r'(<a\b[^>]*>)(.*?)</a\s*>', replace_link, source, flags=re.IGNORECASE | re.DOTALL)
     converted = _TAG.sub(replace, source)
     converted = re.sub(r"\n{3,}", "\n\n", converted)
     return converted.strip() + "\n" if converted.strip() else ""
