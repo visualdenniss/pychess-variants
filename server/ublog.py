@@ -83,15 +83,24 @@ def normalize_topics(raw: str) -> list[str]:
 
 # Keep in sync with client/ublogMarkdownV2.ts (Lichess image whitelist).
 BLOG_IMAGE_HOSTS = (
-    "imgur.com", "giphy.com", "wikimedia.org", "creativecommons.org",
-    "pexels.com", "piqsels.com", "freeimages.com", "unsplash.com",
-    "pixabay.com", "githubusercontent.com", "googleusercontent.com",
-    "i.postimg.cc", "imgs.xkcd.com", "image.lichess1.org",
-    "image.lichess.org", "pic.lichess.org",
+    "imgur.com",
+    "giphy.com",
+    "wikimedia.org",
+    "creativecommons.org",
+    "pexels.com",
+    "piqsels.com",
+    "freeimages.com",
+    "unsplash.com",
+    "pixabay.com",
+    "githubusercontent.com",
+    "googleusercontent.com",
+    "i.postimg.cc",
+    "imgs.xkcd.com",
+    "image.lichess1.org",
+    "image.lichess.org",
+    "pic.lichess.org",
 )
-BLOG_CDN_PATH = re.compile(
-    r"^/gh/pychess/pychess-variants@[^/]+/static/(?:images|docs|icons)/"
-)
+BLOG_CDN_PATH = re.compile(r"^/gh/pychess/pychess-variants@[^/]+/static/(?:images|docs|icons)/")
 BLOG_STATIC_PATH = re.compile(r"^/static/(?:images|docs|icons)/")
 
 
