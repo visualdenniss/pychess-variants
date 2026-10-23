@@ -11,7 +11,9 @@ import re
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlparse
 
-_TAG = re.compile(r"<\s*/?\s*(?:img|iframe|p|div|br|a|b|strong|em|i|h[1-6])\b[^>]*>", re.IGNORECASE | re.DOTALL)
+_TAG = re.compile(
+    r"<\s*/?\s*(?:img|iframe|p|div|br|a|b|strong|em|i|h[1-6])\b[^>]*>", re.IGNORECASE | re.DOTALL
+)
 _DIMENSION_MAX = 2048
 
 
@@ -58,7 +60,9 @@ def _embed_link(src: str) -> str:
         if re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
             return f"https://www.youtube.com/watch?v={video_id}"
     if host in ("lichess.org", "www.lichess.org"):
-        match = re.fullmatch(r"/study/(?:embed/)?([A-Za-z0-9]{8}(?:/[A-Za-z0-9]{8})?)/?", parsed.path)
+        match = re.fullmatch(
+            r"/study/(?:embed/)?([A-Za-z0-9]{8}(?:/[A-Za-z0-9]{8})?)/?", parsed.path
+        )
         if match:
             return "https://lichess.org/study/" + match.group(1)
     return ""
@@ -66,6 +70,7 @@ def _embed_link(src: str) -> str:
 
 def convert_legacy_blog_markdown(source: str) -> str:
     """Convert known legacy HTML; leave unknown HTML to be escaped by the renderer."""
+
     def replace(match: re.Match[str]) -> str:
         node = _Tag(match.group())
         tag = node.name
@@ -107,7 +112,9 @@ def convert_legacy_blog_markdown(source: str) -> str:
         label = html.unescape(body).replace("[", "\\[").replace("]", "\\]")
         return f"[{label}]({href.replace(' ', '%20').replace('(', '%28').replace(')', '%29')})"
 
-    source = re.sub(r'(<a\b[^>]*>)(.*?)</a\s*>', replace_link, source, flags=re.IGNORECASE | re.DOTALL)
+    source = re.sub(
+        r"(<a\b[^>]*>)(.*?)</a\s*>", replace_link, source, flags=re.IGNORECASE | re.DOTALL
+    )
     converted = _TAG.sub(replace, source)
     converted = re.sub(r"\n{3,}", "\n\n", converted)
     return converted.strip() + "\n" if converted.strip() else ""
