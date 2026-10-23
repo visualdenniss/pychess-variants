@@ -288,7 +288,7 @@ async def _profile_exists(app_state: Any, profile_id: str) -> bool:
 async def _load_post(app_state: Any, post_id: str, profile_id: str) -> dict[str, Any] | None:
     if app_state.db is None:
         return None
-    post = await app_state.db.ublog_post.find_one({"_id": post_id, "author": profile_id})
+    post = await app_state.db.ublog_post2.find_one({"_id": post_id, "author": profile_id})
     if post is None:
         return None
     return post
@@ -410,7 +410,7 @@ async def community(request: web.Request) -> ViewContext:
     }
     if topic != "":
         query["topics"] = topic
-    cursor = app_state.db.ublog_post.find(query).sort(
+    cursor = app_state.db.ublog_post2.find(query).sort(
         [("sticky", -1), ("publishedAt", -1), ("createdAt", -1)]
     )
     posts = await cursor.limit(60).to_list(60)
@@ -418,7 +418,7 @@ async def community(request: web.Request) -> ViewContext:
     context["community_topic"] = topic
     context["community_topics"] = sorted(
         t
-        for t in await app_state.db.ublog_post.distinct(
+        for t in await app_state.db.ublog_post2.distinct(
             "topics",
             {
                 "live": True,
@@ -438,7 +438,7 @@ async def image_proxy(request: web.Request) -> web.Response:
     if app_state.db is None:
         return web.Response(status=503)
 
-    post = await app_state.db.ublog_post.find_one({"_id": post_id}, {"image": 1})
+    post = await app_state.db.ublog_post2.find_one({"_id": post_id}, {"image": 1})
     if post is None:
         return web.Response(status=404)
     image = str(post.get("image") or "")
@@ -498,7 +498,7 @@ async def discuss(request: web.Request) -> web.StreamResponse:
     if app_state.db is None:
         raise web.HTTPFound("/forum")
 
-    post = await app_state.db.ublog_post.find_one({"_id": post_id, "live": True})
+    post = await app_state.db.ublog_post2.find_one({"_id": post_id, "live": True})
     if post is None:
         raise web.HTTPFound("/forum")
 
@@ -537,13 +537,13 @@ async def like(request: web.Request) -> web.StreamResponse:
     likes = _likes_from_doc(doc)
     liked = user.username in likes
     if user.username in likes:
-        await app_state.db.ublog_post.update_one(
+        await app_state.db.ublog_post2.update_one(
             {"_id": post_id, "author": profile_id},
             {"$pull": {"likes": user.username}},
         )
         liked = False
     else:
-        result = await app_state.db.ublog_post.update_one(
+        result = await app_state.db.ublog_post2.update_one(
             {"_id": post_id, "author": profile_id},
             {"$addToSet": {"likes": user.username}},
         )
@@ -561,7 +561,7 @@ async def like(request: web.Request) -> web.StreamResponse:
             )
 
     if wants_json:
-        updated = await app_state.db.ublog_post.find_one(
+        updated = await app_state.db.ublog_post2.find_one(
             {"_id": post_id, "author": profile_id}, {"likes": 1}
         )
         updated_likes = _likes_from_doc(updated or {})
@@ -594,7 +594,7 @@ async def user_blog(request: web.Request) -> ViewContext:
         context["ublog_posts"] = []
     else:
         posts = await (
-            app_state.db.ublog_post.find({"author": profile_id, "live": True})
+            app_state.db.ublog_post2.find({"author": profile_id, "live": True})
             .sort([("sticky", -1), ("publishedAt", -1), ("createdAt", -1)])
             .limit(50)
             .to_list(50)
@@ -621,7 +621,7 @@ async def drafts(request: web.Request) -> ViewContext:
         context["ublog_posts"] = []
     else:
         posts = await (
-            app_state.db.ublog_post.find({"author": profile_id, "live": False})
+            app_state.db.ublog_post2.find({"author": profile_id, "live": False})
             .sort([("updatedAt", -1), ("createdAt", -1)])
             .limit(50)
             .to_list(50)
@@ -664,7 +664,7 @@ async def post(request: web.Request) -> ViewContext:
         and bool(doc.get("live"))
         and not user.anon
     ):
-        result = await app_state.db.ublog_post.update_one(
+        result = await app_state.db.ublog_post2.update_one(
             {
                 "_id": post_id,
                 "author": profile_id,
@@ -682,7 +682,7 @@ async def post(request: web.Request) -> ViewContext:
     related_docs: list[dict[str, Any]] = []
     if app_state.db is not None:
         related_docs = await (
-            app_state.db.ublog_post.find(
+            app_state.db.ublog_post2.find(
                 {"author": profile_id, "live": True, "_id": {"$ne": doc["_id"]}},
             )
             .sort([("publishedAt", -1), ("createdAt", -1)])
@@ -751,7 +751,7 @@ async def create(request: web.Request) -> web.Response:
         return aiohttp_jinja2.render_template("ublog_form.html", request, ctx, status=400)
 
     now = datetime.now(UTC)
-    post_id = await new_id(app_state.db.ublog_post)
+    post_id = await new_id(app_state.db.ublog_post2)
     topics = normalize_topics(values["topics"])
     image = sanitize_image_url(values["image"])
     doc = {
@@ -776,7 +776,7 @@ async def create(request: web.Request) -> web.Response:
         "updatedAt": now,
         "publishedAt": None,
     }
-    await app_state.db.ublog_post.insert_one(doc)
+    await app_state.db.ublog_post2.insert_one(doc)
     raise web.HTTPFound(_blog_post_edit_url(profile_id, post_id))
 
 
@@ -852,7 +852,7 @@ async def update(request: web.Request) -> web.Response:
     elif not next_live:
         update_fields["publishedAt"] = None
 
-    await app_state.db.ublog_post.update_one({"_id": post_id}, {"$set": update_fields})
+    await app_state.db.ublog_post2.update_one({"_id": post_id}, {"$set": update_fields})
     updated = await _load_post(app_state, post_id, profile_id)
     if updated is None:
         raise web.HTTPNotFound()
@@ -882,5 +882,5 @@ async def delete(request: web.Request) -> web.Response:
         raise web.HTTPServiceUnavailable(text="Database unavailable")
     if not is_owner(user.username, profile_id, user.anon):
         raise web.HTTPForbidden()
-    await app_state.db.ublog_post.delete_one({"_id": post_id, "author": profile_id})
+    await app_state.db.ublog_post2.delete_one({"_id": post_id, "author": profile_id})
     raise web.HTTPFound(_blog_drafts_url(profile_id))

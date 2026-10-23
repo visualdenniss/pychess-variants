@@ -1800,7 +1800,7 @@ async def get_blogs(request, tag=None, limit=0):
     # Prefer migrated site blogs from ublog_post.
     tag_filter = tag.casefold() if isinstance(tag, str) and tag.strip() != "" else None
     site_query: dict[str, object] = {"live": True, "blogType": "site"}
-    site_cursor = app_state.db.ublog_post.find(site_query).sort(
+    site_cursor = app_state.db.ublog_post2.find(site_query).sort(
         [("sticky", -1), ("publishedAt", -1), ("createdAt", -1)]
     )
     site_blogs: list[dict] = []

@@ -153,7 +153,7 @@ class GamesApiCategoryFilterTestCase(AioHTTPTestCase):
 
     async def test_direct_anonymous_profile_uses_restricted_rendering(self):
         app_state = get_app_state(self.app)
-        await app_state.db.ublog_post.insert_one(
+        await app_state.db.ublog_post2.insert_one(
             {
                 "_id": "restricted-profile-post",
                 "author": self.profile_probe,
@@ -175,7 +175,7 @@ class GamesApiCategoryFilterTestCase(AioHTTPTestCase):
 
     async def test_internal_profile_navigation_keeps_full_rendering(self):
         app_state = get_app_state(self.app)
-        await app_state.db.ublog_post.insert_one(
+        await app_state.db.ublog_post2.insert_one(
             {
                 "_id": "internal-profile-post",
                 "author": self.profile_probe,

@@ -225,11 +225,11 @@ async def profile(request: web.Request) -> ViewContext:
             context["profile_study_count"] = await count_studies_for_owner_view(
                 app_state, profile_user.username, viewer
             )
-        context["ublog_post_count"] = await app_state.db.ublog_post.count_documents(
+        context["ublog_post_count"] = await app_state.db.ublog_post2.count_documents(
             {"author": profileId, "live": True}
         )
         posts = await (
-            app_state.db.ublog_post.find({"author": profileId, "live": True})
+            app_state.db.ublog_post2.find({"author": profileId, "live": True})
             .sort([("sticky", -1), ("publishedAt", -1), ("createdAt", -1)])
             .limit(3)
             .to_list(3)

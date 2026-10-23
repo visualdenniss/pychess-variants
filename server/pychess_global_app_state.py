@@ -642,31 +642,31 @@ class PychessGlobalAppState:
                     video_count = await _upsert_static_docs(self.db.video, VIDEOS)
                     log.debug("[startup] synced %s static video documents", video_count)
 
-                if not is_test_run() and os.getenv("LEGACY_BLOG_BOOTSTRAP", "1") == "1":
-                    # Run legacy bootstrap only for an empty target collection.
-                    # This keeps first deploy fully automatic while preventing
-                    # rewrites of migrated posts on every subsequent restart.
-                    ublog_post_count = await self.db.ublog_post.count_documents({}, limit=1)
-                    if ublog_post_count == 0:
-                        from legacy_blog_migration import build_legacy_ublog_docs
+            with startup.phase("migrate strict blogs to ublog_post2"):
+                from ublog_post2_migration import migrate_ublog_post2
 
-                        legacy_blog_author_policy = os.getenv("LEGACY_BLOG_AUTHOR_POLICY", "keep")
-                        if legacy_blog_author_policy not in (
-                            "keep",
-                            "official-as-pychess",
-                        ):
-                            legacy_blog_author_policy = "keep"
-                        legacy_count = await _upsert_static_docs(
-                            self.db.ublog_post,
-                            build_legacy_ublog_docs(
-                                author_policy=legacy_blog_author_policy,
-                                strip_preamble=True,
-                            ),
-                        )
-                        log.info(
-                            "[startup] bootstrapped %s legacy blog documents",
-                            legacy_count,
-                        )
+                # A brand-new installation has no legacy collection to import.
+                # Bootstrap static posts directly into v2, never writing to v1.
+                if (
+                    not is_test_run()
+                    and os.getenv("LEGACY_BLOG_BOOTSTRAP", "1") == "1"
+                    and await self.db.ublog_post.count_documents({}, limit=1) == 0
+                    and await self.db.ublog_post2.count_documents({}, limit=1) == 0
+                    and not await self.db.config.find_one({"_id": "ublog_post2_migration_v1"})
+                ):
+                    from legacy_blog_migration import build_legacy_ublog_docs
+                    from ublog_markdown_migration import convert_legacy_blog_markdown
+
+                    author_policy = os.getenv("LEGACY_BLOG_AUTHOR_POLICY", "keep")
+                    if author_policy not in ("keep", "official-as-pychess"):
+                        author_policy = "keep"
+                    docs = build_legacy_ublog_docs(author_policy=author_policy, strip_preamble=True)
+                    for doc in docs:
+                        doc["markdown"] = convert_legacy_blog_markdown(doc.get("markdown") or "")
+                    count = await _upsert_static_docs(self.db.ublog_post2, docs)
+                    log.info("[startup] bootstrapped %s strict blog documents", count)
+
+                await migrate_ublog_post2(self.db)
 
             with startup.phase("restore fishnet + config + user migrations"):
                 if "fishnet" in db_collections:

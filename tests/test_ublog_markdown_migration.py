@@ -1,8 +1,6 @@
-import json
 import unittest
-from pathlib import Path
 
-from server.ublog_markdown_migration import convert_legacy_blog_markdown
+from ublog_markdown_migration import convert_legacy_blog_markdown
 
 
 class TestLegacyBlogMarkdown(unittest.TestCase):

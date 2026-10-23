@@ -61,7 +61,7 @@ import { initTournamentForm } from './tournamentForm';
 import { initUserMiniWidget } from './userMiniWidget';
 import { initUblogLike } from './ublogLike';
 import { initTopNavDisclosures } from './topNav';
-import { initUblogMarkdown } from './ublogMarkdown';
+import { initUblogMarkdownV2 } from './ublogMarkdownV2';
 import { initUblogEditor } from './ublogEditor';
 import { initPushSubscription } from './push';
 import { initCommunityVariantFavorites } from './communityVariants';
@@ -343,7 +343,7 @@ function start() {
     initUserMiniWidget(model.assetURL, model.username, model.anon);
     if (model.pushEnabled) void initPushSubscription(model.anon, model.pushVapidKey);
     initUblogLike();
-    initUblogMarkdown();
+    initUblogMarkdownV2();
     initUblogEditor();
 
     const hamburger = document.querySelector('.hamburger') as HTMLElement;

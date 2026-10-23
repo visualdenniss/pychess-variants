@@ -1,4 +1,4 @@
-/** Strict blog Markdown renderer. Not activated until the ublog_post2 migration. */
+/** Strict blog Markdown renderer for ublog_post2. */
 import DOMPurify from 'dompurify';
 import { createMarkdownRenderer } from '../markdown';
 
@@ -142,4 +142,10 @@ export function renderStrictBlogMarkdown(source: string): DocumentFragment {
         if (info) paragraph.replaceWith(makeEmbed(document, info));
     });
     return fragment;
+}
+
+export function initUblogMarkdownV2(): void {
+    const source = document.getElementById('ublog-markdown-source') as HTMLTextAreaElement | null;
+    const render = document.getElementById('ublog-markdown-render');
+    if (source && render) render.replaceChildren(renderStrictBlogMarkdown(source.value || ''));
 }

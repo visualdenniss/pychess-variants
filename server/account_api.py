@@ -294,7 +294,7 @@ async def _scrub_delete_owned_data(app_state: Any, user: Any, now: datetime) -> 
         app_state, user.username, erase=True, remove_from_tournaments=True
     )
     await _erase_forum_posts_by_user(app_state, user.username, now)
-    await db.ublog_post.delete_many({"author": user.username})
+    await db.ublog_post2.delete_many({"author": user.username})
     await db.bot_token.delete_many({"user": user.username})
     await db.external_engine.delete_many({"user": user.username})
     await db.push_subscription.delete_many({"user": user.username})
@@ -314,7 +314,7 @@ async def _scrub_delete_owned_data(app_state: Any, user: Any, now: datetime) -> 
     )
     await db.relation.delete_many({"$or": [{"u1": user.username}, {"u2": user.username}]})
 
-    await db.ublog_post.update_many(
+    await db.ublog_post2.update_many(
         {"$or": [{"likes": user.username}, {"viewers": user.username}]},
         {"$pull": {"likes": user.username, "viewers": user.username}},
     )
@@ -444,7 +444,7 @@ async def account_personal_data_export(request: web.Request) -> web.StreamRespon
             app_state.db.inbox_msg.find({"from": user.username}),
         ),
         ("Forum posts by this account", app_state.db.forum_post.find({"user": user.username})),
-        ("Blog posts by this account", app_state.db.ublog_post.find({"author": user.username})),
+        ("Blog posts by this account", app_state.db.ublog_post2.find({"author": user.username})),
         (
             "Push subscriptions",
             app_state.db.push_subscription.find({"user": user.username}),
