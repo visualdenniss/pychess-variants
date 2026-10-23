@@ -15,7 +15,7 @@
 </aside>
 <article class="ublog-box box box-pad ublog-post">
     <h1 class="ublog-post__title">{{ ublog_post['title'] }}</h1>
-    {% if ublog_post['image'] %}
+    {% if ublog_post['image_src'] %}
     <img class="ublog-post-image ublog-post__image" src="{{ ublog_post['image_src'] }}" alt="{{ ublog_post['imageAlt'] }}">
     {% endif %}
     <div class="ublog-post-meta-headline">

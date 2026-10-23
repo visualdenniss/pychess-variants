@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import ipaddress
-import socket
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote
 
 import aiohttp_jinja2
-from aiohttp import ClientSession, ClientTimeout, web
+from aiohttp import web
 from forum.storage import recompute_categ_summary, refresh_post_author_count, topic_by_tree
 from newid import new_id
 from pychess_global_app_state_utils import get_app_state
@@ -35,17 +33,11 @@ from ublog import (
 
 from views import get_user_context
 
-UBLOG_IMAGE_PROXY_MAX_BYTES = 5 * 1024 * 1024
-UBLOG_IMAGE_PROXY_UA = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-)
 UBLOG_DISCUSS_CATEG_ID = "community-blog-discussions"
 UBLOG_DISCUSS_CATEG_NAME = "Community Blog Discussions"
 UBLOG_DISCUSS_CATEG_DESC = "Discuss community blog posts."
 UBLOG_DISCUSS_CATEG_ORDER = 25
 UBLOG_DISCUSS_TEXT_PREFIX = "Comments on "
-UBLOG_IMAGE_PROXY_ALLOWED_PORTS = {80, 443}
 
 
 def _safe_path_segment(value: str) -> str:
@@ -215,71 +207,6 @@ async def _cards_from_posts(app_state: Any, posts: list[dict[str, Any]]) -> list
     return [_to_card(post, titles.get(str(post.get("author") or ""), "")) for post in visible_posts]
 
 
-def _is_safe_image_content_type(content_type: str | None) -> bool:
-    if not content_type:
-        return False
-    ctype = content_type.split(";", 1)[0].strip().lower()
-    return ctype in {
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "image/avif",
-    }
-
-
-def _is_public_ip(ip_value: str) -> bool:
-    try:
-        return ipaddress.ip_address(ip_value).is_global
-    except ValueError:
-        return False
-
-
-async def _is_safe_image_host(hostname: str) -> bool:
-    host = hostname.strip().rstrip(".").casefold()
-    if not host or host == "localhost" or host.endswith((".localhost", ".local")):
-        return False
-
-    if _is_public_ip(host):
-        return True
-
-    loop = asyncio.get_running_loop()
-    try:
-        addr_infos = await loop.getaddrinfo(host, None, type=socket.SOCK_STREAM)
-    except socket.gaierror:
-        return False
-
-    if not addr_infos:
-        return False
-
-    for info in addr_infos:
-        ip_value = info[4][0]
-        if not isinstance(ip_value, str) or not _is_public_ip(ip_value):
-            return False
-    return True
-
-
-async def _normalize_proxy_image_url(raw_url: str) -> str | None:
-    candidate = raw_url.strip()
-    if candidate == "":
-        return None
-
-    parsed = urlsplit(candidate)
-    if parsed.scheme not in {"http", "https"}:
-        return None
-    if parsed.username or parsed.password:
-        return None
-    if parsed.hostname is None:
-        return None
-    if parsed.port is not None and parsed.port not in UBLOG_IMAGE_PROXY_ALLOWED_PORTS:
-        return None
-    if not await _is_safe_image_host(parsed.hostname):
-        return None
-
-    path = parsed.path if parsed.path else "/"
-    return urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, ""))
-
-
 async def _profile_exists(app_state: Any, profile_id: str) -> bool:
     profile = await app_state.public_users.get_profile(profile_id)
     return profile is not None and profile.enabled
@@ -430,66 +357,6 @@ async def community(request: web.Request) -> ViewContext:
     context["title"] = "Community blogs • PyChess"
     context["view_css"] = "ublog.css"
     return context
-
-
-async def image_proxy(request: web.Request) -> web.Response:
-    app_state = get_app_state(request.app)
-    post_id = request.match_info["postId"]
-    if app_state.db is None:
-        return web.Response(status=503)
-
-    post = await app_state.db.ublog_post2.find_one({"_id": post_id}, {"image": 1})
-    if post is None:
-        return web.Response(status=404)
-    image = str(post.get("image") or "")
-    safe_image = await _normalize_proxy_image_url(image)
-    if safe_image is None:
-        return web.Response(status=404)
-
-    return await _proxy_image_from_url(safe_image)
-
-
-async def image_proxy_external(request: web.Request) -> web.Response:
-    # Proxy arbitrary external inline blog images referenced from markdown content.
-    raw_url = str(request.rel_url.query.get("url", ""))
-    safe_image = await _normalize_proxy_image_url(raw_url)
-    if safe_image is None:
-        return web.Response(status=404)
-    return await _proxy_image_from_url(safe_image)
-
-
-async def _proxy_image_from_url(image: str) -> web.Response:
-    timeout = ClientTimeout(total=8)
-    try:
-        async with (
-            ClientSession(
-                timeout=timeout,
-                headers={
-                    "User-Agent": UBLOG_IMAGE_PROXY_UA,
-                    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-                },
-            ) as session,
-            session.get(image, allow_redirects=False) as resp,
-        ):
-            if resp.status != 200:
-                return web.Response(status=404)
-            content_type = resp.headers.get("Content-Type")
-            if not _is_safe_image_content_type(content_type):
-                return web.Response(status=404)
-            body = await resp.read()
-            if len(body) > UBLOG_IMAGE_PROXY_MAX_BYTES:
-                return web.Response(status=413)
-            return web.Response(
-                body=body,
-                content_type=content_type.split(";", 1)[0].strip(),
-                headers={
-                    "Cache-Control": "public, max-age=3600",
-                    "X-Content-Type-Options": "nosniff",
-                    "Content-Security-Policy": "default-src 'none'; sandbox",
-                },
-            )
-    except Exception:
-        return web.Response(status=404)
 
 
 async def discuss(request: web.Request) -> web.StreamResponse:
