@@ -110,17 +110,29 @@ async def tournaments(request: web.Request) -> ViewContext:
             try:
                 await task
             except asyncio.CancelledError:
-                log.debug("%s cancelled" % taskname)
+                log.debug("%s cancelled for tournament %s", taskname, tournament.id)
                 tournament.clock_task = None
 
-        await create_or_update_tournament(
-            app_state,
-            user.username,
-            data,
-            tournament,
-            creator_is_director=director,
-            editor_is_admin=admin,
-        )
+        try:
+            await create_or_update_tournament(
+                app_state,
+                user.username,
+                data,
+                tournament,
+                creator_is_director=director,
+                editor_is_admin=admin,
+            )
+        finally:
+            # Restored tournaments have with_clock=False, so initialize() does not
+            # restart their clock. Rejected edits must also resume the old schedule.
+            if (
+                not app_state.shutdown
+                and tournament.status in (T_CREATED, T_STARTED)
+                and (tournament.clock_task is None or tournament.clock_task.done())
+            ):
+                tournament.clock_task = asyncio.create_task(
+                    tournament.clock(), name="tournament-clock"
+                )
 
     lang = context["lang"]
     gettext = app_state.translations[lang].gettext
