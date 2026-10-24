@@ -17,6 +17,7 @@ from aiohttp.web_app import Application
 from aiohttp_session import SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiohttp_swagger3 import SwaggerDocs, SwaggerInfo
+from client_ip import client_ip_middleware
 from csrf import ALLOW_ORIGINLESS_LOOPBACK_KEY, csrf_protection_middleware
 from db_wrapper import AsyncDBWrapper
 from middlewares import (
@@ -78,6 +79,7 @@ def make_app(
             else None
         )
 
+        app.middlewares.append(client_ip_middleware)
         app.middlewares.append(redirect_to_https)
 
         app[anon_as_test_users_key] = anon_as_test_users

@@ -9,6 +9,7 @@ from time import monotonic
 
 import aiohttp_session
 from aiohttp import web
+from client_ip import get_client_ip
 from request_utils import request_log_fingerprint, safe_log_value
 from typedefs import (
     REQUEST_NEW_SESSION_KEY,
@@ -159,8 +160,7 @@ async def request_timing_middleware(request: web.Request, handler: Handler) -> w
         path = request.rel_url.path
         if _should_trace_request(path, status, duration_ms):
             request_id = request.headers.get("X-Request-ID", "-")
-            forwarded_for = request.headers.get("X-Forwarded-For", request.remote or "-")
-            client_ip = forwarded_for.split(",", maxsplit=1)[0].strip()
+            client_ip = get_client_ip(request)
             user_agent, referer, http_version, session_cookie = request_log_fingerprint(request)
             profile_restricted = request.get(REQUEST_PROFILE_RESTRICTED_KEY, "-")
             rate_limit_bucket = request.get(REQUEST_RATE_LIMIT_BUCKET_KEY, "-")

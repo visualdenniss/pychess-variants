@@ -8,6 +8,7 @@ from time import monotonic
 
 import aiohttp_session
 from aiohttp import web
+from client_ip import get_client_ip
 from const import ANON_PREFIX
 from request_utils import request_log_fingerprint, safe_log_value
 from settings import LOCALHOST, URI
@@ -232,11 +233,7 @@ class RequestProtectionState:
         return any(lowered.startswith(prefix.lower()) for prefix in self._SCANNER_PREFIXES)
 
     def client_key(self, request: web.Request) -> str:
-        # Heroku forwards client IP in X-Forwarded-For.
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        if forwarded_for:
-            return forwarded_for.split(",", maxsplit=1)[0].strip()
-        return request.remote or "unknown"
+        return get_client_ip(request) or "unknown"
 
     def should_log_block(self, key: str) -> bool:
         now = monotonic()
