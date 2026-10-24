@@ -91,6 +91,7 @@ BERGER_NORM = 2
 
 NOTIFY1_MINUTES = 60 * 6
 NOTIFY2_MINUTES = 10
+DISCORD_REMINDER_TIMEOUT = 30
 AUTO_ROUND_INTERVAL = -1
 MANUAL_ROUND_INTERVAL = -2
 MIN_AUTO_ROUND_INTERVAL_SECONDS = 10
@@ -1033,6 +1034,13 @@ class Tournament(ABC):
     async def send_scheduled_start_reminders(self) -> None:
         """Hook for tournament systems that notify registered players before start."""
 
+    async def _send_discord_start_reminder(self, message: str) -> None:
+        try:
+            async with asyncio.timeout(DISCORD_REMINDER_TIMEOUT):
+                await self.app_state.discord.send_to_discord("notify_tournament", message)
+        except Exception:
+            log.exception("Failed to send Discord start reminder for tournament %s", self.id)
+
     async def clock(self):
         try:
             while self.status not in (T_ABORTED, T_FINISHED, T_ARCHIVED):
@@ -1080,17 +1088,22 @@ class Tournament(ABC):
                         self.notify1 = True
                         self.notify2 = True
                         await self.send_scheduled_start_reminders()
-                        await self.app_state.discord.send_to_discord(
-                            "notify_tournament",
-                            self.notify_discord_msg(remaining_mins_to_start),
+                        # Discord readiness/network waits must not block the tournament clock.
+                        self.app_state.create_background_task(
+                            self._send_discord_start_reminder(
+                                self.notify_discord_msg(remaining_mins_to_start)
+                            ),
+                            name="t-discord-reminder-%s" % self.id,
                         )
                         continue
 
                     elif (not self.notify1) and remaining_mins_to_start <= NOTIFY1_MINUTES:
                         self.notify1 = True
-                        await self.app_state.discord.send_to_discord(
-                            "notify_tournament",
-                            self.notify_discord_msg(remaining_mins_to_start),
+                        self.app_state.create_background_task(
+                            self._send_discord_start_reminder(
+                                self.notify_discord_msg(remaining_mins_to_start)
+                            ),
+                            name="t-discord-reminder-%s" % self.id,
                         )
                         self.app_state.create_background_task(
                             lichess_team_msg(self.app_state),
