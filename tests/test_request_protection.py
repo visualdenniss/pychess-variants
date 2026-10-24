@@ -178,6 +178,7 @@ class RequestProtectionTestCase(AioHTTPTestCase):
         self.assertIn(resp.status, {302, 400})
         self.assertEqual(before, set(app_state.users))
 
+    @patch("client_ip.CLIENT_IP_MODE", "heroku")
     async def test_anonymous_profiles_share_a_global_budget_across_ips(self):
         state = self.app[request_protection_state_key]
         state._ANON_PROFILE_GLOBAL_LIMIT = RouteRateLimit(
@@ -193,6 +194,72 @@ class RequestProtectionTestCase(AioHTTPTestCase):
             statuses.append(resp.status)
 
         self.assertEqual([404, 404, 404, 429], statuses)
+
+    @patch("client_ip.CLIENT_IP_MODE", "heroku")
+    async def test_forwarded_prefix_rotation_cannot_reset_per_ip_budget(self):
+        state = self.app[request_protection_state_key]
+        state._PROFILE_LIMIT = RouteRateLimit("profile", max_requests=2, window_seconds=60.0)
+        statuses = []
+        with self.assertLogs("request_protection", level="WARNING") as captured:
+            for index in range(3):
+                response = await self.client.get(
+                    "/@/NoSuchCrawlerTarget",
+                    headers=[
+                        ("X-Forwarded-For", f"203.0.113.{index}"),
+                        ("X-Forwarded-For", "198.51.100.44"),
+                    ],
+                )
+                statuses.append(response.status)
+        self.assertEqual(statuses, [404, 404, 429])
+        self.assertIn("from 198.51.100.44", "\n".join(captured.output))
+        self.assertNotIn("203.0.113.", "\n".join(captured.output))
+
+        response = await self.client.get(
+            "/@/NoSuchCrawlerTarget",
+            headers={"X-Forwarded-For": "203.0.113.0, 198.51.100.45"},
+        )
+        self.assertEqual(response.status, 404)
+
+    @patch("client_ip.CLIENT_IP_MODE", "direct")
+    async def test_direct_connections_cannot_use_headers_to_reset_per_ip_budget(self):
+        state = self.app[request_protection_state_key]
+        state._PROFILE_LIMIT = RouteRateLimit("profile", max_requests=2, window_seconds=60.0)
+        statuses = []
+        for index in range(3):
+            response = await self.client.get(
+                "/@/NoSuchCrawlerTarget",
+                headers={"X-Forwarded-For": f"203.0.113.{index}"},
+            )
+            statuses.append(response.status)
+        self.assertEqual(statuses, [404, 404, 429])
+
+    @patch("client_ip.CLIENT_IP_MODE", "heroku")
+    async def test_invalid_forwarded_address_is_rejected_before_handler(self):
+        app_state = get_app_state(self.app)
+        before = set(app_state.users)
+        for headers in ({}, {"X-Forwarded-For": "203.0.113.10, invalid"}):
+            response = await self.client.get("/about", headers=headers)
+            self.assertEqual(response.status, 400)
+            self.assertEqual(await response.text(), "Invalid forwarded client address")
+        self.assertEqual(before, set(app_state.users))
+
+    @patch("client_ip.CLIENT_IP_MODE", "heroku")
+    async def test_request_trace_uses_canonical_router_observed_address(self):
+        with (
+            patch("middlewares._should_trace_request", return_value=True),
+            self.assertLogs("middlewares", level="WARNING") as captured,
+        ):
+            response = await self.client.get(
+                "/about",
+                headers=[
+                    ("X-Forwarded-For", "203.0.113.10"),
+                    ("X-Forwarded-For", "2001:0DB8:0:0:0:0:0:1"),
+                ],
+            )
+        self.assertEqual(response.status, 200)
+        message = "\n".join(captured.output)
+        self.assertIn("fwd=2001:db8::1", message)
+        self.assertNotIn("203.0.113.10", message)
 
     async def test_profile_trace_logs_request_fingerprint_and_protection_decisions(self):
         app_state = get_app_state(self.app)

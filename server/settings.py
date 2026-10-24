@@ -12,6 +12,12 @@ URI = os.getenv("URI", LOCALHOST)
 PROD = os.getenv("PROD") == "true"
 DEV = not PROD
 
+# Heroku isolates web dynos behind its router. Elsewhere, ignore proxy headers
+# unless the operator explicitly configures that same routing boundary.
+CLIENT_IP_MODE = os.getenv("CLIENT_IP_MODE", "heroku" if os.getenv("DYNO") else "direct")
+if CLIENT_IP_MODE not in {"direct", "heroku"}:
+    raise ValueError("CLIENT_IP_MODE must be 'direct' or 'heroku'")
+
 # Simuls are available on both production and DEV deployments.
 SIMULING = True
 
