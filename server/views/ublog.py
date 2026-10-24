@@ -611,7 +611,7 @@ async def create(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(text="Invalid form data")
 
     values = _extract_form_values(data, _empty_form_values())
-    errors = _validate_content(values)
+    errors = _validate_full(values)
 
     if errors:
         ctx = _build_form_context(context, profile_id, values, errors)

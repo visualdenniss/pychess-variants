@@ -22,6 +22,19 @@ class BlogCoverImageTests(unittest.TestCase):
         cdn = "https://cdn.jsdelivr.net/gh/pychess/pychess-variants@1.11.78/static/images/a.svg"
         self.assertEqual(image_src({"image": cdn}), cdn)
 
+    def test_missing_cover_uses_template_fallback(self):
+        from pathlib import Path
+
+        templates = Path(__file__).resolve().parents[1] / "templates"
+        for name in (
+            "ublog_index.html", "ublog_community.html", "ublog_post.html",
+            "profile.html", "blogs.html",
+        ):
+            with self.subTest(template=name):
+                self.assertIn("ublog-default-cover.svg", (templates / name).read_text())
+        self.assertEqual(image_src({"image": ""}), "")
+        self.assertEqual(image_src({"image": "https://untrusted.example/a.png"}), "")
+
     def test_unapproved_urls_never_become_cover_sources(self):
         for url in (
             "https://bad.example/image.png",

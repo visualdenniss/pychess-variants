@@ -685,3 +685,14 @@
     justify-content: flex-start;
   }
 }
+
+/* Preserve the original cover aspect ratio; center the PyChess fallback instead of cropping it. */
+.ublog-page .ublog-cover-fallback,
+.player-ublog .ublog-cover-fallback {
+  object-fit: contain;
+  background: #d9e0e5;
+}
+.ublog-page .ublog-post-image.ublog-cover-fallback {
+  max-height: 360px;
+  object-fit: contain;
+}
