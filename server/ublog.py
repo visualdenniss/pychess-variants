@@ -99,6 +99,8 @@ BLOG_IMAGE_HOSTS = (
     "image.lichess1.org",
     "image.lichess.org",
     "pic.lichess.org",
+    "external-content.duckduckgo.com",
+    "images.unsplash.com",
 )
 BLOG_CDN_PATH = re.compile(r"^/gh/pychess/pychess-variants@[^/]+/static/(?:images|docs|icons)/")
 BLOG_STATIC_PATH = re.compile(r"^/static/(?:images|docs|icons)/")
