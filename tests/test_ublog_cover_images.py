@@ -27,8 +27,11 @@ class BlogCoverImageTests(unittest.TestCase):
 
         templates = Path(__file__).resolve().parents[1] / "templates"
         for name in (
-            "ublog_index.html", "ublog_community.html", "ublog_post.html",
-            "profile.html", "blogs.html",
+            "ublog_index.html",
+            "ublog_community.html",
+            "ublog_post.html",
+            "profile.html",
+            "blogs.html",
         ):
             with self.subTest(template=name):
                 self.assertIn("ublog-default-cover.svg", (templates / name).read_text())
