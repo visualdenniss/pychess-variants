@@ -66,23 +66,6 @@ yarn test
 uv run server/server.py
 ```
 
-### Client IP trust
-
-`CLIENT_IP_MODE=direct` (the default outside Heroku) ignores forwarded headers and
-uses the connection's peer address for rate limits, ban-evasion signals, and request
-traces. `CLIENT_IP_MODE=heroku` is selected automatically when `DYNO` is set and can
-be explicitly overridden. It trusts the rightmost `X-Forwarded-For` address across
-all repeated header fields, as appended by the
-[Heroku router](https://devcenter.heroku.com/articles/http-routing#heroku-headers).
-The address is validated and canonicalized; missing or malformed trusted addresses
-return HTTP 400.
-
-Only enable `heroku` mode when all inbound traffic passes through a trusted router
-that appends the observed address on the right and direct access to the app is
-blocked. With an additional proxy in front of Heroku, this identifies that proxy,
-not the original client. Resolving clients beyond that boundary requires a policy
-for those additional trusted proxies; do not select a supplied leftmost address.
-
 ### Python checks and tests
 ```bash
 uv run ruff format --target-version py313 .
@@ -102,10 +85,3 @@ docker compose up --build
 ```
 This recompiles the frontend and starts the server and DB. Once it is up, you can connect to `localhost:8080` in your browser.
 For more detailed Docker workflows, including contributor checks and the optional `ci` service, see [docker/README.md](docker/README.md).
-
-
-## Supported browsers
-
-Pychess-variants should support almost all browsers. Though older browsers (including any version of Internet Explorer) will not work. For your own sake, please upgrade. Security and performance, think about it!
-
-Only [Fairy-Stockfish analysis](https://www.pychess.org/analysis/chess) might not work on all browsers.
