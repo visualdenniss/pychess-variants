@@ -161,6 +161,7 @@ class PlayerData:
     __slots__ = (
         "berger",
         "color_balance",
+        "color_streak",
         "free",
         "games",
         "id",
@@ -204,6 +205,7 @@ class PlayerData:
         self.berger: int = 0
         self.prev_opp: str = ""
         self.color_balance: int = 0  # +1 when played as white, -1 when played as black
+        self.color_streak: int = 0  # Positive for consecutive whites, negative for blacks.
         # Swiss-only: first round in which the player can be paired.
         self.joined_round: int = 1
         self.joined_at: datetime = datetime.now(UTC)
@@ -1889,6 +1891,8 @@ class Tournament(ABC):
 
         wplayer.color_balance += 1
         bplayer.color_balance -= 1
+        wplayer.color_streak = max(1, wplayer.color_streak + 1)
+        bplayer.color_streak = min(-1, bplayer.color_streak - 1)
 
         wplayer.nb_not_paired = 0
         bplayer.nb_not_paired = 0

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import time
 from itertools import product
 from typing import TYPE_CHECKING
@@ -18,7 +19,7 @@ log = logging.getLogger(__name__)
 
 class ArenaTournament(Tournament):
     system = ARENA
-    color_balance_limit = 3
+    color_streak_limit = 3
 
     async def finish(self, reason: str | None = None) -> None:
         # Match lila Arena behavior: tournaments that never produced a pairing are
@@ -40,16 +41,18 @@ class ArenaTournament(Tournament):
             return False
         return y.username == x_data.prev_opp or x.username == y_data.prev_opp
 
-    def color_balance_problem(self, x, y):
-        # Players are not allowed to play more than 3 conseutive games with the same color
+    def color_streak_problem(self, x: User, y: User) -> bool:
+        # Match lila ColorHistory.couldPlay: one player must be able to switch colors.
         x_data = self.player_data_by_name(x.username)
         y_data = self.player_data_by_name(y.username)
         if x_data is None or y_data is None:
             return False
-        color_balance_a = x_data.color_balance
-        color_balance_b = y_data.color_balance
-        return (color_balance_a == color_balance_b == self.color_balance_limit) or (
-            color_balance_a == color_balance_b == -self.color_balance_limit
+        return (
+            x_data.color_streak >= self.color_streak_limit
+            and y_data.color_streak >= self.color_streak_limit
+        ) or (
+            x_data.color_streak <= -self.color_streak_limit
+            and y_data.color_streak <= -self.color_streak_limit
         )
 
     def create_pairing(self, waiting_players: list[User]) -> list[tuple[User, User]]:
@@ -74,7 +77,10 @@ class ArenaTournament(Tournament):
                 )
                 return
 
-            if x_data.color_balance < y_data.color_balance:
+            # Match lila ColorHistory.firstGetsWhite: streak, then balance, then chance.
+            x_history = (x_data.color_streak, x_data.color_balance)
+            y_history = (y_data.color_streak, y_data.color_balance)
+            if x_history < y_history or (x_history == y_history and random.choice((True, False))):
                 wp, bp = x, y
             else:
                 wp, bp = y, x
@@ -89,6 +95,9 @@ class ArenaTournament(Tournament):
             y = waiting_players[1]
             x_data = self.player_data_by_name(x.username)
             if x_data is None:
+                return pairing
+
+            if self.ongoing_games and self.color_streak_problem(x, y):
                 return pairing
 
             if y.username not in (
@@ -114,7 +123,7 @@ class ArenaTournament(Tournament):
 
         # https://github.com/lichess-org/lila/blob/master/modules/tournament/src/main/arena/PairingSystem.scala
         def rank_factor(rank_a, rank_b):
-            return 300 + 1700 * round((rank_max - min(rank_a, rank_b)) / rank_max)
+            return 300 + 1700 * (rank_max - min(rank_a, rank_b)) // rank_max
 
         for pair in product(rx_nodes, rx_nodes):
             player_a = waiting_players[pair[0]]
@@ -122,7 +131,7 @@ class ArenaTournament(Tournament):
             if (
                 pair[0] != pair[1]
                 and (not self.just_played_together(player_a, player_b))
-                and (not self.color_balance_problem(player_a, player_b))
+                and (not self.color_streak_problem(player_a, player_b))
             ):
                 rank_a = ranks[pair[0]]
                 rank_b = ranks[pair[1]]
