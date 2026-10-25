@@ -56,6 +56,31 @@ class ArenaTournament(Tournament):
         )
 
     def create_pairing(self, waiting_players: list[User]) -> list[tuple[User, User]]:
+        if len(waiting_players) < 2:
+            return []
+
+        if len(waiting_players) % 2:
+            now = time.monotonic()
+
+            def waiting_since(player: User) -> float:
+                data = self.player_data_by_name(player.username)
+                return (
+                    data.waiting_since
+                    if data is not None and data.waiting_since is not None
+                    else now
+                )
+
+            # Match lila WaitingUsers.evenNumber and PairingSystem.evenOrAll.
+            # Equal arrival times leave out the last player in leaderboard order.
+            newest = max(reversed(waiting_players), key=waiting_since)
+            older_waiters = [p for p in waiting_players if p.username != newest.username]
+            pairing = self._create_pairing(older_waiters)
+            if pairing:
+                return pairing
+
+        return self._create_pairing(waiting_players)
+
+    def _create_pairing(self, waiting_players: list[User]) -> list[tuple[User, User]]:
         start = time.time()
         pairing = []
 

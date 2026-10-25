@@ -187,6 +187,93 @@ class ArenaPairingTestCase(TournamentTestCase):
             self.tournament.players[player].color_streak = 3
         self.assert_pairing(players[:2], [(players[0], players[1])])
 
+    async def test_odd_wave_prefers_longer_waiting_players(self):
+        players = await self.make_tournament(3)
+        for player, since in zip(players, (30.0, 20.0, 0.0)):
+            self.tournament.players[player].waiting_since = since
+        # The highest-ranked player arrived last; the two older waiters play.
+        self.assert_pairing(players, [(players[1], players[2])])
+
+    async def test_five_waiting_players_leave_newest_out(self):
+        players = await self.make_tournament(5)
+        for player, since in zip(players, (50.0, 10.0, 20.0, 30.0, 40.0)):
+            self.tournament.players[player].waiting_since = since
+        self.assert_pairing(players, [(players[1], players[2]), (players[3], players[4])])
+
+    async def test_odd_wave_retries_everyone_if_older_waiters_cannot_play(self):
+        players = await self.make_tournament(3)
+        for restriction in ("rematch", "color"):
+            with self.subTest(restriction=restriction):
+                for index, player in enumerate(players):
+                    data = self.tournament.players[player]
+                    data.waiting_since = float(index)
+                    data.prev_opp = ""
+                    data.color_streak = 0
+                if restriction == "rematch":
+                    self.tournament.players[players[0]].prev_opp = players[1].username
+                else:
+                    for player in players[:2]:
+                        self.tournament.players[player].color_streak = 3
+                self.assert_pairing(players, [(players[1], players[2])])
+
+    async def test_unpaired_player_keeps_waiting_priority_for_next_wave(self):
+        players = await self.make_tournament(3)
+        for player, since in zip(players, (30.0, 20.0, 10.0)):
+            self.tournament.players[player].waiting_since = since
+        self.assert_pairing(players, [(players[1], players[2])])
+        await self.record_colors(players[1:], "W")
+        with patch("tournament.tournament.monotonic", return_value=40.0):
+            waiting = self.tournament.waiting_players()
+        self.assertEqual(self.tournament.players[players[0]].waiting_since, 30.0)
+        self.assertEqual(self.tournament.players[players[1]].waiting_since, 40.0)
+        self.assertEqual(self.tournament.players[players[2]].waiting_since, 40.0)
+        self.assert_pairing(waiting, [(players[0], players[1])])
+
+    async def test_repeated_waiting_checks_preserve_age_and_game_start_resets_it(self):
+        players = await self.make_tournament(3)
+        with patch("tournament.tournament.monotonic", return_value=10.0):
+            self.assertEqual(self.tournament.waiting_players(), players)
+        with patch("tournament.tournament.monotonic", return_value=20.0):
+            self.tournament.waiting_players()
+        self.assertEqual([self.tournament.players[p].waiting_since for p in players], [10.0] * 3)
+        await self.tournament.create_games([(players[0], players[1])])
+        with patch("tournament.tournament.monotonic", return_value=30.0):
+            self.assertEqual(self.tournament.waiting_players(), [players[2]])
+        self.assertEqual(
+            [self.tournament.players[p].waiting_since for p in players], [None, None, 10.0]
+        )
+
+    async def test_pause_and_withdraw_reset_waiting_age_before_rejoining(self):
+        players = await self.make_tournament(2)
+        with patch("tournament.tournament.monotonic", return_value=10.0):
+            self.tournament.waiting_players()
+        await self.tournament.pause(players[0])
+        await self.tournament.withdraw(players[1])
+        self.assertEqual([self.tournament.players[p].waiting_since for p in players], [None, None])
+        for player in players:
+            await self.tournament.join(player)
+        with patch("tournament.tournament.monotonic", return_value=20.0):
+            self.tournament.waiting_players()
+        self.assertEqual([self.tournament.players[p].waiting_since for p in players], [20.0] * 2)
+
+    async def test_only_full_disconnect_resets_waiting_age(self):
+        players = await self.make_tournament(2)
+        player = players[0]
+        with patch("tournament.tournament.monotonic", return_value=10.0):
+            self.tournament.waiting_players()
+        # Closing one tab while another remains connected preserves the wait.
+        self.tournament.spactator_leave(player)
+        self.assertEqual(self.tournament.players[player].waiting_since, 10.0)
+        player.tournament_sockets[self.tournament.id].clear()
+        self.tournament.spactator_leave(player)
+        self.assertIsNone(self.tournament.players[player].waiting_since)
+        player.tournament_sockets[self.tournament.id].add(None)
+        self.tournament.spactator_join(player)
+        with patch("tournament.tournament.monotonic", return_value=20.0):
+            self.tournament.waiting_players()
+        self.assertEqual(self.tournament.players[player].waiting_since, 20.0)
+        self.assertEqual(self.tournament.players[players[1]].waiting_since, 10.0)
+
     async def test_reload_restores_color_streak_from_pairing_history(self):
         players = await self.make_tournament(2)
         games = await self.record_colors(players, "WWWBBB")

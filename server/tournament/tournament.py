@@ -10,6 +10,7 @@ from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from operator import neg
+from time import monotonic
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -179,6 +180,7 @@ class PlayerData:
         "rating",
         "title",
         "username",
+        "waiting_since",
         "win_streak",
         "withdrawn",
     )
@@ -206,6 +208,7 @@ class PlayerData:
         self.prev_opp: str = ""
         self.color_balance: int = 0  # +1 when played as white, -1 when played as black
         self.color_streak: int = 0  # Positive for consecutive whites, negative for blacks.
+        self.waiting_since: float | None = None  # Arena queue age; not persisted across restarts.
         # Swiss-only: first round in which the player can be paired.
         self.joined_round: int = 1
         self.joined_at: datetime = datetime.now(UTC)
@@ -1012,6 +1015,7 @@ class Tournament(ABC):
 
     def waiting_players(self) -> list[User]:
         waiting: list[User] = []
+        now = monotonic() if self.system == ARENA else None
         for player in self.leaderboard:
             player_data = self.player_data_by_name(player.username)
             if player_data is None:
@@ -1023,13 +1027,19 @@ class Tournament(ABC):
                 continue
 
             if not player_data.free or player_data.paused or player_data.withdrawn:
+                player_data.waiting_since = None
                 continue
 
             # Fixed-round events keep pairability in persisted tournament state instead of tying it
             # to whichever page socket the user currently has open. Arena still pairs only connected
             # players because its rolling waves depend on live availability.
-            if self.system != ARENA or len(self.player_round_sockets(player, player_data)) > 0:
-                waiting.append(player)
+            if self.system == ARENA:
+                if not self.player_round_sockets(player, player_data):
+                    player_data.waiting_since = None
+                    continue
+                if player_data.waiting_since is None:
+                    player_data.waiting_since = now
+            waiting.append(player)
 
         return waiting
 
@@ -1672,6 +1682,7 @@ class Tournament(ABC):
             return
         player_data.paused = False
         player_data.withdrawn = True
+        player_data.waiting_since = None
 
         if self.pop_leaderboard_player_by_username(user.username) is not None:
             self.nb_players -= 1
@@ -1693,6 +1704,7 @@ class Tournament(ABC):
             )
             return
         player_data.paused = True
+        player_data.waiting_since = None
 
         await self.db_update_player(user, "PAUSE")
 
@@ -1706,6 +1718,10 @@ class Tournament(ABC):
 
     def spactator_leave(self, spectator: User) -> None:
         self.spectators.discard(spectator)
+        if self.system == ARENA:
+            player_data = self.player_data_by_name(spectator.username)
+            if player_data is not None and not self.player_round_sockets(spectator, player_data):
+                player_data.waiting_since = None
 
     async def create_new_pairings(
         self,
@@ -1881,6 +1897,8 @@ class Tournament(ABC):
 
         wplayer.games.append(game)
         bplayer.games.append(game)
+        wplayer.waiting_since = None
+        bplayer.waiting_since = None
 
         if game.result == "*":
             wplayer.free = False
