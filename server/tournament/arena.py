@@ -86,30 +86,17 @@ class ArenaTournament(Tournament):
                 wp, bp = y, x
             pairing.append((wp, bp))
 
-        # When we have only 2 waiting players, we pait them immediately in two special cases:
-        # - if they never played before
-        # - if arena hes exactly 2 free players only (duel)
-
         if nb_waiting_players == 2:
-            x = waiting_players[0]
-            y = waiting_players[1]
-            x_data = self.player_data_by_name(x.username)
-            if x_data is None:
-                return pairing
-
-            if self.ongoing_games and self.color_streak_problem(x, y):
-                return pairing
-
-            if y.username not in (
-                (g.wplayer.username if g.bplayer.username == x.username else g.bplayer.username)
-                for g in x_data.games
+            x, y = waiting_players
+            # Match lila's duel exception using active participants, including those
+            # currently playing or disconnected. Paused/withdrawn players do not count.
+            only_two_active_players = (
+                sum(not data.paused and not data.withdrawn for data in self.players.values()) == 2
+            )
+            if only_two_active_players or (
+                not self.just_played_together(x, y) and not self.color_streak_problem(x, y)
             ):
-                log.info("find OK opp (they never played before!): %s", y.username)
                 pair_them(x, y)
-            elif len(self.ongoing_games) == 0:
-                log.info("find OK opp (duel!): %s", y.username)
-                pair_them(x, y)
-
             return pairing
 
         rxg = rx.PyGraph()

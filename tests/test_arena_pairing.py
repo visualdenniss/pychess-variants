@@ -148,6 +148,43 @@ class ArenaPairingTestCase(TournamentTestCase):
             self.tournament.players[player].color_streak = 3
         self.assertEqual(self.tournament.create_pairing(players[:2]), [])
         self.tournament.ongoing_games.clear()
+        self.assertEqual(self.tournament.create_pairing(players[:2]), [])
+        for player in players[2:]:
+            self.tournament.players[player].paused = True
+        self.assert_pairing(players[:2], [(players[0], players[1])])
+
+    async def test_two_waiting_players_can_meet_again_after_other_opponents(self):
+        players = await self.make_tournament(4)
+        await self.record_colors(players[:2], "W")
+        await self.record_colors([players[0], players[2]], "W")
+        await self.record_colors([players[1], players[3]], "W")
+        await self.tournament.create_games([(players[2], players[3])])
+        self.assert_pairing(players[:2], [(players[0], players[1])])
+
+    async def test_disconnected_active_players_prevent_immediate_rematch_duel(self):
+        players = await self.make_tournament(3)
+        await self.record_colors(players[:2], "W")
+        players[2].tournament_sockets[self.tournament.id].clear()
+        self.assertEqual(self.tournament.waiting_players(), players[:2])
+        self.assertEqual(self.tournament.create_pairing(players[:2]), [])
+
+    async def test_either_players_last_opponent_prevents_immediate_rematch(self):
+        players = await self.make_tournament(4)
+        await self.tournament.create_games([(players[2], players[3])])
+        for a, b in ((players[1], players[2]), (players[2], players[0])):
+            with self.subTest(a=a.username, b=b.username):
+                self.tournament.players[players[0]].prev_opp = a.username
+                self.tournament.players[players[1]].prev_opp = b.username
+                self.assertEqual(self.tournament.create_pairing(players[:2]), [])
+
+    async def test_duel_ignores_paused_and_withdrawn_players(self):
+        players = await self.make_tournament(4)
+        await self.record_colors(players[:2], "W")
+        self.tournament.players[players[2]].paused = True
+        self.tournament.players[players[3]].withdrawn = True
+        # A true duel permits both immediate rematches and otherwise incompatible colors.
+        for player in players[:2]:
+            self.tournament.players[player].color_streak = 3
         self.assert_pairing(players[:2], [(players[0], players[1])])
 
     async def test_reload_restores_color_streak_from_pairing_history(self):
