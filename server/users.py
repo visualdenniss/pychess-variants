@@ -106,6 +106,7 @@ class Users(UserDict[str, User]):
             username=username,
             title=doc.get("title") or "",
             bot=doc.get("title") == "BOT",
+            bot_engine=doc.get("botEngine"),
             perfs=doc.get("perfs"),
             pperfs=doc.get("pperfs"),
             count=doc.get("count"),

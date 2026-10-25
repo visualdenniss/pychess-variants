@@ -96,3 +96,25 @@ browser engine ownership.
 
 See [the integration reference](external-engine.md) for frontend ownership and
 links to the local application design, protocol and compatibility documentation.
+
+## Engine BOT profile identity
+
+An external BOT can include an optional `engine` object in its existing authenticated
+`GET /api/stream/event` capability header:
+
+```json
+{"version":1,"variants":["alice"],"engine":{"name":"Alice-Stockfish 1.0","author":"Belzedar94 and the Stockfish developers (see AUTHORS file)"}}
+```
+
+The header remains `X-PyChess-Bot-Capabilities`, version 1. The BOT client reads these
+values from the UCI `id name` and `id author` handshake. This is descriptive metadata;
+it does not affect variant eligibility or replace the BOT account's username.
+
+The server accepts a nonempty engine name, normalizes whitespace, and limits names
+to 128 characters and author credits to 256 characters. Unknown engine fields are
+ignored. Missing or malformed optional identity does not prevent the BOT connecting.
+The last reported identity is stored as `botEngine` on that BOT's user document and
+rendered as escaped text in the profile's player summary, including while offline.
+A later advertisement replaces the identity; older clients without an `engine`
+field retain the last reported details. Clients must not send paths, options, tokens,
+or other private configuration in this object.

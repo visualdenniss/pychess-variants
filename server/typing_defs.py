@@ -37,9 +37,15 @@ class ArenaCreationHistoryEntry(TypedDict):
     id: str
 
 
+class BotEngineInfo(TypedDict):
+    name: str
+    author: NotRequired[str]
+
+
 class UserDocument(TypedDict, total=False):
     _id: str
     title: str
+    botEngine: BotEngineInfo
     enabled: bool
     shadowban: bool
     patron: bool

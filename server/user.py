@@ -44,6 +44,7 @@ from websocket_utils import ws_send_json_many
 
 if TYPE_CHECKING:
     from typing_defs import (
+        BotEngineInfo,
         NotificationContent,
         NotificationDocument,
         PerfEntry,
@@ -177,9 +178,11 @@ class User:
         forum_posts: int = 0,
         variant_count: int = 0,
         auth_version: int = 0,
+        bot_engine: BotEngineInfo | None = None,
     ) -> None:
         self.app_state: PychessGlobalAppState = app_state
         self.bot: bool = bot
+        self.bot_engine: BotEngineInfo | None = bot_engine if bot else None
         self.anon: bool = anon
         self.lang: str | None = lang
         self.theme: str = theme

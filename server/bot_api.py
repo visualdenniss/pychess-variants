@@ -24,7 +24,7 @@ from request_utils import read_post_data, read_text_data
 from seek import BOT_CHALLENGE_DECLINED, resolve_decline_reason
 from settings import BOT_TOKENS
 from sse_utils import enqueue_sse_payload
-from typing_defs import UserDocument
+from typing_defs import BotEngineInfo, UserDocument
 from user import User
 from utils import load_game, new_game, play_move, send_bot_game_start_unless_streaming
 from variants import ALL_VARIANTS
@@ -59,7 +59,25 @@ def _require_bot_invite_owner(username: str, seek: Seek) -> None:
         raise web.HTTPForbidden()
 
 
-def _parse_bot_supported_variants(request: web.Request) -> set[str]:
+def _parse_bot_engine_info(value: object) -> BotEngineInfo | None:
+    if not isinstance(value, dict):
+        return None
+    name = value.get("name")
+    if not isinstance(name, str):
+        return None
+    name = " ".join(name.split())[:128]
+    if not name:
+        return None
+    engine: BotEngineInfo = {"name": name}
+    author = value.get("author")
+    if isinstance(author, str):
+        author = " ".join(author.split())[:256]
+        if author:
+            engine["author"] = author
+    return engine
+
+
+def _parse_bot_capabilities(request: web.Request) -> tuple[set[str], BotEngineInfo | None]:
     raw_capabilities = request.headers.get(BOT_CAPABILITIES_HEADER)
     if raw_capabilities is None:
         raise web.HTTPBadRequest(text=f"Missing required {BOT_CAPABILITIES_HEADER} header.")
@@ -88,7 +106,7 @@ def _parse_bot_supported_variants(request: web.Request) -> set[str]:
     }
     if not supported_variants:
         raise web.HTTPBadRequest(text="BOT does not advertise any PyChess-supported variants.")
-    return supported_variants
+    return supported_variants, _parse_bot_engine_info(capabilities.get("engine"))
 
 
 def _refresh_bot_api_online(bot_player: User) -> None:
@@ -349,7 +367,7 @@ async def challenge_decline(request: web.Request) -> web.StreamResponse:
 async def event_stream(request: web.Request) -> web.StreamResponse:
     app_state = get_app_state(request.app)
     username = _request_username(request)
-    supported_variants = _parse_bot_supported_variants(request)
+    supported_variants, engine_info = _parse_bot_capabilities(request)
 
     resp = web.StreamResponse()
     resp.content_type = "application/x-ndjson"
@@ -368,6 +386,8 @@ async def event_stream(request: web.Request) -> web.StreamResponse:
         app_state.users[bot_player.username] = bot_player
 
         doc: UserDocument | None = await app_state.db.user.find_one({"_id": username})
+        if doc is not None:
+            bot_player.bot_engine = doc.get("botEngine")
         if doc is None:
             result = await app_state.db.user.insert_one(
                 {
@@ -379,6 +399,15 @@ async def event_stream(request: web.Request) -> web.StreamResponse:
             log.debug("db insert user result %r", result.inserted_id)
 
     bot_player.bot_supported_variants = supported_variants
+    if engine_info is not None:
+        # Store the last reported identity so offline profiles can show it too.
+        if app_state.db is not None:
+            await app_state.db.user.update_one(
+                {"_id": username, "botEngine": {"$ne": engine_info}},
+                {"$set": {"botEngine": engine_info}},
+            )
+        bot_player.bot_engine = engine_info
+        app_state.public_users.invalidate(username)
 
     _refresh_bot_api_online(bot_player)
 

@@ -47,6 +47,14 @@
             {% endfor %}
             </div>
         </div>
+        {% if profile_bot_engine %}
+        <div class="player-engine">
+            <div class="player-engine__name"><span class="player-engine__label">{% trans %}Engine{% endtrans %}</span> {{ profile_bot_engine['name'] }}</div>
+            {% if profile_bot_engine.get('author') %}
+            <div class="player-engine__author"><span class="player-engine__label">{% trans %}Author{% endtrans %}</span> {{ profile_bot_engine['author'] }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
         <div class="player-social">
             {% if profile_system or profile_study_count or (profile_title != "BOT") %}
             <div class="profile-number-menu">

@@ -191,6 +191,7 @@ async def profile(request: web.Request) -> ViewContext:
         )
     }
     context["profile_title"] = profile_user.title
+    context["profile_bot_engine"] = profile_user.bot_engine if profile_user.bot else None
     context["profile_tournament_points"] = profile_user.tournament_points
     context["profile_forum_posts"] = profile_user.forum_posts
     context["profile_variant_count"] = profile_user.variant_count
