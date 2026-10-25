@@ -143,8 +143,9 @@ class ArenaTournament(Tournament):
         # print(rxg.edge_index_map())
         # print("---")
 
+        # Pair as many players as possible, then minimize rank/rating distance.
         matching = rx.max_weight_matching(
-            rxg, max_cardinality=True, weight_fn=lambda x: x, verify_optimum=True
+            rxg, max_cardinality=True, weight_fn=lambda x: -x, verify_optimum=True
         )
 
         edges = list(rxg.edge_list())
