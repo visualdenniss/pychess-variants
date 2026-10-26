@@ -1468,6 +1468,16 @@ export class AnalysisController extends GameController {
                     this.fsfError.push('');
                     this.fsfError.push(suggestion);
                     const errorMsg = this.fsfError.join('\n');
+                    const diagnostic = {
+                        variant: this.engineVariant,
+                        threads: this.threads,
+                        hashMiB: this.hash,
+                        nnueFile: this.nnue && this.nnueOk ? this.loadedNnueFilename : undefined,
+                        stage: this.browserSearch.status,
+                    };
+                    console.error('Fairy-Stockfish WASM terminated', diagnostic, errorMsg);
+                    this.browserSearch.onFailure(errorMsg);
+                    this.suspendLocalAnalysis();
                     void alertDialog({ text: errorMsg });
                     return;
                 }
