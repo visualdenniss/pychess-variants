@@ -33,6 +33,9 @@ log = logging.getLogger(__name__)
 _SEND_CONCURRENCY = 200
 _SEND_TIMEOUT_SECS = 2.0
 _RECEIVE_TIMEOUT_SECS = 30.0
+# Keep idle browser connections alive at the Heroku router even if JavaScript
+# timers (and therefore the application-level /n heartbeat) are suspended.
+_WS_HEARTBEAT_SECS = 25.0
 _WS_JSON_ENCODER = msgspec.json.Encoder()
 _WS_JSON_DECODER = msgspec.json.Decoder()
 _TYPE_FIELD_RE = re.compile(r'"type"\s*:\s*"([^"\\]+)"')
@@ -123,9 +126,10 @@ async def process_ws(
         return None
 
     # The client sends an application-level "/n" ping every 2.5 seconds and
-    # reconnects if its pong is missing. Keep server cleanup deliberately
-    # slower so short network stalls do not race an aggressive protocol ping.
-    ws = WebSocketResponse(receive_timeout=_RECEIVE_TIMEOUT_SECS)
+    # reconnects if its pong is missing. Browser throttling can pause those
+    # JavaScript timers, so send a protocol-level PING when traffic goes quiet.
+    # Keep server cleanup slower than the normal application-level heartbeat.
+    ws = WebSocketResponse(receive_timeout=_RECEIVE_TIMEOUT_SECS, heartbeat=_WS_HEARTBEAT_SECS)
     ws_ready = ws.can_prepare(request)
     if not ws_ready.ok:
         log.debug("Ignoring non-websocket request on %s: %r", request.rel_url.path, ws_ready)
