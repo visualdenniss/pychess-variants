@@ -270,7 +270,6 @@ async def admin_operation(request: web.Request) -> web.Response:
         moderator,
         SITE_LOG_TARGET,
         "fishnet_key_removed",
-        "logging_level_changed",
         name,
     )
     return _success("fishnet_key_removed", f"Fishnet key for {name} removed.")
