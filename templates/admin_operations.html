@@ -15,6 +15,25 @@
             <div class="admin-ops-grid">
                 <section class="admin-ops-card">
                     <header>
+                        <h2>Console logging</h2>
+                        <p>Set the minimum severity written to the server log. All running servers pick up the saved setting within 60 seconds.</p>
+                    </header>
+                    <div class="admin-ops-state">
+                        <span>Configured level</span>
+                        <strong>{{ admin_operations_logging_level }}</strong>
+                    </div>
+                    <form data-admin-operation action="/api/admin/operations/logging-level" method="post">
+                        <label for="admin-logging-level">Minimum log level</label>
+                        <select id="admin-logging-level" name="level" required>
+                            {% for level in ["DEBUG", "INFO", "WARNING", "ERROR"] %}
+                            <option value="{{ level }}"{% if level == admin_operations_logging_level %} selected{% endif %}>{{ level }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="admin-action-button" type="submit">Save logging level</button>
+                    </form>
+                </section>
+                <section class="admin-ops-card">
+                    <header>
                         <h2>Anonymous access</h2>
                         <p>Temporarily control creation of new anonymous sessions.</p>
                     </header>

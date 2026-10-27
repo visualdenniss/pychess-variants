@@ -78,6 +78,46 @@ class AdminOperationsTestCase(AioHTTPTestCase):
         self.assertIn("Add YouTube stream completed.", body)
         self.assertIn("Recent site operations", body)
 
+    async def test_logging_level_update_is_admin_only_validated_and_audited(self):
+        app_state = get_app_state(self.app)
+        await app_state.db.config.insert_one(
+            {
+                "name": "logging.config",
+                "value": {
+                    "handlers": {"default": {"level": "DEBUG", "formatter": "standard"}},
+                    "loggers": {"wsr": {"level": "DEBUG"}},
+                },
+            }
+        )
+        self.add_live_user("alice")
+        self.add_live_user("mod")
+        self.set_session_user("alice")
+        with patch("admin_ops_api.ADMINS", ["mod"]):
+            forbidden = await self.client.post(
+                "/api/admin/operations/logging-level", data={"level": "INFO"}
+            )
+        self.assertEqual(forbidden.status, 403)
+
+        self.client.session.cookie_jar.clear()
+        self.set_session_user("mod")
+        with patch("admin_ops_api.ADMINS", ["mod"]):
+            invalid = await self.client.post(
+                "/api/admin/operations/logging-level", data={"level": "OFF"}
+            )
+            updated = await self.client.post(
+                "/api/admin/operations/logging-level", data={"level": "INFO"}
+            )
+        self.assertEqual(invalid.status, 400)
+        self.assertEqual(updated.status, 200)
+        config = await app_state.db.config.find_one({"name": "logging.config"})
+        self.assertEqual(config["value"]["handlers"]["default"]["level"], "INFO")
+        self.assertEqual(config["value"]["handlers"]["default"]["formatter"], "standard")
+        self.assertEqual(config["value"]["loggers"]["wsr"]["level"], "DEBUG")
+        logs = await app_state.db.mod_log.find({"action": "logging_level_changed"}).to_list(None)
+        self.assertEqual(len(logs), 1)
+        self.assertEqual(logs[0]["mod"], "mod")
+        self.assertEqual(logs[0]["details"], "INFO")
+
     async def test_anonymous_session_toggle_is_idempotent_and_audited(self):
         app_state = get_app_state(self.app)
         self.add_live_user("mod")

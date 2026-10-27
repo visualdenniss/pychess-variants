@@ -329,6 +329,14 @@ async def admin_operations(request: web.Request) -> ViewContext:
     context["admin_action_notice"] = (
         MOD_ACTION_LABELS.get(done, "") if done in OPERATION_LOG_ACTIONS else ""
     )
+    logging_doc = await app_state.db.config.find_one({"name": "logging.config"})
+    value = logging_doc.get("value", {}) if logging_doc else {}
+    handlers = value.get("handlers", {}) if isinstance(value, dict) else {}
+    default_handler = handlers.get("default", {}) if isinstance(handlers, dict) else {}
+    level = default_handler.get("level") if isinstance(default_handler, dict) else None
+    context["admin_operations_logging_level"] = (
+        level if level in {"DEBUG", "INFO", "WARNING", "ERROR"} else "UNKNOWN"
+    )
     context["admin_operations_anons_disabled"] = app_state.disable_new_anons
     context["admin_operations_streams"] = sorted(
         app_state.youtube.live_streams,

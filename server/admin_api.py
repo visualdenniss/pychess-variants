@@ -43,6 +43,7 @@ MOD_ACTION_LABELS: dict[str, str] = {
     "crosstable_regenerated": "Regenerate crosstable",
     "fishnet_key_created": "Create fishnet key",
     "fishnet_key_removed": "Remove fishnet key",
+    "logging_level_changed": "Change logging level",
     "system_message_sent": "Send system message",
     "close_team": "Close team",
     "reopen_team": "Reopen team",

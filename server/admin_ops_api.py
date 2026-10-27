@@ -33,6 +33,7 @@ OPERATION_LOG_ACTIONS = frozenset(
         "crosstable_regenerated",
         "fishnet_key_created",
         "fishnet_key_removed",
+        "logging_level_changed",
     }
 )
 
@@ -47,6 +48,7 @@ API_ACTIONS = frozenset(
         "crosstable",
         "fishnet-create",
         "fishnet-remove",
+        "logging-level",
     }
 )
 
@@ -99,6 +101,26 @@ async def admin_operation(request: web.Request) -> web.Response:
 
     data = await read_post_data(request)
     form = data if data is not None else {}
+
+    if action == "logging-level":
+        level = form.get("level")
+        if not isinstance(level, str) or level not in {"DEBUG", "INFO", "WARNING", "ERROR"}:
+            return _error("Choose a valid logging level", 400)
+
+        # Update only the persisted console handler level; retain module-specific settings.
+        result = await app_state.db.config.update_one(
+            {"name": "logging.config"},
+            {"$set": {"value.handlers.default.level": level}},
+        )
+        if not result.matched_count:
+            return _error("Logging configuration is not initialized", 503)
+        await record_mod_action(
+            app_state, moderator, SITE_LOG_TARGET, "logging_level_changed", level
+        )
+        return _success(
+            "logging_level_changed",
+            f"Console logging set to {level}. Running servers refresh within 60 seconds.",
+        )
 
     if action in {"disable-anons", "enable-anons"}:
         disabled = action == "disable-anons"
@@ -248,6 +270,7 @@ async def admin_operation(request: web.Request) -> web.Response:
         moderator,
         SITE_LOG_TARGET,
         "fishnet_key_removed",
+        "logging_level_changed",
         name,
     )
     return _success("fishnet_key_removed", f"Fishnet key for {name} removed.")
