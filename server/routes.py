@@ -370,6 +370,7 @@ get_routes: tuple[RouteDef, ...] = (
     ("/admin/system-messages", admin_system_messages_view.admin_system_messages),
     ("/admin/operations", admin_view.admin_operations),
     ("/admin/fair-play", admin_view.admin_fair_play),
+    (r"/admin/fair-play/overlay/{reportId:[0-9a-fA-F]{24}}", admin_view.admin_overlay_download),
     ("/reports", reports_view.reports),
     ("/mod/public-chat", mod_public_chat_view.mod_public_chat),
     ("/challenges", get_header_challenges),

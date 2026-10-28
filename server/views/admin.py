@@ -10,6 +10,9 @@ from admin import is_protected_username
 from admin_api import MOD_ACTION_LABELS, MOD_LOG_COLLECTION, TEAM_LOG_ACTIONS, USER_LOG_ACTIONS
 from admin_ops_api import OPERATION_LOG_ACTIONS, fishnet_key_id
 from aiohttp import web
+from bson import ObjectId
+from bson.errors import InvalidId
+from cheat_report import valid_overlay_svg
 from pychess_global_app_state_utils import get_app_state
 from report_api import TIMEOUT_REASONS
 from security_evasion import BAN_SIGNAL_COLLECTION, signal_ids_from_user_doc
@@ -239,6 +242,44 @@ async def admin_fair_play(request: web.Request) -> ViewContext:
     context["admin_fair_play_username"] = username
     context["admin_fair_play_game"] = game_id
     return context
+
+
+async def admin_overlay_download(request: web.Request) -> web.Response:
+    # A direct download URL must be protected even when linked only from an admin page.
+    user, _ = await get_user_context(request)
+    if not _is_admin_username(user.username):
+        raise web.HTTPForbidden()
+
+    try:
+        report_id = ObjectId(request.match_info["reportId"])
+    except (InvalidId, TypeError) as exc:
+        raise web.HTTPNotFound() from exc
+    app_state = get_app_state(request.app)
+    report = await app_state.db.cheat_report.find_one(
+        {"_id": report_id, "kind": "external_overlay"},
+        projection={"overlaySvg": 1, "gameId": 1},
+    )
+    svg = valid_overlay_svg(report.get("overlaySvg")) if report else None
+    if svg is None:
+        raise web.HTTPNotFound()
+
+    game_id = report.get("gameId", "unknown")
+    safe_game_id = (
+        game_id
+        if isinstance(game_id, str) and re.fullmatch(r"[A-Za-z0-9]{8}", game_id)
+        else "unknown"
+    )
+    filename = f"overlay-{safe_game_id}.svg"
+    return web.Response(
+        body=svg.encode("utf-8"),
+        content_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+            "Content-Security-Policy": "sandbox",
+        },
+    )
 
 
 @aiohttp_jinja2.template("admin.html")

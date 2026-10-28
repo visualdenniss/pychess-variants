@@ -286,9 +286,13 @@ export class RoundController extends GameController {
         if (this.isCevalDetectionEligible()) {
             const board = document.querySelector('cg-board');
             if (board) {
-                this.stopOverlayObservation = startOverlayObservation(board, () => {
+                this.stopOverlayObservation = startOverlayObservation(board, svg => {
                     if (this.isCevalDetectionEligible()) {
-                        this.doSend({ type: 'overlay_detected', gameId: this.gameId });
+                        this.doSend({
+                            type: 'overlay_detected',
+                            gameId: this.gameId,
+                            svg: svg.length <= 32768 ? svg : '',
+                        });
                     }
                 });
             }

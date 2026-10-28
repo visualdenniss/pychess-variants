@@ -35,6 +35,9 @@
                         <div><dt>Variant</dt><dd>{{ report.variant or '—' }}</dd></div>
                         <div><dt>Ply</dt><dd>{{ report.ply if report.ply is defined else '—' }}</dd></div>
                         <div><dt>Action</dt><dd>{{ report.action or 'reported_only' }}</dd></div>
+                        {% if report.kind == 'external_overlay' and report.overlaySvg %}
+                        <div><dt>Evidence</dt><dd><a href="/admin/fair-play/overlay/{{ report._id }}" download>Download SVG</a> <small>Untrusted file — open with a trusted image viewer.</small></dd></div>
+                        {% endif %}
                         {% if report.kind == 'ceval_cross_tab' %}
                         <div><dt>Reported position</dt><dd><code>{{ report.reportedFen or '—' }}</code></dd></div>
                         {% endif %}
