@@ -109,6 +109,9 @@ class AdminViewTestCase(AioHTTPTestCase):
             denied = await self.client.get(url)
         self.assertEqual(denied.status, 403)
 
+        # The previous request updates the session cookie for alice. Clear it
+        # before switching identities to avoid duplicate scoped cookies.
+        self.client.session.cookie_jar.clear()
         self.set_session_user("mod")
         with patch("views.admin.ADMINS", ["mod"]):
             page = await self.client.get("/admin/fair-play")
