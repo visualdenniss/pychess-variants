@@ -2264,11 +2264,7 @@ export function lobbyView(model: PyChessModel): VNode[] {
                         h('span.post-media', [
                             h('img', {
                                 attrs: {
-                                    src:
-                                        (post['image'] || '').startsWith('http://') ||
-                                        (post['image'] || '').startsWith('https://')
-                                            ? `${post['image']}`
-                                            : model.assetURL + `${post['image']}`,
+                                    src: post.image_src || model.assetURL + '/images/ublog-default-cover.svg',
                                     alt: `${post['imageAlt'] || post['alt'] || ''}`,
                                 },
                             }),
