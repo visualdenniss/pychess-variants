@@ -78,6 +78,7 @@ Community members already run dedicated BOT accounts on PyChess, including:
 
 - **[MBCA-Grand](https://www.pychess.org/@/MBCA-Grand)**, Tord Romstad's Grand Chess BOT, powered by [MBCA-10x10](https://github.com/romstad/mbca-10x10), a UCI engine whose evaluation network was trained using Jamie Whiting's [bullet](https://github.com/jw1912/bullet) library.
 - **[sin-san](https://www.pychess.org/@/sin-san)** for Janggi, powered by [Sinsan](https://github.com/VectorSophie/sinsan), an AlphaZero-style engine combining a neural network with Monte Carlo tree search.
+- **[Prolix](https://www.pychess.org/@/Prolix)** for Shatranj, powered by Chris Bao's [Prolix engine](https://github.com/sscg13/Prolix), an open-source UCI/XBoard engine with NNUE evaluation.
 
 This feature has been available for a while; we're giving it the announcement it deserves.
 
