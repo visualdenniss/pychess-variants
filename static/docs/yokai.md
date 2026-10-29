@@ -84,7 +84,7 @@ Nurikabe are barrier monsters. They start in each player's hand and can only mov
 *Drops* - The main exceptions to dropping a piece anywhere are with pawns. 
 1) Pawns cannot be dropped in the same file as another one of your unpromoted pawns (promoted are okay). 
 2) A pawn drop cannot checkmate, but checks are okay. 
-3) The final exception applies to all minor pieces. You cannot drop a piece so that it can’t move, which usually means the last rank… or the last two ranks in the case of a knight.
+3) The final exception applies to a pawn or tengu. You cannot drop either in the last rank as they would have no valid moves.
 
 *Perpetual check* - Repeating check resulting in the same position four times in a row is a loss to the player causing perpetual check. In chess, this results in a draw.
 
