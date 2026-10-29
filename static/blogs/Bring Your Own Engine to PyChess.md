@@ -25,11 +25,11 @@ Native Fairy-Stockfish and Alice-Stockfish have been tested with the external-an
 
 ### How much faster?
 
-<!-- SCREENSHOT 1: PyChess analysis panel header, browser Fairy-Stockfish WASM, showing engine name, depth, and NPS. -->
+![Browser Fairy-Stockfish analysis: depth 22 and 388 knodes per second.](/static/images/bring-your-own-engine/fairy-stockfish-browser.png)
 
-<!-- SCREENSHOT 2: Same position and comparable engine/settings, native Fairy-Stockfish, showing engine name, depth, and NPS. -->
+![Native Fairy-Stockfish analysis: depth 23 and 871 knodes per second.](/static/images/bring-your-own-engine/fairy-stockfish-native.png)
 
-*Above: Compare the browser and native analysis headers using real measurements from the same position.*
+*Above: Real browser and native analysis of the same position, with one CPU thread, 64 MB hash, one variation and NNUE disabled. These are different Fairy-Stockfish builds (browser 14+ and native 130726), so this is an illustrative comparison rather than a controlled benchmark.*
 
 The **NPS** figure means *nodes per second*, the number of search-tree nodes the engine investigates each second. It's a useful speed comparison for **the same engine** under similar conditions, but higher NPS doesn't necessarily make one *different* engine stronger than another. We'll let the actual screenshots speak for themselves.
 
@@ -63,7 +63,7 @@ Replace the paths with those on your computer, and keep the companion app runnin
 
 The companion app has been verified on Linux x86-64 with Chromium, Edge and Firefox. Other platforms and Safari have not yet been fully verified; see the [installation guide](https://github.com/pychess/pychess-external-engine/blob/main/docs/installation.md) and [compatibility notes](https://github.com/pychess/pychess-external-engine/blob/main/docs/compatibility.md) for details.
 
-<!-- SCREENSHOT 3 (OPTIONAL): PyChess analysis panel with Alice-Stockfish selected, showing a real Alice Chess position. -->
+![Alice Chess opening analysis with Alice-Stockfish 1.0 running natively.](/static/images/bring-your-own-engine/alice-stockfish-analysis.png)
 
 ## Let other players challenge your engine
 
@@ -111,9 +111,9 @@ uv run python lichess-bot.py
 
 Yes, the script is still named `lichess-bot.py`! Our [pychess-bot](https://github.com/gbtami/pychess-bot) is a fork of the excellent open-source [lichess-bot](https://github.com/lichess-bot-devs/lichess-bot) project, adapted for PyChess. We deliberately retain some upstream filenames and internal structures to make incorporating upstream improvements easier. **Make sure `url` points to PyChess, not Lichess.**
 
-<!-- SCREENSHOT 4: Real PyChess Alice-Stockfish BOT profile with the BOT badge and challenge action. -->
+![Alice-Stockfish profile with its BOT badge and Challenge action.](/static/images/bring-your-own-engine/alice-stockfish-bot-profile.png)
 
-*Above: A dedicated PyChess BOT account that players can challenge.*
+*Above: The Alice-Stockfish BOT profile shown on a local PyChess instance, with the Challenge action available to signed-in players.*
 
 ## Your computer, your engine, your choice
 
