@@ -47,7 +47,7 @@ Kappas are aquatic demons; in this game, there are two of them that have mirror 
 
 ![Yurei](https://github.com/pychess/pychess-variants/blob/master/static/images/YokaiShogiGuide/Yurei.png)
 
-Yurei are ghosts; they can move up to two squares forward or sideways. If a piece is blocking them, then they still move past that piece (like a ghost) but cannot capture on that second square. Upon promotion, they become a Vengeful Spirit that gains the ability to also move two squares backward. On top of that, they gain the ability to jump anywhere within 2 squares (including a knight jump away) without capturing. 
+Yurei are ghosts; they can move up to two squares orthogonally. If a piece is blocking them, then they still move past that piece (like a ghost) but cannot capture on that second square. Upon promotion, they become a Vengeful Spirit that gains the ability to also move two squares backward. On top of that, they gain the ability to jump anywhere within 2 squares (including a knight jump away) without capturing. 
 
 ### Tengu (G) and Dai-tengu
 
